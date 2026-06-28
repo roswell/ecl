@@ -68,7 +68,7 @@ hash_fingerprint(uint64_t hash)
   return (hash >> 57) & FINGERMASK;
 }
 
-typedef struct ecl_cache_record {
+typedef struct {
   cl_object key;
   cl_object val;
 } ecl_cache_record;
@@ -85,61 +85,62 @@ typedef struct ecl_cache_record {
   head[0] is currently not used and we can use it in the future for something.
   Like we can store here a probe max distance, or store a lock for the bucket.
 */
-typedef struct ecl_cache_bucket {
+typedef struct {
   uint8_t head[16];
   ecl_cache_record tail[15];
 } ecl_cache_bucket;
 
 
 /*
-  The cache header is shaped like a bucket, but the first line, except from
-  shortened hashes, contains its size, fill counter and two records for quick
-  lookup (used at discretion of the caller).
+  The cache header occuplies exactly 64B. [meta] contains size and fill counters
+  and remaining slots are at a disposal of the client who uses the table. They
+  may be used for example to implement PIC cache.
 
-  [head][meta][pic0][pic1]
-  [elem][elem][elem][elem]
-  [elem][elem][elem][elem]
-  [elem][elem][elem][elem]
+  [meta][slot][slot][slot]
 
-  Bytes head[1:3] are TOMBSTONEs so headers and buckets are binary compatible.
-  That said we don't use the header "bucket" in dispatch to avoid cycling
-  through three (always empty) items. Using it actually shows on the benchmark.
-*/
-typedef struct ecl_cache_header {
-  uint8_t head[16];             /* 2 : [0:3] reserved, [4:15] tail */
-  uint64_t size;                /* 1 : number of buckets */
-  uint64_t fill;                /* 1 : number of records */
-  ecl_cache_record pic[2];      /* 4 : hot cache */
-  ecl_cache_record tail[12];    /* 24: warm cache(?) */
-} ecl_cache_header, *ecl_cache_ptr;
+  This is what we initially allocate instaed of a dispatch table. Functions that
+  are never called won't extend beyond the header. It is a responsibility of
+  ecl_update_cache to resize the table to fit the element.
 
-/* Feeler has a compatible layout with ecl_cache_header but it doesn't allocate
-   space for elements. This is what we initially allocate instaed of a dispatch
-   table. Functions that are never called won't extend beyond the feeler. It is
-   a responsibility of ecl_update_cache to resize the table to fit the element.
-
-   size == 0 -> feeler
+   size == 0 -> header
    size >= 1 -> header + buckets
 */
-typedef struct ecl_cache_feeler {
-  uint8_t head[16];             /* 2 : [0:1] reserved, [4:15] poly */
+typedef struct {
   uint64_t size;                /* 1 : number of buckets */
   uint64_t fill;                /* 1 : number of records */
-  ecl_cache_record pic[2];      /* 4 : hot cache */
-} ecl_cache_feeler;
-
-/* API */
-extern ecl_cache_ptr ecl_make_cache(cl_index cache_size);
-extern cl_object ecl_cache_make_key(cl_index len, cl_object *keys);
-extern void ecl_update_cache(const cl_env_ptr env, cl_object gf,
-                             ecl_cache_ptr cache, cl_index hash,
-                             cl_index argno, cl_object *keys, cl_object value);
-extern void ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key);
-extern void ecl_cache_invalidate(const cl_env_ptr env, cl_object gf);
-
+  cl_object slot[6];            /* 6 : general purpose slots */
+} ecl_cache_header, *ecl_cache_ptr;
 
 
 /* General purpose cache. */
+
+static inline void
+clear_cache(ecl_cache_ptr cache)
+{
+  uint64_t cache_size = cache->size;
+  ecl_cache_bucket *table=(ecl_cache_bucket *)(cache+1);
+  /* Initialize header. */
+  cache->size = cache_size;
+  cache->fill = 0;
+  for(int j=0; j<6; j++)
+    cache->slot[j]=OBJNULL;
+  /* Initialize buckets. */
+  for(int i=0; i<cache_size; i++)
+    for(int j=0; j<16; j++)
+      table[i].head[j]=EMPTYSLOT;
+}
+
+static inline ecl_cache_ptr
+ecl_make_cache(uint64_t cache_size)
+{
+  /* Our indexing is per bucket. To avoid division on each probe, sizes are
+     powers of two. Size=0 means that we have allocated only the feeler. */
+  ecl_cache_ptr cache = ecl_alloc(sizeof(ecl_cache_header) +
+                                  sizeof(ecl_cache_bucket) * cache_size);
+  cache->size = cache_size;
+  clear_cache(cache);
+  return cache;
+}
 
 static inline bool
 keys_match(int argno, cl_object *keys, cl_object *record_keys)
@@ -166,7 +167,7 @@ keys_match(int argno, cl_object *keys, cl_object *record_keys)
 }
 
 static inline cl_object
-ecl_search_cache(ecl_cache_header *cache, uint64_t hash, cl_index argno, cl_object *keys)
+ecl_search_cache(ecl_cache_ptr cache, uint64_t hash, cl_index argno, cl_object *keys)
 {
   ecl_cache_record *record;
   cl_object *record_key;
@@ -194,8 +195,24 @@ ecl_search_cache(ecl_cache_header *cache, uint64_t hash, cl_index argno, cl_obje
   return OBJNULL;
 }
 
+static inline cl_object
+make_key(cl_index len, cl_object *keys)
+{
+  cl_index idx;
+  cl_object key = si_make_vector(ECL_T,
+                                 ecl_make_integer(len),
+                                 ECL_NIL, /* adjustable */
+                                 ECL_NIL, /* fill pointer */
+                                 ECL_NIL, /* displaced */
+                                 ECL_NIL);
+  for(idx=0; idx<len; idx++) {
+    key->vector.self.t[idx] = keys[idx];
+  }
+  return key;
+}
+
 static inline void
-update_cache(ecl_cache_header *cache, uint64_t hash,
+insert_cache(ecl_cache_ptr cache, uint64_t hash,
              cl_index argno, cl_object *keys, cl_object val)
 {
   uint64_t size = cache->size;
@@ -212,7 +229,7 @@ update_cache(ecl_cache_header *cache, uint64_t hash,
          we would need be see if they key already exists until EMPTYSLOT. */
       if (ctrl == EMPTYSLOT || ctrl == TOMBSTONE) {
         bucket->head[idx] = fp;
-        bucket->tail[idx-1].key = ecl_cache_make_key(argno, keys);
+        bucket->tail[idx-1].key = make_key(argno, keys);
         bucket->tail[idx-1].val = val;
         cache->fill++;
         return;
@@ -224,38 +241,17 @@ update_cache(ecl_cache_header *cache, uint64_t hash,
 }
 
 static inline void
-clear_cache(ecl_cache_header *cache)
+upsert_cache(ecl_cache_ptr cache, uint64_t hash,
+             cl_index argno, cl_object *keys, cl_object val)
 {
-  uint64_t cache_size = cache->size;
-  ecl_cache_bucket *table=(ecl_cache_bucket *)(cache+1);
-  /* Initialize header. */
-  cache->size = cache_size;
-  cache->fill = 0;
-  for(int j=0; j<16; j++)
-    cache->head[j]=RESERVED;
-  /* Initialize buckets. */
-  for(int i=0; i<cache_size; i++)
-    for(int j=0; j<16; j++)
-      table[i].head[j]=EMPTYSLOT;
+  ecl_internal_error("upsert: not implemented yet.");
 }
 
-static inline ecl_cache_header *
-create_cache(uint64_t cache_size)
+static inline void
+delete_cache(ecl_cache_ptr cache, uint64_t hash,
+             cl_index argno, cl_object *keys, cl_object val)
 {
-  /* Our indexing is per bucket. To avoid division on each probe, sizes are
-     powers of two. Size=0 means that we have allocated only the feeler. */
-  ecl_cache_header *cache;
-  switch (cache_size) {
-  case 0:
-    cache = ecl_alloc(sizeof(ecl_cache_feeler));
-    break;
-  default:
-    cache = ecl_alloc(sizeof(ecl_cache_header) +
-                      sizeof(ecl_cache_bucket) * cache_size);
-  }
-  cache->size = cache_size;
-  clear_cache(cache);
-  return cache;
+  ecl_internal_error("delete: not implemented yet.");
 }
 
 /* A few notes about cache overflow, resizing the table and eviction. The caller
@@ -269,9 +265,8 @@ create_cache(uint64_t cache_size)
    Until we reach the limit, we resize when fill reaches 7/8. After we reach the
    limit, we only rehash and skip every fourth live record when inserting. This
    reduces the fill count, shortens chains and removes tombstones. */
-
-static inline ecl_cache_header *
-rehash_cache(ecl_cache_header *cache)
+static inline ecl_cache_ptr
+rehash_cache(ecl_cache_ptr cache)
 {
   uint64_t size = cache->size;
   uint64_t fill = cache->fill;
@@ -279,10 +274,11 @@ rehash_cache(ecl_cache_header *cache)
   uint64_t limit = (7*capacity)/8;
 
   if (size == 0) {              /* only feeler */
-    ecl_cache_header *new_cache = create_cache(1);
-    /* Copy pic records. */
-    new_cache->pic[0] = cache->pic[0];
-    new_cache->pic[1] = cache->pic[1];
+    ecl_cache_ptr new_cache = ecl_make_cache(1);
+    /* Copy slots and fix the header. */
+    *new_cache = *cache;
+    new_cache->size = 1;
+    new_cache->fill = 0;
     return new_cache;
   }
 
@@ -290,7 +286,7 @@ rehash_cache(ecl_cache_header *cache)
     return cache;
   }
 
-  ecl_cache_header *new_cache = NULL;
+  ecl_cache_ptr new_cache = NULL;
   ecl_cache_bucket *old_table = (ecl_cache_bucket *)(cache+1);
   /* Eviction always goes through the same indexes, but this is fine, because we
      have a strong randomized hash. Even assuming that we don't resize, evicting
@@ -308,10 +304,11 @@ rehash_cache(ecl_cache_header *cache)
     new_size = size;
   }
 
-  new_cache = create_cache(new_size);
-  /* Copy pic records. */
-  new_cache->pic[0] = cache->pic[0];
-  new_cache->pic[1] = cache->pic[1];
+  new_cache = ecl_make_cache(new_size);
+  /* Copy slots and fix the header. */
+  *new_cache = *cache;
+  new_cache->size = new_size;
+  new_cache->fill = 0;
   /* Insert live bucket elements. */
   for(int i = 0; i<size; i++) {
     for(int idx = 1; idx<16; idx++) {
@@ -325,13 +322,14 @@ rehash_cache(ecl_cache_header *cache)
       uint64_t key_length = key->vector.dim;
       cl_object *key_vector = key->vector.self.t;
       uint64_t hash = vector_hash_keys(key_length, key_vector);
-      update_cache(new_cache, hash, key_length, key_vector, val);
+      insert_cache(new_cache, hash, key_length, key_vector, val);
     }
   }
   return new_cache;
 }
 
 
+
 #ifdef ECL_THREADS
 static inline cl_object
 ecl_bds_get_value(const cl_env_ptr env, cl_object gf)
@@ -379,6 +377,33 @@ ecl_bds_set_value(const cl_env_ptr env, cl_object gf, cl_object cache)
 #ifdef __cplusplus
 }
 #endif
+
+
+
+static inline void
+ecl_update_cache(const cl_env_ptr env, cl_object gf,
+                 ecl_cache_ptr cache, cl_index hash, cl_index argno,
+                 cl_object *keys, cl_object value)
+{
+  ecl_cache_ptr recache;
+  ecl_disable_interrupts();
+  recache = rehash_cache(cache);  /* checks fill */
+  if (recache != cache) {
+    cache = recache;
+    ECL_SET_GFUN_CACHE(env, gf, cache);
+  }
+  insert_cache(cache, hash, argno, keys, value);
+  ecl_enable_interrupts();
+}
+
+static inline void
+ecl_cache_invalidate(const cl_env_ptr env, cl_object gf)
+{
+  /* We first call ECL_GET_GFUN_CACHE to ensure, that the cache
+     exists. ECL_SET_GFUN_CACHE quietly assumes that this is true.*/
+  ECL_GET_GFUN_CACHE(env, gf);
+  ECL_SET_GFUN_CACHE(env, gf, ecl_make_cache(1));
+}
 
 
 #endif /* !ECL_CACHE_H */
