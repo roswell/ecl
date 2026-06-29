@@ -118,7 +118,7 @@
                (location-table location-table))
       class
     (let* ((size (max 32 (* 2 (length all-slots))))
-           (table (make-hash-table :size size)))
+           (table (make-hash-table :size size :test #'eq)))
       (dolist (slotd all-slots)
         (setf (gethash (slot-definition-name slotd) table) slotd))
       (let ((metaclass (si::instance-class class))
@@ -126,7 +126,7 @@
         (when (or (eq metaclass (find-class 'standard-class))
                   (eq metaclass (find-class 'funcallable-standard-class))
                   (eq metaclass (find-class 'structure-class)))
-          (setf locations (make-hash-table :size size))
+          (setf locations (make-hash-table :size size :test #'eq))
           (dolist (slotd all-slots)
             (setf (gethash (slot-definition-name slotd) locations)
                   (slot-definition-location slotd))))
