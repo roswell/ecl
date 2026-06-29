@@ -44,7 +44,7 @@ HDIR	= ../ecl
 HFILES = $(HDIR)/config.h $(HDIR)/ecl.h $(HDIR)/ecl-cmp.h $(HDIR)/object.h      \
 	$(HDIR)/cs.h $(HDIR)/stacks.h $(HDIR)/external.h $(HDIR)/cons.h         \
 	$(HDIR)/legacy.h $(HDIR)/number.h $(HDIR)/page.h $(HDIR)/bytecodes.h    \
-	$(HDIR)/cache.h $(HDIR)/config-internal.h $(HDIR)/ecl_atomics.h         \
+	$(HDIR)/cache.h $(HDIR)/cach1.h $(HDIR)/config-internal.h $(HDIR)/ecl_atomics.h         \
 	$(HDIR)/ecl-inl.h $(HDIR)/internal.h $(HDIR)/stack-resize.h             \
 	$(HDIR)/threads.h $(HDIR)/impl/math_dispatch2.h                         \
 	$(HDIR)/impl/math_dispatch.h $(HDIR)/impl/math_fenv.h                   \
