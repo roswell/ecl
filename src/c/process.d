@@ -34,7 +34,7 @@
 
 /* -- Thread-local variables ------------------------------------------------ */
 
-#ifdef ECL_THREADS
+#ifdef ECL_THREADS_DISABLED
 # ifdef ECL_WINDOWS_THREADS
 #  define ecl_process_key_t DWORD
 #  define ecl_process_key_create(key) key = TlsAlloc()
@@ -76,7 +76,7 @@ ecl_set_process_env(cl_env_ptr env)
 }
 #else
 /* The current global environment for single-threaded builds. */
-cl_env_ptr cl_env_p = NULL;
+__thread cl_env_ptr cl_env_p = NULL;
 #endif  /* ECL_THREADS */
 
 /* -- Initialiation --------------------------------------------------------- */
@@ -85,7 +85,7 @@ void
 init_process(void)
 {
   cl_env_ptr env = ecl_core.first_env;
-#ifdef ECL_THREADS
+#ifdef ECL_THREADS_DISABLED
   ecl_process_key_create(cl_env_key);
   ecl_mutex_init(&ecl_core.processes_lock, 1);
   ecl_mutex_init(&ecl_core.global_lock, 1);

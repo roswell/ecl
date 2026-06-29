@@ -149,6 +149,8 @@ struct ecl_interrupt_struct {
 #endif
 };
 
+#if 0                           /* -- try __thread storage class */
+
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
@@ -163,6 +165,16 @@ struct ecl_interrupt_struct {
 # define ecl_process_env_unsafe() cl_env_p
 # define ecl_set_process_env(env) cl_env_p = env
   extern ECL_API cl_env_ptr cl_env_p;
+#endif
+
+#else  /* -- try __thread storage class */
+
+# define cl_env (*cl_env_p)
+# define ecl_process_env() cl_env_p
+# define ecl_process_env_unsafe() cl_env_p
+# define ecl_set_process_env(env) cl_env_p = env
+extern ECL_API __thread cl_env_ptr cl_env_p;
+
 #endif
 
 /* Core environment. */
