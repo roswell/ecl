@@ -123,8 +123,8 @@
           ;; std-slot-value.lsp
           cl:slot-boundp
           cl:slot-exists-p
-          cl:slot-value
-          clos:slot-value-set
+          ;; cl:slot-value
+          ;; clos:slot-value-set
           clos:standard-instance-access ;; alias clos:funcallable-standard-instance-access
           clos:standard-instance-set))
 
