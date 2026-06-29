@@ -14,7 +14,7 @@
 #include <ecl/ecl.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
-#include <ecl/cache.h>
+#include <ecl/cach1.h>
 
 static void
 no_applicable_method(cl_env_ptr env, cl_object gfun, cl_object args)
@@ -69,19 +69,18 @@ static inline cl_object
 ensure_slot_reader_index(const cl_env_ptr env, cl_object gf, cl_object instance)
 {
   ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gf);
-  cl_object keys[1], index, clas;
+  cl_object index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
-  keys[0] = clas;
   hash = instance->instance.hash;
-  index = ecl_search_cache(cache, hash, 1, keys);
+  index = ecl_search_cache(cache, hash, clas);
   unlikely_if (index == OBJNULL) {
     cl_object args = ecl_list1(instance);
     index = slot_method_index(gf, instance, args);
     unlikely_if (index == OBJNULL) {
       return index;
     }
-    ecl_update_cache(env, gf, cache, hash, 1, keys, index);
+    ecl_update_cache(env, gf, cache, hash, clas, index);
   }
   ensure_up_to_date_instance(instance, clas);
   return index;
@@ -92,19 +91,18 @@ ensure_slot_writer_index(const cl_env_ptr env, cl_object gf,
                          cl_object value, cl_object instance)
 {
   ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gf);
-  cl_object keys[1], index, clas;
+  cl_object index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
-  keys[0] = clas;
   hash = instance->instance.hash;
-  index = ecl_search_cache(cache, hash, 1, keys);
+  index = ecl_search_cache(cache, hash, clas);
   unlikely_if (index == OBJNULL) {
     cl_object args = cl_list(2, value, instance);
     index = slot_method_index(gf, instance, args);
     unlikely_if (index == OBJNULL) {
       return index;
     }
-    ecl_update_cache(env, gf, cache, hash, 1, keys, index);
+    ecl_update_cache(env, gf, cache, hash, clas, index);
   }
   ensure_up_to_date_instance(instance, clas);
   return index;
