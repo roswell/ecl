@@ -191,7 +191,7 @@
 (defsetf standard-instance-access standard-instance-set)
 (defsetf funcallable-standard-instance-access standard-instance-set)
 
-(defun slot-value (self slot-name)
+(defun clos::sloth-value-get (self slot-name)
   (with-early-accessors (+standard-class-slots+
                          +slot-definition-slots+)
     (let* ((class (class-of self))
@@ -228,7 +228,7 @@
                 (slot-boundp-using-class class self slotd)
                 (values (slot-missing class self slot-name 'SLOT-BOUNDP))))))))
 
-(defun clos::slot-value-set (value self slot-name)
+(defun clos::sloth-value-set (value self slot-name)
   (with-early-accessors (+standard-class-slots+
                          +slot-definition-slots+)
     (let* ((class (class-of self))

@@ -34,27 +34,63 @@
 
  */
 
-static cl_object
-slot_location(cl_object instance, cl_object slot_name)
+#include <ecl/ecl.h>
+#include <ecl/internal.h>
+
+static inline void
+ensure_up_to_date_instance(cl_object instance, cl_object clas)
 {
-  cl_object clas = ECL_CLASS_OF(instance);
+  unlikely_if (instance->instance.stamp != clas->instance.class_stamp) {
+    _ecl_funcall2(@'clos::update-instance', instance);
+  }
+}
+
+static cl_object
+slot_location(cl_object clas, cl_object instance, cl_object slot_name)
+{
   cl_object table = ECL_CLASS_LOCATIONS(clas);
   unlikely_if (Null(table)) {
-    /* Not STD-CLASS. */
+    /* Not a STD-CLASS. */
     return ECL_NIL;
   }
   return ecl_gethash_safe(slot_name, table, OBJNULL);
 }
 
 extern cl_object
-cl_slot_value(cl_object instance, cl_object name)
+cl_slot_value(cl_object instance, cl_object slot_name)
 {
-  niy();
+  cl_object clas = ECL_CLASS_OF(instance), value = OBJNULL;
+  cl_object index = slot_location(clas, instance, slot_name);
+  unlikely_if (index == OBJNULL || index == ECL_NIL) {
+    return _ecl_funcall3(@'clos::sloth-value-get', instance, slot_name);
+  }
+
+  ensure_up_to_date_instance(instance, clas);
+  value = (ECL_FIXNUMP(index)
+           ? instance->instance.slots[ecl_fixnum(index)]
+           : ECL_CONS_CAR(index));
+
+  unlikely_if (value == ECL_UNBOUND) {
+    value = _ecl_funcall4(@'slot-unbound', clas, instance, slot_name);
+  }
+  ecl_return1(ecl_process_env(), value);
 }
 
 extern cl_object
-clos_slot_value_set(cl_object value, cl_object instance, cl_object name)
+clos_slot_value_set(cl_object value, cl_object instance, cl_object slot_name)
 {
-  niy();
-}
+  cl_object clas = ECL_CLASS_OF(instance);
+  cl_object index = slot_location(clas, instance, slot_name);
+  unlikely_if (index == OBJNULL || index == ECL_NIL) {
+    return _ecl_funcall4(@'clos::sloth-value-set', value, instance, slot_name);
+  }
 
+  ensure_up_to_date_instance(instance, clas);
+  if (ECL_FIXNUMP(index)) {
+    instance->instance.slots[ecl_fixnum(index)] = value;
+  } else {
+    ECL_RPLACA(index, value);
+  }
+
+  ecl_return1(ecl_process_env(), value);
+}
