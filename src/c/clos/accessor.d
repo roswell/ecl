@@ -72,6 +72,7 @@ ensure_slot_reader_index(const cl_env_ptr env, cl_object gf, cl_object instance)
   cl_object index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
+  if (cache->slot[0] == clas) return cache->slot[1];
   hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, clas);
   unlikely_if (index == OBJNULL) {
@@ -82,6 +83,7 @@ ensure_slot_reader_index(const cl_env_ptr env, cl_object gf, cl_object instance)
     }
     ecl_update_cache(env, gf, cache, hash, clas, index);
   }
+  cache->slot[0] = clas; cache->slot[1] = index;
   ensure_up_to_date_instance(instance, clas);
   return index;
 }
@@ -94,6 +96,7 @@ ensure_slot_writer_index(const cl_env_ptr env, cl_object gf,
   cl_object index, clas;
   cl_index hash;
   clas = ECL_CLASS_OF(instance);
+  if (cache->slot[0] == clas) return cache->slot[1];
   hash = instance->instance.hash;
   index = ecl_search_cache(cache, hash, clas);
   unlikely_if (index == OBJNULL) {
@@ -104,6 +107,7 @@ ensure_slot_writer_index(const cl_env_ptr env, cl_object gf,
     }
     ecl_update_cache(env, gf, cache, hash, clas, index);
   }
+  cache->slot[0] = clas; cache->slot[1] = index;
   ensure_up_to_date_instance(instance, clas);
   return index;
 }
@@ -125,6 +129,15 @@ ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
     va_end(args);
   }
 
+  /* This is a party trick for monomorphic dispatch. It is good, but we should
+     do that at the call site and without invoking the gfun cache. */
+  ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gfun);
+  if (cache->slot[2] == instance) {
+    cl_object clas = ECL_CLASS_OF(instance);
+    if(instance->instance.stamp == clas->instance.class_stamp)
+      ecl_return1(env, *((cl_object*)cache->slot[3]));
+  }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, ecl_list1(instance));
     return env->values[0];
@@ -137,6 +150,8 @@ ecl_slot_reader_dispatch(cl_narg narg, ... /* cl_object instance */)
   }
 
   if (ECL_FIXNUMP(index)) {
+    cache->slot[2] = instance;
+    cache->slot[3] = (cl_object)&(instance->instance.slots[ecl_fixnum(index)]);
     value = instance->instance.slots[ecl_fixnum(index)];
   } else if (ecl_unlikely(!ECL_LISTP(index))) {
     value = cl_slot_value(instance, index);
@@ -173,6 +188,17 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
     va_end(args);
   }
 
+  /* This is a party trick for monomorphic dispatch. It is good, but we should
+     do that at the call site and without invoking the gfun cache. */
+  ecl_cache_ptr cache = ECL_GET_GFUN_CACHE(env, gfun);
+  if (cache->slot[2] == instance) {
+    cl_object clas = ECL_CLASS_OF(instance);
+    if(instance->instance.stamp == clas->instance.class_stamp) {
+      *((cl_object*)cache->slot[3]) = value;
+      ecl_return1(env, value);
+    }
+  }
+
   unlikely_if (!ECL_INSTANCEP(instance)) {
     no_applicable_method(env, gfun, cl_list(2, value, instance));
     return env->values[0];
@@ -185,6 +211,8 @@ ecl_slot_writer_dispatch(cl_narg narg, ... /* cl_object value, cl_object instanc
   }
 
   if (ECL_FIXNUMP(index)) {
+    cache->slot[2] = instance;
+    cache->slot[3] = (cl_object)&(instance->instance.slots[ecl_fixnum(index)]);
     instance->instance.slots[ecl_fixnum(index)] = value;
   } else if (ecl_unlikely(!ECL_LISTP(index))) {
     clos_slot_value_set(value, instance, index);
