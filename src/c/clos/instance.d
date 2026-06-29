@@ -348,7 +348,7 @@ cl_object
 ecl_slot_value(cl_object x, const char *slot)
 {
   cl_object slot_name = ecl_read_from_cstring(slot);
-  return funcall(3, @'slot-value', x, slot_name);
+  return cl_slot_value(x, slot_name);
 }
 
 cl_object
@@ -356,7 +356,7 @@ ecl_slot_value_set(cl_object x, const char *slot, cl_object value)
 {
   cl_object slot_name = ecl_read_from_cstring(slot);
   cl_object slot_setter = ecl_read_from_cstring("(SETF SLOT-VALUE)");
-  return funcall(4, ecl_fdefinition(slot_setter), value, x, slot_name);
+  return clos_slot_value_set(value, x, slot_name);
 }
 
 /**********************************************************************

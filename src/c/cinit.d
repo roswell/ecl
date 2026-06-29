@@ -45,18 +45,6 @@ si_safe_eval(cl_narg narg, cl_object form, cl_object env, ...)
 }
 
 extern cl_object
-cl_slot_value(cl_object instance, cl_object name)
-{
-  return _ecl_funcall3(@'slot-value', instance, name);
-}
-
-extern cl_object
-clos_slot_value_set(cl_object value, cl_object instance, cl_object name)
-{
-  return _ecl_funcall4(@'clos::slot-value-set', value, instance, name);
-}
-
-extern cl_object
 clos_std_compute_applicable_methods_using_classes(cl_object gf, cl_object classes)
 {
   return _ecl_funcall3(@'clos::std-compute-applicable-methods-using-classes', gf, classes);

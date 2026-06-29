@@ -1087,6 +1087,7 @@ struct ecl_condition_variable {
 #define ECL_CLASS_INFERIORS(x)  (x)->instance.slots[3+2]
 #define ECL_CLASS_SLOTS(x)      (x)->instance.slots[3+3]
 #define ECL_CLASS_CPL(x)        (x)->instance.slots[3+4]
+#define ECL_CLASS_LOCATIONS(x)  (x)->instance.slots[3+16]
 
 #define ECL_NOT_FUNCALLABLE     0
 #define ECL_STANDARD_DISPATCH   1
@@ -1096,8 +1097,15 @@ struct ecl_condition_variable {
 #define ECL_USER_DISPATCH       5
 #define ECL_NULL_DISPATCH       6 /* funcallable, but gfdef is null */
 
+/* SLOT-VALUE-USING-CLASS may be specialized to the metaclass (first argument)
+   or to the instance class (second argument). In both cases SLOT-VALUE should
+   punt TO SLOT-VALUE-USING-CLASS, even when the metaclass is STANDARD-CLASS.
+   This reasoning applies to other SLOT-*-USING-CLASS functions. */
+#define ECL_SLOT_X_USING_METACLASS 1
+#define ECL_SLOT_X_USING_OBJ_CLASS 2
+
 struct ecl_instance {            /* -- instance header -- */
-        _ECL_HDR1(isgf);         /*  gf type              */
+        _ECL_HDR2(isgf,svuc);    /*  gf type, svuc spec   */
         cl_object clas;          /*  instance class       */
         cl_object gfdef;         /*  generic function definition */
         cl_objectfn entry;       /*  entry address (matches cfun.entry) */
