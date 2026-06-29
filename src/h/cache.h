@@ -249,7 +249,7 @@ upsert_cache(ecl_cache_ptr cache, uint64_t hash,
 
 static inline void
 delete_cache(ecl_cache_ptr cache, uint64_t hash,
-             cl_index argno, cl_object *keys, cl_object val)
+             cl_index argno, cl_object *keys)
 {
   ecl_internal_error("delete: not implemented yet.");
 }
