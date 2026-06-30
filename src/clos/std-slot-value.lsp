@@ -195,19 +195,20 @@
   (with-early-accessors (+standard-class-slots+
                          +slot-definition-slots+)
     (let* ((class (class-of self))
-           (location-table (class-location-table class)))
-      (if location-table
-          (let ((location (gethash slot-name location-table nil)))
-            (if location
-                (let ((value (standard-instance-access self location)))
-                  (if (si:sl-boundp value)
-                      value
-                      (values (slot-unbound class self slot-name))))
-                (slot-missing class self slot-name 'SLOT-VALUE)))
-          (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
-            (if slotd
-                (slot-value-using-class class self slotd)
-                (values (slot-missing class self slot-name 'SLOT-VALUE))))))))
+           (location (clos::slot-location class slot-name)))
+      (etypecase location
+        ((or fixnum cons)
+         (let ((value (standard-instance-access self location)))
+           (if (si:sl-boundp value)
+               value
+               (values (slot-unbound class self slot-name)))))
+        (null
+         (slot-missing class self slot-name 'SLOT-VALUE))
+        (symbol
+         (let ((slotd (find slot-name (class-slots class) :key #'slot-definition-name)))
+           (if slotd
+               (slot-value-using-class class self slotd)
+               (values (slot-missing class self slot-name 'SLOT-VALUE)))))))))
 
 (defun slot-exists-p (self slot-name)
   (and (find-slot-definition (class-of self) slot-name)
