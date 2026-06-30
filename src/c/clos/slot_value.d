@@ -45,7 +45,7 @@ ensure_up_to_date_instance(cl_object instance, cl_object clas)
   }
 }
 
-static cl_object
+static inline cl_object
 slot_location(cl_object clas, cl_object instance, cl_object slot_name)
 {
   cl_object table = ECL_CLASS_LOCATIONS(clas);
@@ -59,6 +59,8 @@ slot_location(cl_object clas, cl_object instance, cl_object slot_name)
 extern cl_object
 cl_slot_value(cl_object instance, cl_object slot_name)
 {
+  /* XXX check whether it is an instance (ECL_CLASS_LOCATIONS hardcodes
+     offset) */
   cl_object clas = ECL_CLASS_OF(instance), value = OBJNULL;
   cl_object index = slot_location(clas, instance, slot_name);
   unlikely_if (index == OBJNULL || index == ECL_NIL) {
@@ -66,9 +68,11 @@ cl_slot_value(cl_object instance, cl_object slot_name)
   }
 
   ensure_up_to_date_instance(instance, clas);
-  value = (ECL_FIXNUMP(index)
-           ? instance->instance.slots[ecl_fixnum(index)]
-           : ECL_CONS_CAR(index));
+  likely_if (ECL_FIXNUMP(index)) {
+    value = instance->instance.slots[ecl_fixnum(index)];
+  } else {
+    value = ECL_CONS_CAR(index);
+  }
 
   unlikely_if (value == ECL_UNBOUND) {
     value = _ecl_funcall4(@'slot-unbound', clas, instance, slot_name);
@@ -86,7 +90,7 @@ clos_slot_value_set(cl_object value, cl_object instance, cl_object slot_name)
   }
 
   ensure_up_to_date_instance(instance, clas);
-  if (ECL_FIXNUMP(index)) {
+  likely_if (ECL_FIXNUMP(index)) {
     instance->instance.slots[ecl_fixnum(index)] = value;
   } else {
     ECL_RPLACA(index, value);
