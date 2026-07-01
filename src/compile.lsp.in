@@ -91,7 +91,10 @@
                array-total-size-limit ffi:c-short-min ffi:c-short-max ffi:c-ushort-max
                ffi:c-int-min ffi:c-int-max ffi:c-uint-max ffi:c-long-min ffi:c-long-max
                ffi:c-ulong-max #+long-long ffi:c-long-long-min #+long-long ffi:c-long-long-max
-               #+long-long ffi:c-ulong-long-max))
+               #+long-long ffi:c-ulong-long-max
+               #+uintptr-t ffi:c-intptr-min #+uintptr-t ffi:c-intptr-max #+uintptr-t ffi:c-uintptr-max #+uintptr-t ffi:intptr-bits
+               #+uintmax-t ffi:c-intmax-min #+uintmax-t ffi:c-intmax-max #+uintmax-t ffi:c-uintmax-max #+uintmax-t ffi:intmax-bits
+               ))
     (c::cmp-env-register-symbol-macro s (symbol-value s) c::*cmp-env-root* t))
   (c::write-target-info #P"build:target-info.lsp"))
 
