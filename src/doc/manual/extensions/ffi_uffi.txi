@@ -33,6 +33,10 @@ and pointers. They are all symbols in the keyword package.
 @lspindex :uint32-t
 @lspindex :int64-t
 @lspindex :uint64-t
+@lspindex :intptr-t
+@lspindex :uintptr-t
+@lspindex :intmax-t
+@lspindex :uintmax-t
 @lspindex :float
 @lspindex :double
 @lspindex :long-double

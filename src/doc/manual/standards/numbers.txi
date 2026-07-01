@@ -248,6 +248,10 @@ Numeric C types understood by ECL
 @item unsigned long @tab (integer 0 ffi:c-long-max)
 @item long long @tab (integer ffi:c-long-long-min ffi:c-long-long-max) @tab ecl_long_long_t @tab :long-long
 @item unsigned long long @tab (integer 0 ffi:c-ulong-long-max) @tab ecl_ulong_long_t @tab :ulong-long
+@item intptr_t @tab (integer ffi:c-intptr-min ffi:c-intptr-max) @tab ecl_intptr_t @tab :uintptr-t
+@item uintptr_t @tab (integer 0 ffi:c-uintptr-max) @tab ecl_uintptr_t @tab :uintptr-t
+@item intmax_t @tab (integer ffi:c-intmax-min ffi:c-intmax-max) @tab ecl_intmax_t @tab :uintmax-t
+@item uintmax_t @tab (integer 0 ffi:c-uintmax-max) @tab ecl_uintmax_t @tab :uintmax-t
 @end multitable
 
 @paragraph Description

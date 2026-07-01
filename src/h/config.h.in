@@ -120,6 +120,10 @@
 #undef ecl_int64_t
 #undef ecl_long_long_t
 #undef ecl_ulong_long_t
+#undef ecl_uintptr_t
+#undef ecl_intptr_t
+#undef ecl_uintmax_t
+#undef ecl_intmax_t
 
 /*
  * C TYPES AND SYSTEM LIMITS
@@ -143,6 +147,9 @@
 typedef @CL_FIXNUM_TYPE@ cl_fixnum;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_index;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
+
+#define ECL_INTMAX_BITS         @CL_INTMAX_BITS@
+#define ECL_INTPTR_BITS         @CL_INTPTR_BITS@
 
 #define ECL_BIGNUM_REGISTER_NUMBER 3
 

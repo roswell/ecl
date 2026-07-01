@@ -1149,6 +1149,33 @@ extern ECL_API cl_object ecl_make_ulong_long(ecl_ulong_long_t i);
 extern ECL_API cl_object ecl_make_long_long(ecl_long_long_t i);
 #endif /* ecl_long_long_t */
 
+#ifdef ecl_uintptr_t
+# if ECL_INTPTR_BITS == ECL_FIXNUM_BITS
+#  define ecl_to_uintptr_t fixnnint /* cl_index */
+#  define ecl_to_intptr_t fixint    /* cl_fixnum */
+#  define ecl_make_uintptr_t ecl_make_unsigned_integer
+#  define ecl_make_intptr_t ecl_make_integer
+# else
+#  error "Currently ECL expects 'uintptr_t' type to have ECL_FIXNUM_BITS bits"
+# endif
+#endif /* ecl_uintptr_t */
+
+#ifdef ecl_uintmax_t
+# if ECL_INTMAX_BITS == 32
+#  define ecl_to_uintmax_t ecl_to_uint32_t
+#  define ecl_to_intmax_t ecl_to_int32_t
+#  define ecl_make_uintmax_t ecl_make_uint32_t
+#  define ecl_make_intmax_t ecl_make_int32_t
+# elif ECL_INTMAX_BITS == 64
+#   define ecl_to_uintmax_t ecl_to_uint64_t
+#   define ecl_to_intmax_t ecl_to_int64_t
+#   define ecl_make_uintmax_t ecl_make_uint64_t
+#   define ecl_make_intmax_t ecl_make_int64_t
+# else
+#  error "Currently ECL expects 'uintmax_t' type to have 32 or 64 bits"
+# endif
+#endif /* ecl_uintmax_t */
+
 extern ECL_API cl_object ecl_make_ratio(cl_object num, cl_object den);
 extern ECL_API cl_object ecl_make_single_float(float f);
 extern ECL_API cl_object ecl_make_double_float(double f);

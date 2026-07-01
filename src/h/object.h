@@ -873,6 +873,14 @@ enum ecl_ffi_tag {
         ECL_FFI_LONG_LONG,
         ECL_FFI_UNSIGNED_LONG_LONG,
 #endif
+#ifdef ecl_uintptr_t
+        ECL_FFI_INTPTR_T,
+        ECL_FFI_UINTPTR_T,
+#endif
+#ifdef ecl_uintmax_t
+        ECL_FFI_INTMAX_T,
+        ECL_FFI_UINTMAX_T,
+#endif
         ECL_FFI_POINTER_VOID,
         ECL_FFI_CSTRING,
         ECL_FFI_OBJECT,
@@ -918,6 +926,14 @@ union ecl_ffi_values {
         ecl_long_long_t ll;
         ecl_ulong_long_t ull;
         unsigned long l2[2];
+#endif
+#ifdef ecl_uintptr_t
+        ecl_intptr_t iptr;
+        ecl_uint64_t uptr;
+#endif
+#ifdef ecl_uintmax_t
+        ecl_intmax_t imax;
+        ecl_uintmax_t umax;
 #endif
         void *pv;
         char *pc;

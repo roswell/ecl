@@ -128,6 +128,10 @@
     (:uint32-t           integer                  "ecl_uint32_t"         "ecl_make_uint32_t"                 "ecl_to_uint32_t"           "ecl_to_uint32_t")
     (:int64-t            integer                  "ecl_int64_t"          "ecl_make_int64_t"                  "ecl_to_int64_t"            "ecl_to_int64_t")
     (:uint64-t           integer                  "ecl_uint64_t"         "ecl_make_uint64_t"                 "ecl_to_uint64_t"           "ecl_to_uint64_t")
+    (:intptr-t           integer                  "ecl_intptr_t"         "ecl_make_intptr_t"                 "ecl_to_intptr_t"           "ecl_to_intptr_t")
+    (:uintptr-t          integer                  "ecl_uintptr_t"        "ecl_make_uintptr_t"                "ecl_to_uintptr_t"          "ecl_to_uintptr_t")
+    (:intmax-t           integer                  "ecl_intmax_t"         "ecl_make_intmax_t"                 "ecl_to_intmax_t"           "ecl_to_intmax_t")
+    (:uintmax-t          integer                  "ecl_uintmax_t"        "ecl_make_uintmax_t"                "ecl_to_uintmax_t"          "ecl_to_uintmax_t")
     (:short              integer                  "short"                "ecl_make_short"                    "ecl_to_short"              "ecl_fixnum")
     (:unsigned-short     integer                  "unsigned short"       "ecl_make_ushort"                   "ecl_to_ushort"             "ecl_fixnum")))
 

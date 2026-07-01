@@ -358,6 +358,12 @@
 /* Define to 1 if you have the 'gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define to 1 if the system has the type 'intmax_t'. */
+#undef HAVE_INTMAX_T
+
+/* Define to 1 if the system has the type 'intptr_t'. */
+#undef HAVE_INTPTR_T
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -396,6 +402,9 @@
 
 /* Define to 1 if the system has the type 'long complex'. */
 #undef HAVE_LONG_COMPLEX
+
+/* Define to 1 if the system has the type 'long long int'. */
+#undef HAVE_LONG_LONG_INT
 
 /* Define to 1 if you have the 'lstat' function. */
 #undef HAVE_LSTAT
@@ -585,6 +594,12 @@
 /* Define to 1 if you have the 'tzset' function. */
 #undef HAVE_TZSET
 
+/* Define to 1 if the system has the type 'uintmax_t'. */
+#undef HAVE_UINTMAX_T
+
+/* Define to 1 if the system has the type 'uintptr_t'. */
+#undef HAVE_UINTPTR_T
+
 /* Define to 1 if you have the <ulimit.h> header file. */
 #undef HAVE_ULIMIT_H
 
@@ -593,6 +608,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type 'unsigned long long int'. */
+#undef HAVE_UNSIGNED_LONG_LONG_INT
 
 /* Define to 1 if you have the 'vfork' function. */
 #undef HAVE_VFORK
@@ -645,6 +663,12 @@
 
 /* Define to the type of arg 5 for 'select'. */
 #undef SELECT_TYPE_ARG5
+
+/* The size of 'uintmax_t', as computed by sizeof. */
+#undef SIZEOF_UINTMAX_T
+
+/* The size of 'uintptr_t', as computed by sizeof. */
+#undef SIZEOF_UINTPTR_T
 
 /* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
@@ -700,6 +724,12 @@
 /* ecl_int8_t */
 #undef ecl_int8_t
 
+/* ecl_intmax_t */
+#undef ecl_intmax_t
+
+/* ecl_intptr_t */
+#undef ecl_intptr_t
+
 /* compiler understands long long */
 #undef ecl_long_long_t
 
@@ -714,6 +744,12 @@
 
 /* ecl_uint8_t */
 #undef ecl_uint8_t
+
+/* ecl_uintmax_t */
+#undef ecl_uintmax_t
+
+/* ecl_uintptr_t */
+#undef ecl_uintptr_t
 
 /* compiler understands long long */
 #undef ecl_ulong_long_t
@@ -739,6 +775,14 @@
 /* Define to the type of a signed integer type of width exactly 8 bits if such
    a type exists and the standard includes do not define it. */
 #undef int8_t
+
+/* Define to the widest signed integer type if <stdint.h> and <inttypes.h> do
+   not define. */
+#undef intmax_t
+
+/* Define to the type of a signed integer type wide enough to hold a pointer,
+   if such a type exists, and if the system does not define it. */
+#undef intptr_t
 
 /* Define to rpl_malloc if the replacement function should be used. */
 #undef malloc
@@ -767,6 +811,14 @@
 /* Define to the type of an unsigned integer type of width exactly 8 bits if
    such a type exists and the standard includes do not define it. */
 #undef uint8_t
+
+/* Define to the widest unsigned integer type if <stdint.h> and <inttypes.h>
+   do not define. */
+#undef uintmax_t
+
+/* Define to the type of an unsigned integer type wide enough to hold a
+   pointer, if such a type exists, and if the system does not define it. */
+#undef uintptr_t
 
 /* Define as 'fork' if 'vfork' does not work. */
 #undef vfork
