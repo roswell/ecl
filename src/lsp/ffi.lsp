@@ -358,12 +358,12 @@ Creates a NULL pointer of a specified type."
   (si::allocate-foreign-data ftype 0))
 
 (defun make-pointer (addr type)
-  (c-inline (type (size-of-foreign-type type) addr) (:object :unsigned-long :unsigned-long) :object
+  (c-inline (type (size-of-foreign-type type) addr) (:object :cl-index :cl-index) :object
             "ecl_make_foreign_data(#0, #1, (void*)#2)"
             :side-effects t
             :one-liner t))
 
-#+(OR) ;; Already defined in core
+#+(or) ;; Already defined in core
 (defun null-pointer-p (object)
   (si::null-pointer-p object))
 
