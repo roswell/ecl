@@ -339,7 +339,6 @@ ecl_read_token(cl_object rtbl, cl_object in, int flags)
   }
   token->token.escaped = (TOKEN_ESCAPE_FILLP(escape) > 0);
 
-  /*TOKEN_STRING_CHAR_SET(string,length,'\0');*/
   /* If the readtable case was :INVERT and all non-escaped characters
    * had the same case, we revert their case. */
   if (read_case == ecl_case_invert && count != 0) {
