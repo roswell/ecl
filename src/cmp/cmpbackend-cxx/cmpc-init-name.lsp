@@ -132,7 +132,7 @@ machine."
                         for name = (maybe-init-function line)
                         if name collect name)))
             (when (> (length candidates) 1)
-              (cmperr "Found multiple candidates ~S for init function names of file ~S. Please make sure you are not using any functions whose names start with __ecl_init."))
+              (cmperr "Found multiple candidates ~S for init function names of file ~S. Please make sure you are not using any functions whose names start with __ecl_init." candidates file))
             (when (null candidates)
               (cmperr "Found no init function name for file ~S of kind ~S" file kind))
             (first candidates))))
