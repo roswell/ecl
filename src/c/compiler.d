@@ -1919,6 +1919,12 @@ c_let_leta(cl_env_ptr env, int op, cl_object args, int flags) {
   body = c_process_declarations(ECL_CONS_CDR(args));
   specials = env->values[3];
 
+  /* validation bindings */
+  if(!ECL_LISTP(bindings)) {
+      FEprogram_error("Syntax error: ~S requires a list, but got ~S.",
+          2, (op == OP_PBIND ? @'let' : @'let*'), bindings);
+  }
+
   /* Optimize some common cases */
   if (bindings == ECL_NIL)
     return c_locally(env, CDR(args), flags);
