@@ -92,6 +92,7 @@ out_of_memory(size_t requested_bytes)
   ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
+  the_env->token_pool = ECL_NIL;
 
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
@@ -119,6 +120,7 @@ out_of_memory(size_t requested_bytes)
         /* We can free some memory and try handling the error */
         GC_FREE(ecl_core.safety_region);
         the_env->string_pool = ECL_NIL;
+        the_env->token_pool = ECL_NIL;
         ecl_core.safety_region = 0;
         method = 0;
       } else {
@@ -337,6 +339,7 @@ ecl_alloc_object(cl_type t)
   case t_mailbox:
 #endif
   case t_foreign:
+  case t_token:
   case t_codeblock: {
     cl_object obj;
     ecl_disable_interrupts_env(the_env);
@@ -555,6 +558,7 @@ void init_type_info (void)
   init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
   init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
   init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 0);
+  init_tm(t_token, "TOKEN", sizeof(struct ecl_token), 2);
   init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef ECL_SSE2
   init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
@@ -714,6 +718,9 @@ void init_type_info (void)
     to_bitmap(&o, &(o.foreign.tag));
   type_info[t_frame].descriptor =
     to_bitmap(&o, &(o.frame.env));
+  type_info[t_token].descriptor =
+    to_bitmap(&o, &(o.token.string)) |
+    to_bitmap(&o, &(o.token.escape)));
   type_info[t_weak_pointer].descriptor = 0;
 #ifdef ECL_SSE2
   type_info[t_sse_pack].descriptor = 0;

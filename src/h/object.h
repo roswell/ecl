@@ -84,6 +84,7 @@ typedef enum {
         t_codeblock,
         t_foreign,
         t_frame,
+        t_token,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -103,6 +104,7 @@ typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn_fixed)();
+typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 /*
         OBJect NULL value.
@@ -726,7 +728,8 @@ enum ecl_chattrib {             /*  character attribute  */
 
 struct ecl_readtable_entry {            /*  read table entry  */
         enum ecl_chattrib syntax_type;  /*  character attribute  */
-        cl_object dispatch;             /*  a macro, a hash or NIL  */
+        cl_object macro;                /*  character  macro  */
+        cl_object table;                /*  dispatch table or NIL*/
 };
 
 enum ecl_readtable_case {
@@ -740,6 +743,7 @@ struct ecl_readtable {          /*  read table  */
         _ECL_HDR1(locked);
         enum ecl_readtable_case read_case; /*  readtable-case  */
         struct ecl_readtable_entry *table; /*  read table itself  */
+        cl_objectfn_parse parse_token;     /*  token parser */
 #ifdef ECL_UNICODE
         cl_object hash;         /* hash for values outside base-char range */
 #endif
@@ -945,6 +949,13 @@ struct ecl_stack_frame {
         cl_index size;          /*  Number of arguments  */
         cl_index sp;            /*  Stack pointer  */
         struct cl_env_struct *env;
+};
+
+/* Token is constructed by the reader from constituents and then parsed. */
+struct ecl_token {
+        _ECL_HDR1(escaped);
+        cl_object string;       /* the token string */
+        cl_object escape;       /* ranges of escaped characters */
 };
 
 struct ecl_weak_pointer {       /*  weak pointer to value  */
@@ -1180,6 +1191,7 @@ union cl_lispunion {
         struct ecl_cclosure     cclosure;       /*  compiled closure  */
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
+        struct ecl_token        token;          /*  token */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */

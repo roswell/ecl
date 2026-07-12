@@ -120,6 +120,7 @@ struct cl_env_struct {
         /* -- Private variables used by different parts of ECL ---------------- */
         /* ... the reader and printer ... */
         cl_object string_pool;
+        cl_object token_pool;
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
         /* ... the formatter ... */
@@ -1570,10 +1571,17 @@ extern ECL_API cl_object si_read_object_or_ignore(cl_object stream, cl_object eo
 extern ECL_API cl_object si_readtable_lock _ECL_ARGS((cl_narg narg, cl_object readtable, ...));
 extern ECL_API cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
-extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
-extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);
+extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro, cl_object *table);
+extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro, cl_object table);
+extern ECL_API cl_object ecl_read_constituent(cl_object in, bool not_first);
+extern ECL_API cl_object ecl_read_delimited_list(int d, cl_object strm, bool proper);
+extern ECL_API cl_object ecl_dispatch_reader_fun(cl_object in, cl_object dc);
+extern ECL_API cl_object ecl_read_eval(cl_object in);
 extern ECL_API cl_object ecl_read_object_non_recursive(cl_object in);
+extern ECL_API cl_object ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int del, int flags);
 extern ECL_API cl_object ecl_read_object(cl_object in);
+extern ECL_API cl_object ecl_read_token(cl_object rtbl, cl_object in, int flags);
+extern ECL_API cl_object ecl_parse_token(cl_object token, cl_object in, int flags);
 extern ECL_API cl_object ecl_parse_number(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API cl_object ecl_parse_integer(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API bool ecl_invalid_character_p(int c);
@@ -1584,6 +1592,12 @@ extern ECL_API char ecl_current_read_default_float_format(void);
 #define ecl_read_from_cstring(s) si_string_to_object(1,ecl_make_constant_base_string(s,-1))
 #define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,ecl_make_constant_base_string(s,-1),(v))
 extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
+
+extern ECL_API cl_object si_parse_token(cl_object token);
+extern ECL_API cl_object si_read_object(cl_object, cl_object);
+extern ECL_API cl_object si_read_token(cl_object);
+extern ECL_API cl_object si_token_string(cl_object);
+extern ECL_API cl_object si_token_escape(cl_object);
 
 /* reference.c */
 

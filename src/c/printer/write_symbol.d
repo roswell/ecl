@@ -89,7 +89,7 @@ needs_to_be_escaped(cl_object s, cl_object readtable, cl_object print_case)
    * of 22.1.3.3.2. */
   for (i = 0; i < s->base_string.fillp;  i++) {
     int c = ecl_char(s, i);
-    int syntax = ecl_readtable_get(readtable, c, 0);
+    int syntax = ecl_readtable_get(readtable, c, NULL, NULL);
     if (syntax != cat_constituent ||
         ecl_invalid_character_p(c) ||
         (c) == ':')

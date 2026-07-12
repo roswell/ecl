@@ -560,6 +560,32 @@ write_char_increment_column(cl_object strm, ecl_character c)
 extern cl_object ecl_off_t_to_integer(ecl_off_t offset);
 extern ecl_off_t ecl_integer_to_off_t(cl_object offset);
 
+/* read.d */
+
+#ifdef ECL_UNICODE
+# define TOKEN_STRING_DIM(s) ((s)->string.dim)
+# define TOKEN_STRING_FILLP(s) ((s)->string.fillp)
+# define TOKEN_STRING_CHAR(s,n) ((s)->string.self[n])
+# define TOKEN_STRING_CHAR_SET(s,n,c) (s)->string.self[n]=(c)
+# define TOKEN_STRING_CHAR_CMP(s,n,c) ((s)->string.self[n]==(c))
+#else
+# define TOKEN_STRING_DIM(s) ((s)->base_string.dim)
+# define TOKEN_STRING_FILLP(s) ((s)->base_string.fillp)
+# define TOKEN_STRING_CHAR(s,n) ((s)->base_string.self[n])
+# define TOKEN_STRING_CHAR_SET(s,n,c) ((s)->base_string.self[n]=(c))
+# define TOKEN_STRING_CHAR_CMP(s,n,c) ((s)->base_string.self[n]==(c))
+#endif
+
+# define TOKEN_ESCAPE_FILLP(s) ((s)->vector.fillp)
+
+#define ECL_READ_RETURN_IGNORABLE 1
+#define ECL_READ_LIST_DOT 2
+#define ECL_READ_SUPPRESS 4
+#define ECL_READ_ESCAPE_FIRST 8
+
+extern cl_object ecl_get_reader_token(void);
+extern void ecl_put_reader_token(cl_object token);
+
 /* format.d */
 
 #ifndef ECL_CMU_FORMAT
@@ -642,6 +668,25 @@ extern cl_object mp_get_rwlock_write_wait(cl_object lock);
 #else
 #define RTABSIZE        ECL_CHAR_CODE_LIMIT     /*  read table size  */
 #endif
+
+#define loop_across_token(index, limit, string, object) {               \
+  cl_object string = object->token.string;                              \
+  cl_object __ecl_lims = object->token.escape;                          \
+  cl_object *__ecl_v = __ecl_lims->vector.self.t;                       \
+  cl_index __ecl_ndx = __ecl_lims->vector.fillp;                        \
+  cl_index __ecl_idx;                                                   \
+  cl_fixnum index = 0;                                                  \
+  cl_fixnum limit, __ecl_high;                                          \
+  for(__ecl_idx = 0; __ecl_idx <= __ecl_ndx; __ecl_idx+=2) {            \
+    if (__ecl_idx == __ecl_ndx) {                                       \
+      limit = __ecl_high = TOKEN_STRING_FILLP(string);                  \
+    } else {                                                            \
+      limit = ecl_fixnum(__ecl_v[__ecl_idx]);                           \
+      __ecl_high = ecl_fixnum(__ecl_v[__ecl_idx+1]);                    \
+    }                                                                   \
+    for(; index<limit; index++) {
+
+#define end_loop_across_token() } index=__ecl_high; }}
 
 /* package.d */
 
