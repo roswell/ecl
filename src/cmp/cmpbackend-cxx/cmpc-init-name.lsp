@@ -128,9 +128,12 @@ machine."
             (safe-run-program *nm* (list (namestring (translate-logical-pathname file))))
           (declare (ignore result))
           (let ((candidates
-                  (loop for line in output
+                  (loop with names = nil
+                        for line in output
                         for name = (maybe-init-function line)
-                        if name collect name)))
+                        if name
+                          do (pushnew name names :test #'string=)
+                        finally (return names))))
             (when (> (length candidates) 1)
               (cmperr "Found multiple candidates ~S for init function names of file ~S. Please make sure you are not using any functions whose names start with __ecl_init." candidates file))
             (when (null candidates)
