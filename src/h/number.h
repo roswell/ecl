@@ -187,18 +187,20 @@ _ecl_big_integer_length(cl_object x) {
 
 #define _ecl_big_tstbit(x,n) (ecl_bignum(x) & ((big_num_t)1<<n))
 
-/* FIXME overflows / underflows */
-static inline void
-_ecl_big_div_2exp(cl_object result, cl_object base, cl_index bits)
-{ ecl_bignum(result) = ecl_bignum(base) >> bits; }
+extern ECL_API void
+_ecl_big_div_2exp(cl_object result, cl_object base, cl_index bits);
 
-static inline void
-_ecl_big_mul_2exp(cl_object result, cl_object base, cl_index bits)
-{ ecl_bignum(result) = ecl_bignum(base) << bits; }
+extern ECL_API void
+_ecl_big_mul_2exp(cl_object result, cl_object base, cl_index bits);
 
-#define _ecl_big_mul(z, x, y) (ecl_bignum(z) = ecl_bignum(x) * ecl_bignum(y))
-#define _ecl_big_mul_ui(z, x, y) (ecl_bignum(z) = ecl_bignum(x) * y)
-#define _ecl_big_add_ui(z, x, y) (ecl_bignum(z) = ecl_bignum(x) + y)
+extern ECL_API void _ecl_int_mul(cl_object z, big_num_t x, big_num_t y);
+#define _ecl_big_mul(z, x, y)    _ecl_int_mul(z, ecl_bignum(x), ecl_bignum(y))
+#define _ecl_big_mul_ui(z, x, y) _ecl_int_mul(z, ecl_bignum(x), y)
+
+extern ECL_API void _ecl_int_add(cl_object z, big_num_t x, big_num_t y);
+#define _ecl_big_add(z, x, y)    _ecl_int_add(z, ecl_bignum(x), ecl_bignum(y))
+#define _ecl_big_add_ui(z, x, y) _ecl_int_add(z, ecl_bignum(x), y)
+
 extern ECL_API cl_index _ecl_big_sizeinbase(cl_object x, int base);
 #define _ecl_big_neg(z, x) (ecl_bignum(z) = -ecl_bignum(x))
 
