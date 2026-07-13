@@ -49,7 +49,9 @@ cl_object
 _ecl_big_gcd(cl_object x, cl_object y)
 {
   big_num_t i = ecl_bignum(x), j = ecl_bignum(y);
-  cl_object gcd = ecl_alloc_object(t_bignum);
+  cl_object z = _ecl_big_register0();
+  if (i<0) i=-i;
+  if (j<0) j=-j;
   while ( 1 ) {
     big_num_t k;
     if ( i<j ) {
@@ -58,8 +60,8 @@ _ecl_big_gcd(cl_object x, cl_object y)
       j = k;
     }
     if ( j == 0 ) {
-      ecl_bignum(gcd) = k;
-      return gcd;
+      ecl_bignum(z) = i;
+      return _ecl_big_register_normalize(z);
     }
     k = i % j;
     i = j;
