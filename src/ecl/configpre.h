@@ -34,6 +34,9 @@
 /* Use the serialization framework */
 #undef ECL_EXTERNALIZABLE
 
+/* GNU Multiprecision library for bignums */
+#undef ECL_GMPLIB
+
 /* ECL_IEEE_FP */
 #undef ECL_IEEE_FP
 

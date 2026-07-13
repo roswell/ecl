@@ -49,8 +49,11 @@
  */
 
 /* Use GNU Multiple Precision library for bignums                       */
-#ifndef DPP
-#include "@ECL_GMP_HEADER@"
+#undef ECL_GMPLIB
+#ifdef ECL_GMPLIB
+# ifndef DPP
+#  include "@ECL_GMP_HEADER@"
+# endif
 #endif
 
 /* Userland threads?                                                    */

@@ -413,97 +413,112 @@ dnl build flags for the library, because GMP may choose to build for 64
 dnl or 32 bits executables and ECL has to be compiled / linked using precisely
 dnl the same flags
 dnl
-if test "x$GMP_INCDIR" != "x"; then
-  GMP_CPPFLAGS="-I$GMP_INCDIR"
-fi
-if test "x$GMP_LIBDIR" != "x"; then
-  GMP_LDFLAGS="-L$GMP_LIBDIR"
-  if test "$enable_rpath" = "yes"; then
-    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
-      GMP_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$GMP_LIBDIR,"`" $GMP_LDFLAGS"
-    fi
-  fi
-fi
-CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
-LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
-
 AS_CASE([${enable_gmp}],
         [portable], [with_system_gmp=no; with_c_gmp=yes],
         [included], [with_system_gmp=no],
         [system],   [with_system_gmp=yes],
+        [no],       [without_gmp=yes],
         [AC_CHECK_LIB( [gmp], [__gmpz_init],
            [with_system_gmp=yes],
            [with_system_gmp=no] )])
 
-ECL_GMP_HEADER=
-if test "${with_system_gmp}" = "yes"; then
-  AC_CHECK_LIB( [gmp], [__gmpz_init],
-    [FASL_LIBS="${FASL_LIBS} -lgmp"],
-    [AC_MSG_ERROR([System gmp library requested but not found.])])
-  AC_CHECK_HEADER( [gmp.h], [ECL_GMP_HEADER='gmp.h'] )
-  if test "x$ECL_GMP_HEADER" = "x"; then
-    AC_CHECK_HEADER( [gmp/gmp.h], [ECL_GMP_HEADER='gmp/gmp.h'] )
-  fi
+if test "x${without_gmp}" = "xyes" ; then
+  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
 else
-  SUBDIRS="${SUBDIRS} gmp"
-  CORE_LIBS="-leclgmp ${CORE_LIBS}"
-  if test ${enable_shared} = "no"; then
-    LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
+  AC_DEFINE( [ECL_GMPLIB], [1], [GNU Multiprecision library for bignums])
+  EXTRA_OBJS="${EXTRA_OBJS} big.o"
+fi
+
+if test "x${without_gmp}" == "x"; then
+  if test "x$GMP_INCDIR" != "x"; then
+    GMP_CPPFLAGS="-I$GMP_INCDIR"
+  fi
+  if test "x$GMP_LIBDIR" != "x"; then
+    GMP_LDFLAGS="-L$GMP_LIBDIR"
+    if test "$enable_rpath" = "yes"; then
+      if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+        GMP_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$GMP_LIBDIR,"`" $GMP_LDFLAGS"
+      fi
+    fi
+  fi
+  CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
+  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+fi
+
+if test "x${without_gmp}" == "x"; then
+  ECL_GMP_HEADER=
+  if test "${with_system_gmp}" = "yes"; then
+    AC_CHECK_LIB( [gmp], [__gmpz_init],
+      [FASL_LIBS="${FASL_LIBS} -lgmp"],
+      [AC_MSG_ERROR([System gmp library requested but not found.])])
+    AC_CHECK_HEADER( [gmp.h], [ECL_GMP_HEADER='gmp.h'] )
+    if test "x$ECL_GMP_HEADER" = "x"; then
+      AC_CHECK_HEADER( [gmp/gmp.h], [ECL_GMP_HEADER='gmp/gmp.h'] )
+    fi
+  else
+    SUBDIRS="${SUBDIRS} gmp"
+    CORE_LIBS="-leclgmp ${CORE_LIBS}"
+    if test ${enable_shared} = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
+    fi
   fi
 fi
 
 dnl ----------------------------------------------------------------------
 dnl Configure local GMP if needed
-AC_SUBST(ECL_GMP_HEADER)
-EXTRA_OBJS="${EXTRA_OBJS} big.o"
-if test "x${with_system_gmp}" = "xno" ; then
-  AC_MSG_NOTICE(Configuring included GMP library:)
-  test -d gmp && rm -rf gmp
-  if test -z "$gmp_build"; then
-    gmp_build="${build}"
-  fi
-  if test "x$with_c_gmp" = "xyes"; then
-    gmp_build=`echo ${gmp_build} | sed 's,@<:@^-@:>@*\(-.*\),none\1,'`
-    echo '***'
-    echo '***' BUILDING GMP WITH C!
-    echo '***' This is a last resort, either because of license or
-    echo '***' porting issues.
-    echo '***'
-  fi
-  ECL_GMP_HEADER='ecl/gmp.h'
-  if test "x$ABI" = "x"; then
-    GMP_ABI=""
+if test "x${without_gmp}" == "x"; then
+  AC_SUBST(ECL_GMP_HEADER)
+  if test "x${with_system_gmp}" = "xno" ; then
+    AC_MSG_NOTICE(Configuring included GMP library:)
+    test -d gmp && rm -rf gmp
+    if test -z "$gmp_build"; then
+      gmp_build="${build}"
+    fi
+    if test "x$with_c_gmp" = "xyes"; then
+      gmp_build=`echo ${gmp_build} | sed 's,@<:@^-@:>@*\(-.*\),none\1,'`
+      echo '***'
+      echo '***' BUILDING GMP WITH C!
+      echo '***' This is a last resort, either because of license or
+      echo '***' porting issues.
+      echo '***'
+    fi
+    ECL_GMP_HEADER='ecl/gmp.h'
+    if test "x$ABI" = "x"; then
+      GMP_ABI=""
+    else
+      GMP_ABI="ABI=$ABI"
+    fi
+    # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
+    # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
+    mkdir gmp
+    dnl Notice we need -DPIC to force the assembler to generate PIC code
+    (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
+       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+       -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+       --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
+       CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
+       "$GMP_ABI" $with_gmp_args)
+    if test ! -f gmp/config.status; then
+      AC_MSG_ERROR([Failed to configure the GMP library.])
+    fi
   else
-    GMP_ABI="ABI=$ABI"
-  fi
-  # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
-  # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
-  mkdir gmp
-  dnl Notice we need -DPIC to force the assembler to generate PIC code
-  (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
-     $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
-     -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-     --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
-     CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-     "$GMP_ABI" $with_gmp_args)
-  if test ! -f gmp/config.status; then
-    AC_MSG_ERROR([Failed to configure the GMP library.])
-  fi
-else
-  if test "x$ECL_GMP_HEADER" = "x"; then
-    AC_MSG_ERROR([Can not find GMP header.])
+    if test "x$ECL_GMP_HEADER" = "x"; then
+      AC_MSG_ERROR([Can not find GMP header.])
+    fi
   fi
 fi
 
 dnl -----------------------------------------------------------------------
 dnl GMP-based search of C/C++ compiler and linker flags
-AC_MSG_CHECKING([GMP autoconf])
-AC_MSG_RESULT(["${with_system_gmp}.${enable_slow_config}"])
-if test "x${enable_slow_config}" = "xyes"; then
-  with_system_gmp=no
-fi
-if test "x${with_system_gmp}" = "xno"; then
-  ECL_GMP_BASED_CONFIG
+if test "x${without_gmp}" == "x"; then
+  AC_MSG_CHECKING([GMP autoconf])
+  AC_MSG_RESULT(["${with_system_gmp}.${enable_slow_config}"])
+  if test "x${enable_slow_config}" = "xyes"; then
+    with_system_gmp=no
+  fi
+  if test "x${with_system_gmp}" = "xno"; then
+    ECL_GMP_BASED_CONFIG
+  fi
 fi
 
 dnl ======================================================================

@@ -5,6 +5,7 @@
  * big_ll.c - bignum emulation with long long
  *
  * Copyright (c) 2005 Maciek Pasternacki
+ * Copyright (c) 2026 Daniel Kochmański
  *
  * See file 'LICENSE' for the copyright details.
  *
@@ -29,7 +30,7 @@ big_normalize(cl_object x)
 {
   if (ecl_bignum(x) == 0ll)
     return(ecl_make_fixnum(0));
-  if (ECL_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
+  if (MOST_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
     return(ecl_make_fixnum(ecl_bignum(x)));
   return x;
 }
@@ -39,27 +40,9 @@ _ecl_big_register_normalize(cl_object x)
 {
   if (ecl_bignum(x) == 0ll)
     return(ecl_make_fixnum(0));
-  if (ECL_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
+  if (MOST_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
     return(ecl_make_fixnum(ecl_bignum(x)));
   return _ecl_big_register_copy(x);
-}
-
-static cl_object
-big_alloc(int size)
-{
-  volatile cl_object x = ecl_alloc_object(t_bignum);
-  if (size <= 0)
-    ecl_internal_error("negative or zero size for bignum in big_alloc");
-  ecl_bignum(x) = 0ll;
-  return x;
-}
-
-static cl_object
-_ecl_big_copy(cl_object x)
-{
-  volatile cl_object y = ecl_alloc_object(t_bignum);
-  ecl_bignum(y) = ecl_bignum(x);
-  return y;
 }
 
 cl_object
@@ -131,7 +114,7 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 }
 
 cl_object
-_ecl_big_ceiling(cl_object a, cl_object b, cl_object *pr)
+_ecl_big_ceiling(cl_object x, cl_object y, cl_object *pr)
 {
   cl_object q = ecl_alloc_object(t_bignum);
   cl_object r = ecl_alloc_object(t_bignum);
@@ -142,7 +125,7 @@ _ecl_big_ceiling(cl_object a, cl_object b, cl_object *pr)
 }
 
 cl_object
-_ecl_big_floor(cl_object a, cl_object b, cl_object *pr)
+_ecl_big_floor(cl_object x, cl_object y, cl_object *pr)
 {
   cl_object q = ecl_alloc_object(t_bignum);
   cl_object r = ecl_alloc_object(t_bignum);
@@ -163,4 +146,126 @@ _ecl_big_negate(cl_object x)
 void
 init_big(void)
 {
+}
+
+/* missing interfaces */
+void
+ecl_init_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    cl_object x = ecl_alloc_object(t_bignum);
+    env->big_register[i] = x;
+  }
+}
+
+void
+ecl_clear_bignum_registers(cl_env_ptr env)
+{
+  int i;
+  for (i = 0; i < ECL_BIGNUM_REGISTER_NUMBER; i++) {
+    ecl_bignum(env->big_register[i]) = 0;
+    /* _ecl_big_clear(env->big_register[i]); */
+  }
+}
+
+cl_fixnum
+fixint(cl_object x)
+{
+  if (ECL_FIXNUMP(x))
+    return ecl_fixnum(x);
+  if (ECL_BIGNUMP(x)) {
+    ecl_internal_error("implement fixint");
+  }
+  /* FIXME this error is not correct, cl_fixnum range is bigger. */
+  FEwrong_type_argument(@[fixnum], x);
+}
+
+cl_index
+fixnnint(cl_object x)
+{
+  if (ECL_FIXNUMP(x)) {
+    cl_fixnum i = ecl_fixnum(x);
+    if (i >= 0)
+      return i;
+  } else if (ECL_BIGNUMP(x)) {
+    ecl_internal_error("implement fixnint");
+  }
+  /* FIXME this error is not correct, cl_index range is bigger. */
+  FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
+                                ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
+                        x);
+}
+
+cl_object
+_ecl_big_divided_by_big(cl_object x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = ecl_bignum(x) / ecl_bignum(y);
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = ecl_bignum(x) / y;
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = x / ecl_bignum(y);
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_fix_minus_big(cl_fixnum x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = x - ecl_bignum(y);
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_big_minus_big(cl_object x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = ecl_bignum(x) - ecl_bignum(y);
+  return big_normalize(z);
+}
+
+static void
+mid_bool_noop(cl_object op, cl_object x, cl_object y)
+{
+  ecl_internal_error("implement me!");
+}
+
+static _ecl_big_binary_op bignum_operations[16] = {
+  mid_bool_noop,                /* ECL_BOOLCLR */
+  mid_bool_noop,                /* ECL_BOOLAND */
+  mid_bool_noop,                /* ECL_BOOLANDC2 */
+  mid_bool_noop,                /* ECL_BOOL1 */
+  mid_bool_noop,                /* ECL_BOOLANDC1 */
+  mid_bool_noop,                /* ECL_BOOL2 */
+  mid_bool_noop,                /* ECL_BOOLXOR */
+  mid_bool_noop,                /* ECL_BOOLIOR */
+  mid_bool_noop,                /* ECL_BOOLNOR */
+  mid_bool_noop,                /* ECL_BOOLEQV */
+  mid_bool_noop,                /* ECL_BOOLC2 */
+  mid_bool_noop,                /* ECL_BOOLORC2 */
+  mid_bool_noop,                /* ECL_BOOLC1 */
+  mid_bool_noop,                /* ECL_BOOLORC1 */
+  mid_bool_noop,                /* ECL_BOOLNAND */
+  mid_bool_noop};               /* ECL_BOOLSET */
+
+_ecl_big_binary_op
+_ecl_big_boole_operator(int op)
+{
+  unlikely_if((op < 0) || (op >= 16)) {
+    ecl_internal_error("_ecl_big_boole_operator passed an invalid operator");
+  }
+  return bignum_operations[op];
 }

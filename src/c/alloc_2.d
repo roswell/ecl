@@ -567,8 +567,12 @@ void init_type_info (void)
   type_info[t_list].descriptor =
     to_bitmap(&c, &(c.car)) |
     to_bitmap(&c, &(c.cdr));
+#ifdef ECL_GMPLIB
   type_info[t_bignum].descriptor =
     to_bitmap(&o, &(ECL_BIGNUM_LIMBS(&o)));
+#else
+  type_info[t_bignum].descriptor = 0;
+#endif
   type_info[t_ratio].descriptor =
     to_bitmap(&o, &(o.ratio.num)) |
     to_bitmap(&o, &(o.ratio.den));
