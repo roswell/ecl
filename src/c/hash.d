@@ -241,9 +241,8 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     return hash_word(h, (cl_index)ecl_double_float(x));
   case t_bignum:
     /* FIXME! We should be more precise here! */
-    return hash_string(h, (unsigned char*)ecl_bignum(x)->_mp_d,
-                       abs(ecl_bignum(x)->_mp_size) *
-                       sizeof(ecl_limb_t));
+    return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
+                       ECL_BIGNUM_USIZE(x) * ECL_BIGNUM_LIMB_BITS);
   case t_ratio:
     h = _hash_equalp(0, h, x->ratio.num);
     return _hash_equalp(0, h, x->ratio.den);
