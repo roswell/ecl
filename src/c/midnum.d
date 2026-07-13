@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * big_ll.c - bignum emulation with long long
+ * midnum.c - bignum with fixed precision
  *
  * Copyright (c) 2005 Maciek Pasternacki
  * Copyright (c) 2026 Daniel Kochmański

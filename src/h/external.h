@@ -408,7 +408,7 @@ extern ECL_API cl_object mp_compare_and_swap_symbol_value(cl_object x, cl_object
 extern ECL_API cl_object mp_atomic_incf_symbol_value(cl_object x, cl_object increment);
 #endif
 
-/* big.c */
+/* bignum.c / midnum.c */
 
 /* Note: Needs to be adapted if ECL_BIGNUM_REGISTER_NUMBER changes */
 #define _ecl_big_register0()    ecl_process_env()->big_register[0]

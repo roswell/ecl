@@ -423,10 +423,10 @@ AS_CASE([${enable_gmp}],
            [with_system_gmp=no] )])
 
 if test "x${without_gmp}" = "xyes" ; then
-  EXTRA_OBJS="${EXTRA_OBJS} big_ll.o"
+  EXTRA_OBJS="${EXTRA_OBJS} midnum.o"
 else
   AC_DEFINE( [ECL_GMPLIB], [1], [GNU Multiprecision library for bignums])
-  EXTRA_OBJS="${EXTRA_OBJS} big.o"
+  EXTRA_OBJS="${EXTRA_OBJS} bignum.o"
 fi
 
 if test "x${without_gmp}" == "x"; then

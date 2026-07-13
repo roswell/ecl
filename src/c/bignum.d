@@ -2,8 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * big.c - bignum routines based on the GMP multiple precision
- * integers.
+ * bignum.c - bignum based on the GMP
  *
  * Copyright (c) 1990 Giuseppe Attardi
  * Copyright (c) 2001 Juan Jose Garcia Ripoll

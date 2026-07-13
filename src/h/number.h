@@ -109,7 +109,7 @@ _ecl_big_count_bits(cl_object x) {
 #define _ecl_big_fdiv_q_2exp(z,x,i) mpz_fdiv_q_2exp(ecl_bignum(z), ecl_bignum(x), i);
 #define _ecl_big_fdiv_r_2exp(z,x,i) mpz_fdiv_r_2exp(ecl_bignum(z), ecl_bignum(x), i);
 
-/* Arithmetic operations that are used for parsing numbers (and in big.d) */
+/* Arithmetic operations that are used for parsing numbers and bignums) */
 #define _ecl_big_mul(z, x, y)       mpz_mul(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
 #define _ecl_big_mul_ui(z, x, y)    mpz_mul_ui(ecl_bignum(z),ecl_bignum(x),(y))
 #define _ecl_big_add_ui(z, x, i)    mpz_add_ui(ecl_bignum(z),ecl_bignum(x),(i))
