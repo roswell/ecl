@@ -240,28 +240,86 @@ _ecl_big_minus_big(cl_object x, cl_object y)
 }
 
 static void
-mid_bool_noop(cl_object op, cl_object x, cl_object y)
-{
-  ecl_internal_error("implement me!");
-}
+mid_bool_clr(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = 0; }
+
+static void
+mid_bool_set(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = -1; }
+
+static void
+mid_bool_1(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x); }
+
+static void
+mid_bool_2(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(y); }
+
+static void
+mid_bool_c1(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ~ecl_bignum(x); }
+
+static void
+mid_bool_c2(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ~ecl_bignum(y); }
+
+static void
+mid_bool_and(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x) & ecl_bignum(y); }
+
+static void
+mid_bool_andc1(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = (~ecl_bignum(x)) & ecl_bignum(y); }
+
+static void
+mid_bool_andc2(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x) & (~ecl_bignum(y)); }
+
+static void
+mid_bool_nand(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ~(ecl_bignum(x) & ecl_bignum(y)); }
+
+static void
+mid_bool_ior(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x) | ecl_bignum(y); }
+
+static void
+mid_bool_orc1(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = (~ecl_bignum(x)) | ecl_bignum(y); }
+
+static void
+mid_bool_orc2(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x) | (~ecl_bignum(y)); }
+
+static void
+mid_bool_nor(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ~(ecl_bignum(x) | ecl_bignum(y)); }
+
+static void
+mid_bool_xor(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ecl_bignum(x) ^ ecl_bignum(y); }
+
+static void                     /* xnor */
+mid_bool_eqv(cl_object z, cl_object x, cl_object y)
+{ ecl_bignum(z) = ~(ecl_bignum(x) ^ ecl_bignum(y)); }
 
 static _ecl_big_binary_op bignum_operations[16] = {
-  mid_bool_noop,                /* ECL_BOOLCLR */
-  mid_bool_noop,                /* ECL_BOOLAND */
-  mid_bool_noop,                /* ECL_BOOLANDC2 */
-  mid_bool_noop,                /* ECL_BOOL1 */
-  mid_bool_noop,                /* ECL_BOOLANDC1 */
-  mid_bool_noop,                /* ECL_BOOL2 */
-  mid_bool_noop,                /* ECL_BOOLXOR */
-  mid_bool_noop,                /* ECL_BOOLIOR */
-  mid_bool_noop,                /* ECL_BOOLNOR */
-  mid_bool_noop,                /* ECL_BOOLEQV */
-  mid_bool_noop,                /* ECL_BOOLC2 */
-  mid_bool_noop,                /* ECL_BOOLORC2 */
-  mid_bool_noop,                /* ECL_BOOLC1 */
-  mid_bool_noop,                /* ECL_BOOLORC1 */
-  mid_bool_noop,                /* ECL_BOOLNAND */
-  mid_bool_noop};               /* ECL_BOOLSET */
+  mid_bool_clr,                 /* ECL_BOOLCLR */
+  mid_bool_and,                 /* ECL_BOOLAND */
+  mid_bool_andc2,               /* ECL_BOOLANDC2 */
+  mid_bool_1,                   /* ECL_BOOL1 */
+  mid_bool_andc1,               /* ECL_BOOLANDC1 */
+  mid_bool_2,                   /* ECL_BOOL2 */
+  mid_bool_xor,                 /* ECL_BOOLXOR */
+  mid_bool_ior,                 /* ECL_BOOLIOR */
+  mid_bool_nor,                 /* ECL_BOOLNOR */
+  mid_bool_eqv,                 /* ECL_BOOLEQV */
+  mid_bool_c2,                  /* ECL_BOOLC2 */
+  mid_bool_orc2,                /* ECL_BOOLORC2 */
+  mid_bool_c1,                  /* ECL_BOOLC1 */
+  mid_bool_orc1,                /* ECL_BOOLORC1 */
+  mid_bool_nand,                /* ECL_BOOLNAND */
+  mid_bool_set};                /* ECL_BOOLSET */
 
 _ecl_big_binary_op
 _ecl_big_boole_operator(int op)
