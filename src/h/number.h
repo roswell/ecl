@@ -27,11 +27,14 @@ extern "C" {
                                 name##aux.value->_mp_d = name##data,    \
                                 (cl_object)(&name##aux))
 
+#define _ecl_big_init2(x,size) mpz_init2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
+
 #define ECL_BIGNUM_LIMB_BITS GMP_LIMB_BITS
 #define ECL_BIGNUM_DIM(x)    (ecl_bignum(x)->_mp_alloc) /* number of allocated limbs */
 #define ECL_BIGNUM_SIZE(x)   (ecl_bignum(x)->_mp_size)  /* number of limbs in use times sign of the bignum */
 #define ECL_BIGNUM_USIZE(x)  (mpz_size(ecl_bignum(x)))  /* number of limbs */
 #define ECL_BIGNUM_LIMBS(x)  (ecl_bignum(x)->_mp_d)     /* pointer to array of allocated limbs */
+#define ECL_BIGNUM_SET_SIZE(x,s) (ecl_bignum(x)->_mp_size=s)
 
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
@@ -79,14 +82,25 @@ extern ECL_API long double _ecl_big_get_lf(cl_object x);
 /* Predicates */
 #define _ecl_big_odd_p(x)           ((mpz_get_ui(ecl_bignum(x)) & 1) != 0)
 #define _ecl_big_even_p(x)          ((mpz_get_ui(ecl_bignum(x)) & 1) == 0)
-#define _ecl_big_sign(x)            mpz_sgn(ecl_bignum(x))
 #define _ecl_big_compare(x, y)      mpz_cmp(ecl_bignum(x),ecl_bignum(y))
 
 /* Bit fiddling */
-#define _ecl_big_popcount(x)        mpz_popcount(ecl_bignum(x))
-#define _ecl_big_1com(x,y)          mpz_com(ecl_bignum(x),ecl_bignum(y))
+static inline cl_fixnum
+_ecl_big_count_bits(cl_object x) {
+        cl_fixnum count;
+        if (ecl_bigsgn(x) >= 0)
+                count = mpz_popcount(ecl_bignum(x));
+        else {
+                cl_object z = _ecl_big_register0();
+                mpz_com(ecl_bignum(z),ecl_bignum(x));
+                count = mpz_popcount(ecl_bignum(x));
+                _ecl_big_register_free(z);
+        }
+        return count;
+}
+
 #define _ecl_big_tstbit(x,n)        mpz_tstbit(ecl_bignum(x),n)
-#define _ecl_big_bits(x)            mpz_sizeinbase(ecl_bignum(x),2)
+#define _ecl_big_integer_length(x)  mpz_sizeinbase(ecl_bignum(x),2)
 #define _ecl_big_sizeinbase(x,n)    mpz_sizeinbase(ecl_bignum(x),n)
 
 #define _ecl_big_div_2exp(z,y,i)    mpz_div_2exp(ecl_bignum(z), ecl_bignum(y), i)
@@ -99,7 +113,6 @@ extern ECL_API long double _ecl_big_get_lf(cl_object x);
 #define _ecl_big_mul_ui(z, x, y)    mpz_mul_ui(ecl_bignum(z),ecl_bignum(x),(y))
 #define _ecl_big_add_ui(z, x, i)    mpz_add_ui(ecl_bignum(z),ecl_bignum(x),(i))
 #define _ecl_big_neg(z, x)          mpz_neg(ecl_bignum(z),ecl_bignum(x))
-#define _ecl_big_complement(z, x)   _ecl_big_neg(z,x)
 
 /* Other number operations (not bignum) */
 #if ECL_CAN_INLINE

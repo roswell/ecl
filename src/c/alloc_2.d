@@ -1086,9 +1086,9 @@ si_gc_stats(cl_object enable)
   }
   if (ecl_core.bytes_consed == ECL_NIL) {
     ecl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(ecl_core.bytes_consed), 128);
     ecl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(ecl_core.gc_counter), 128);
+    _ecl_big_init2(ecl_core.bytes_consed, 128/ECL_BIGNUM_LIMB_BITS);
+    _ecl_big_init2(ecl_core.gc_counter, 128/ECL_BIGNUM_LIMB_BITS);
   }
 
   update_bytes_consed();
@@ -1100,8 +1100,8 @@ si_gc_stats(cl_object enable)
     GC_print_stats = 0;
     ecl_core.gc_stats = 0;
   } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(ecl_bignum(ecl_core.bytes_consed), 0);
-    mpz_set_ui(ecl_bignum(ecl_core.gc_counter), 0);
+    _ecl_big_set_ui(ecl_core.bytes_consed, 0);
+    _ecl_big_set_ui(ecl_core.gc_counter, 0);
   } else {
     ecl_core.gc_stats = 1;
     GC_print_stats = (enable == @':full');
@@ -1118,9 +1118,7 @@ gather_statistics()
   /* GC stats rely on bignums */
   if (ecl_core.gc_stats) {
     update_bytes_consed();
-    mpz_add_ui(ecl_bignum(ecl_core.gc_counter),
-               ecl_bignum(ecl_core.gc_counter),
-               1);
+    _ecl_big_add_ui(ecl_core.gc_counter, ecl_core.gc_counter, 1);
   }
   if (GC_old_start_callback)
     GC_old_start_callback();
@@ -1129,9 +1127,8 @@ gather_statistics()
 static void
 update_bytes_consed () {
 #if GBC_BOEHM == 0
-  mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-             ecl_bignum(ecl_core.bytes_consed),
-             GC_get_bytes_since_gc());
+  _ecl_big_add_ui(ecl_core.bytes_consed, ecl_core.bytes_consed,
+                  GC_get_bytes_since_gc());
 #else
   /* This is not accurate and may wrap around. We try to detect this
      assuming that an overflow in an unsigned integer will produce
@@ -1141,16 +1138,16 @@ update_bytes_consed () {
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               wrapped);
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               new_bytes);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    wrapped);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    new_bytes);
   } else {
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               new_bytes - bytes);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    new_bytes - bytes);
   }
   bytes = new_bytes;
 #endif

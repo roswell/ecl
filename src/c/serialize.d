@@ -203,9 +203,9 @@ serialize_vector(pool_t pool, cl_object v)
 static void
 serialize_bignum(pool_t pool, cl_object buffer)
 {
-  int8_t sign = _ecl_big_sign(buffer);
+  int8_t sign = ecl_bigsgn(buffer);
   serialize_bits(pool, &sign, 1);
-  cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
+  cl_index bytes = (_ecl_big_integer_length(buffer) + 7) / 8;
   serialize_bits(pool, &bytes, sizeof(cl_index));
   cl_index index = alloc(pool, bytes);
   cl_index bytes_written;

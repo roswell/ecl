@@ -218,6 +218,7 @@ struct ecl_bignum {
         big_num_t value;
 };
 #define ecl_bignum(o) ((o)->big.value)
+#define ecl_bigsgn(o) mpz_sgn(ecl_bignum(o))
 
 struct ecl_ratio {
         _ECL_HDR;
