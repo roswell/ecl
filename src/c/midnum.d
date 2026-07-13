@@ -329,3 +329,34 @@ _ecl_big_boole_operator(int op)
   }
   return bignum_operations[op];
 }
+
+cl_index
+_ecl_big_sizeinbase(cl_object x, int base)
+{
+  big_num_t num = ecl_bignum(x);
+  cl_index result=0;
+  do {
+    result++;
+    num = num / base;
+  } while(num);
+  return result;
+}
+
+void
+_ecl_big_get_str(char *buf, cl_index n, cl_object x, int base)
+{
+  big_num_t num = ecl_bignum(x);
+  cl_index idx=n;
+  const char *bb = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  /* FIXME for MOST-NEGATIVE-BIGNUM num=-num is UB (special-case it).  */
+  if(num<0) {
+    buf[0]='-';
+    idx++;
+    num = -num;
+  }
+  buf[idx--] = '\0';
+  do {
+    buf[idx--] = bb[num%base];
+    num = num / base;
+  } while(num);
+}

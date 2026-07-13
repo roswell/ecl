@@ -29,11 +29,11 @@ bignum_to_string(cl_object buffer, cl_object x, cl_object base)
                 /* With the leading sign and the trailing null character,
                  * only 62 digits fit in this buffer. */
                 char txt[64];
-                _ecl_big_get_str(txt, b, x);
+                _ecl_big_get_str(txt, str_size, x, b);
                 _ecl_string_push_c_string(buffer, txt);
         } else {
                 char *txt = ecl_alloc_atomic(str_size + 2);
-                _ecl_big_get_str(txt, b, x);
+                _ecl_big_get_str(txt, str_size, x, b);
                 _ecl_string_push_c_string(buffer, txt);
                 ecl_dealloc(txt);
         }

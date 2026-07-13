@@ -67,7 +67,7 @@ extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
 #define _ecl_big_get_ui(x)          mpz_get_ui(ecl_bignum(x))
 #define _ecl_big_get_si(x)          mpz_get_si(ecl_bignum(x))
 #define _ecl_big_get_d(x)           mpz_get_d(ecl_bignum(x))
-#define _ecl_big_get_str(buf,b,x)   mpz_get_str(buf,-b,ecl_bignum(x))
+#define _ecl_big_get_str(buf,n,x,b) mpz_get_str(buf,-b,ecl_bignum(x))
 
 #define _ecl_big_to_ulong(x)        _ecl_big_get_ui(x)
 #define _ecl_big_to_long(x)         _ecl_big_get_si(x)
@@ -150,7 +150,7 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_get_si(x)          (long int) _ecl_big_get(x)
 #define _ecl_big_get_d(x)           (double)_ecl_big_get(x)
 #define _ecl_big_get_lf(x)          (long double)_ecl_big_get(x)
-#define _ecl_big_get_str(buf,b,x)   (void)0
+extern ECL_API void _ecl_big_get_str(char *buf, cl_index n, cl_object x, int base);
 
 #define _ecl_big_to_ulong(x)        _ecl_big_get_ui(x)
 #define _ecl_big_to_long(x)         _ecl_big_get_si(x)
@@ -199,11 +199,8 @@ _ecl_big_mul_2exp(cl_object result, cl_object base, cl_index bits)
 #define _ecl_big_mul(z, x, y) (ecl_bignum(z) = ecl_bignum(x) * ecl_bignum(y))
 #define _ecl_big_mul_ui(z, x, y) (ecl_bignum(z) = ecl_bignum(x) * y)
 #define _ecl_big_add_ui(z, x, y) (ecl_bignum(z) = ecl_bignum(x) + y)
-
+extern ECL_API cl_index _ecl_big_sizeinbase(cl_object x, int base);
 #define _ecl_big_neg(z, x) (ecl_bignum(z) = -ecl_bignum(x))
-
-/* FIXME (stub) */
-#define _ecl_big_sizeinbase(x,y) (62)
 
 #endif  /* ECL_GMPLIB */
 
