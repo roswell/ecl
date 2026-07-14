@@ -11,6 +11,27 @@
  *
  */
 
+/* FIXME This code currently assumes long long int, as originally proposed by
+   Maciek. That said this has numerous fail scenarios:
+
+   - no overflow handling (we should signal STORAGE-EXHAUSTED condition)
+   - overflowing signed values is UB in C99
+   - we only mock fixnnint and fixint (missing implementation for bignums)
+   - bignum has often the same number of bits as FIXNUM (this is bad!)
+     ecl_ash(1, ECL_FIXNUM_BITS) will wrap back to "1" or signal condition
+
+   FIXME When the operation is about to overflow, signal a STORAGE-EXHAUSTED
+   condition.
+
+   FIXME I've stubbed a naive implementation of float_to_digits that does not
+   rely on bignums because printing floats were unstable due to overflows.
+
+   NOTES representing a midnum as [sign, uint] is not practical, because boole
+   operations require 2-complement. That's why using a signed number works best.
+   It would be nice to provide "school-book" complete fallback implementation.
+
+   -- jd 2026-07-14 */
+
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
@@ -96,6 +117,43 @@ _ecl_big_gcd(cl_object x, cl_object y)
   }
 }
 
+/* Negation
+   FIXME -INT_MIN IS ub*/
+cl_object
+_ecl_big_negate(cl_object x)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = - ecl_bignum(x);
+  return big_normalize(z);
+}
+
+/* Division and modulo
+   FIXME INT_MIN/-1 is UB
+   FIXME INT_MIN%-1 is UB */
+cl_object
+_ecl_big_divided_by_big(cl_object x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = ecl_bignum(x) / ecl_bignum(y);
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = ecl_bignum(x) / y;
+  return big_normalize(z);
+}
+
+cl_object
+_ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  ecl_bignum(z) = x / ecl_bignum(y);
+  return big_normalize(z);
+}
+
 static cl_object
 _big_truncate(cl_object x, cl_object y, cl_object *pr)
 {
@@ -121,16 +179,10 @@ _ecl_big_floor(cl_object x, cl_object y, cl_object *pr)
   return _big_truncate(x, y, pr);
 }
 
-cl_object
-_ecl_big_negate(cl_object x)
-{
-  cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = - ecl_bignum(x);
-  return big_normalize(z);
-}
-
 /* Bit shifts */
-/* FIXME integer overlow */
+/* FIXME integer overlow;
+   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign
+   FIXME right-shifting negative integers is implementation defined */
 
 void
 _ecl_big_div_2exp(cl_object z, cl_object x, cl_index bits)
@@ -138,10 +190,13 @@ _ecl_big_div_2exp(cl_object z, cl_object x, cl_index bits)
 
 void
 _ecl_big_mul_2exp(cl_object z, cl_object x, cl_index bits)
-{ ecl_bignum(z) = ecl_bignum(x) << bits; }
+{
+  /* FIXME this overflows in (random 3), because we shift by (1<<64)=1 bits. */
+  ecl_bignum(z) = ecl_bignum(x) << bits; }
 
 /* Multiplication */
-/* FIXME integer overlow */
+/* FIXME integer overlow
+   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign */
 
 static long long int
 _int_mul_int(big_num_t x, big_num_t y)
@@ -175,33 +230,9 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
   return big_normalize(z);
 }
 
-/* Division */
-cl_object
-_ecl_big_divided_by_big(cl_object x, cl_object y)
-{
-  cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = ecl_bignum(x) / ecl_bignum(y);
-  return big_normalize(z);
-}
-
-cl_object
-_ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
-{
-  cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = ecl_bignum(x) / y;
-  return big_normalize(z);
-}
-
-cl_object
-_ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
-{
-  cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = x / ecl_bignum(y);
-  return big_normalize(z);
-}
-
 /* Addition */
-/* FIXME integer overlow */
+/* FIXME integer overlow
+   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign */
 
 static long long int
 _int_add_int(big_num_t x, big_num_t y)
