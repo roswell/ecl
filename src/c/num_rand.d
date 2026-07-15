@@ -223,24 +223,7 @@ generate_limb(cl_object state)
 static cl_index
 generate_fixnum(cl_object state)
 {
-#if ECL_FIXNUM_BITS <= 32
   return generate_int32(state);
-#else
-# if ECL_FIXNUM_BITS <= 64
-  cl_index high = generate_int32(state);
-  return (high << 32) | generate_int32(state);
-# else
-#  if ECL_FIXNUM_BITS <= 128
-  cl_index word0 = generate_int32(state);
-  cl_index word1 = generate_int32(state);
-  cl_index word2 = generate_int32(state);
-  cl_index word3 = generate_int32(state);
-  return (word3 << 96) | (word2 << 64) | (word1 << 32) | word0;
-#  else
-#   error "Implement generate_fixnum for ECL_FIXNUM_BITS>128."
-#  endif
-# endif
-#endif
 }
 #endif
 
