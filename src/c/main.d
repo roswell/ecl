@@ -683,6 +683,16 @@ cl_boot(int argc, char **argv)
   ECL_SET(@'ffi::c-long-long-max', ecl_make_long_long(LLONG_MAX));
   ECL_SET(@'ffi::c-ulong-long-max', ecl_make_ulong_long(ULLONG_MAX));
 #endif
+#ifdef ecl_uintptr_t
+  ECL_SET(@'ffi::c-intptr-min', ecl_make_intptr_t(INTPTR_MIN));
+  ECL_SET(@'ffi::c-intptr-max', ecl_make_intptr_t(INTPTR_MAX));
+  ECL_SET(@'ffi::c-uintptr-max', ecl_make_uintptr_t(UINTPTR_MAX));
+#endif
+#ifdef ecl_uintmax_t
+  ECL_SET(@'ffi::c-intmax-min', ecl_make_intmax_t(INTMAX_MIN));
+  ECL_SET(@'ffi::c-intmax-max', ecl_make_intmax_t(INTMAX_MAX));
+  ECL_SET(@'ffi::c-uintmax-max', ecl_make_uintmax_t(UINTMAX_MAX));
+#endif
 
   init_unixtime();
 

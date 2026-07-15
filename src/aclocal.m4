@@ -142,6 +142,8 @@ CL_FIXNUM_MIN=-536870912L
 CL_SHORT_BITS=32
 CL_INT_BITS=32
 CL_LONG_BITS=32
+CL_INTPTR_BITS=32
+CL_INTMAX_BITS=32
 
 ### 1.3) Order of bytes within a word
 ECL_BIGENDIAN=no
@@ -650,6 +652,37 @@ if test "x$ac_cv_c_int$1_t" = xyes; then
   ECL_ADD_FEATURE(uint$1-t)
 fi])
 
+dnl ---------------------------------------------------------------------
+dnl Check availability of named integer types.  On success, define the global
+dnl variables ECL_INTx_T and ECL_UINTx_T to hold the names of the corresponding
+dnl standard C integer types.
+dnl
+dnl ... ac_cv_type_int{ptr,max}_t is inconsistent with ac_cv_c_int*_t.
+AC_DEFUN(ECL_CHECK_NAMED_INTEGER_TYPE,[
+AC_TYPE_INT$2_T
+AC_TYPE_UINT$2_T
+
+AC_CHECK_SIZEOF(uint$1_t, 0, [
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#elif defined(HAVE_INTTYPES_H)
+# include <inttypes.h>
+#endif
+])
+
+if test "x$ac_cv_type_int$1_t" = xyes; then
+  eval ECL_INT$2_T="int$1_t"
+  eval ECL_UINT$2_T="uint$1_t"
+  AC_DEFINE_UNQUOTED([ecl_int$1_t], [int$1_t], [ecl_int$1_t])
+  AC_DEFINE_UNQUOTED([ecl_uint$1_t], [uint$1_t], [ecl_uint$1_t])
+  ECL_ADD_FEATURE(uint$1-t)
+
+  # Calculate and log the bit-width safely
+  AC_MSG_CHECKING([for number of bits in uint$1_t])
+  CL_INT$2_BITS=$(expr "$ac_cv_sizeof_uint$1_t" \* 8)
+  AC_MSG_RESULT([$CL_INT$2_BITS])
+fi])
+
 dnl
 dnl --------------------------------------------------------------
 dnl Check the existence of different integer types and that they
@@ -657,6 +690,8 @@ dnl have the right size;
 dnl
 AC_DEFUN(ECL_INTEGER_TYPES,[
 AC_SUBST(ECL_STDINT_HEADER)
+AC_SUBST(CL_INTPTR_BITS)
+AC_SUBST(CL_INTMAX_BITS)
 AC_CHECK_HEADER([stdint.h],[AC_DEFINE(HAVE_STDINT_H)
 ECL_STDINT_HEADER="#include <stdint.h>"],[])
 if test -z "${ECL_STDINT_HEADER}"; then
@@ -685,6 +720,20 @@ fi
 if test "x${ECL_UINT8_T}" = "x" -o "x${ECL_UINT8_T}" = xno; then
   AC_MSG_ERROR(Can not build ECL without byte types)
 fi
+
+ECL_CHECK_NAMED_INTEGER_TYPE(ptr, PTR)
+ECL_CHECK_NAMED_INTEGER_TYPE(max, MAX)
+
+if test "x${ECL_UINTPTR_T}" = "x"; then
+  ECL_UINTPTR_T="cl_index"
+  ECL_INTPTR_T="cl_fixnum"
+  CL_INTPTR_BITS=${CL_FIXNUM_BITS}
+fi
+
+if test "x${ECL_UINTMAX_T}" = "x"; then dnl c99 guaranteed
+  AC_MSG_ERROR(Can not build ECL without uintmax_t type)
+fi
+
 ])
 dnl
 dnl --------------------------------------------------------------
@@ -785,28 +834,16 @@ int main() {
     int_type="int";
     for (bits=1; ((t << 1) >> 1) == t; bits++, t <<= 1);
     l = (~l) << (bits - 3);
-#if 1
     fprintf(f,"CL_FIXNUM_MIN='%d';",l);
     fprintf(f,"CL_FIXNUM_MAX='%d';",-(l+1));
-#else
-    l++;
-    fprintf(f,"CL_FIXNUM_MIN='%d';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%d';",-l);
-#endif
   } else if (sizeof(long) >= sizeof(void*)) {
     unsigned long int t = 1;
     signed long int l = 0;
     int_type="long int";
     for (bits=1; ((t << 1) >> 1) == t; bits++, t <<= 1);
     l = (~l) << (bits - 3);
-#if 1
     fprintf(f,"CL_FIXNUM_MIN='%ldL';",l);
     fprintf(f,"CL_FIXNUM_MAX='%ldL';",-(l+1));
-#else
-    l++;
-    fprintf(f,"CL_FIXNUM_MIN='%ldL';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%ldL';",-l);
-#endif
 #ifdef ECL_LONG_LONG_BITS
   } else if (sizeof(long long) >= sizeof(void*)) {
     unsigned long long int t = 1;
@@ -814,14 +851,8 @@ int main() {
     int_type="long long";
     for (bits=1; ((t << 1) >> 1) == t; bits++, t <<= 1);
     l = (~l) << (bits - 3);
-# if 1
     fprintf(f,"CL_FIXNUM_MIN='%lldLL';",l);
     fprintf(f,"CL_FIXNUM_MAX='%lldLL';",-(l+1));
-# else
-    l++;
-    fprintf(f,"CL_FIXNUM_MIN='%lldLL';",l);
-    fprintf(f,"CL_FIXNUM_MAX='%lldLL';",-l);
-# endif
 #endif
   } else {
     exit(1);
@@ -847,7 +878,7 @@ int main() {
     for (bits = 0; x; bits++) {
       x <<= 1;
     }
-    fprintf(f,"CL_LONG_BITS='%d'",bits);
+    fprintf(f,"CL_LONG_BITS='%d';",bits);
   }
   exit(0);
 }]])],[eval "`cat conftestval`"],[],[])
