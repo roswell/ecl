@@ -112,7 +112,24 @@ generate_limb(cl_object state)
 #  if ECL_BIGNUM_LIMB_BITS <= 128
   ecl_limb_t high = generate_int64(state);
   return (high << 64) | generate_int64(state);
+#  else
+#   error "Implement generate_limb for ECL_BIGNUM_LIMB_BITS>128."
 #  endif
+# endif
+#endif
+}
+
+static cl_index
+generate_fixnum(cl_object state)
+{
+#if ECL_FIXNUM_BITS <= 64
+  return generate_int64(state);
+#else
+# if ECL_FIXNUM_BITS <= 128
+  cl_index high = generate_int64(state);
+  return (high << 64) | generate_int64(state);
+# else
+#  error "Implement generate_fixnum for ECL_FIXNUM_BITS>128."
 # endif
 #endif
 }
@@ -195,7 +212,32 @@ generate_limb(cl_object state)
   ecl_limb_t word1 = generate_int32(state);
   ecl_limb_t word2 = generate_int32(state);
   ecl_limb_t word3 = generate_int32(state);
-  return (word3 << 96) | (word3 << 64) | (word1 << 32) || word0;
+  return (word3 << 96) | (word2 << 64) | (word1 << 32) | word0;
+#  else
+#   error "Implement generate_limb for ECL_BIGNUM_LIMB_BITS>128."
+#  endif
+# endif
+#endif
+}
+
+static cl_index
+generate_fixnum(cl_object state)
+{
+#if ECL_FIXNUM_BITS <= 32
+  return generate_int32(state);
+#else
+# if ECL_FIXNUM_BITS <= 64
+  cl_index high = generate_int32(state);
+  return (high << 32) | generate_int32(state);
+# else
+#  if ECL_FIXNUM_BITS <= 128
+  cl_index word0 = generate_int32(state);
+  cl_index word1 = generate_int32(state);
+  cl_index word2 = generate_int32(state);
+  cl_index word3 = generate_int32(state);
+  return (word3 << 96) | (word2 << 64) | (word1 << 32) | word0;
+#  else
+#   error "Implement generate_fixnum for ECL_FIXNUM_BITS>128."
 #  endif
 # endif
 #endif
@@ -239,6 +281,12 @@ random_integer(cl_object limit, cl_object state)
 }
 
 static cl_object
+random_fixnum(cl_object limit, cl_object state)
+{
+  return ecl_make_fixnum(generate_fixnum(state) % ecl_fixnum(limit));
+}
+
+static cl_object
 rando(cl_object x, cl_object rs)
 {
   cl_object z;
@@ -247,10 +295,8 @@ rando(cl_object x, cl_object rs)
   }
   switch (ecl_t_of(x)) {
   case t_fixnum:
-#if ECL_FIXNUM_BITS <= 32
-    z = ecl_make_fixnum(generate_int32(rs->random.value) % ecl_fixnum(x));
+    z = random_fixnum(x, rs->random.value);
     break;
-#endif
   case t_bignum:
     z = random_integer(x, rs->random.value);
     break;
