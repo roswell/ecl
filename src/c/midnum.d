@@ -514,18 +514,17 @@ _ecl_big_sizeinbase(cl_object x, int base)
 void
 _ecl_big_get_str(char *buf, cl_index n, cl_object x, int base)
 {
-  big_num_t num = ecl_bignum(x);
-  cl_index idx=n;
   const char *bb = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  /* FIXME for MOST-NEGATIVE-BIGNUM num=-num is UB (special-case it).  */
-  if(num<0) {
+  sbig_num_t xnum = ecl_bignum(x);
+  ubig_num_t ynum = (xnum<0) ? -(ubig_num_t)xnum : xnum;
+  cl_index idx=n;
+  if (xnum<0) {
     buf[0]='-';
     idx++;
-    num = -num;
   }
   buf[idx--] = '\0';
   do {
-    buf[idx--] = bb[num%base];
-    num = num / base;
-  } while(num);
+    buf[idx--] = bb[ynum%base];
+    ynum = ynum / base;
+  } while(ynum);
 }
