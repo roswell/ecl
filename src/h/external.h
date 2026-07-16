@@ -2021,6 +2021,7 @@ extern ECL_API cl_object _ecl_ucd_name_to_code(cl_object name);
 
 /* vector_push.d  */
 
+extern ECL_API cl_object ecl_extend_vector(cl_object v, cl_index s);
 extern ECL_API ecl_character ecl_string_push_extend(cl_object s, ecl_character c);
 extern ECL_API cl_object cl_vector_push _ECL_ARGS((cl_object V1, cl_object V2));
 extern ECL_API cl_object cl_vector_push_extend _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
