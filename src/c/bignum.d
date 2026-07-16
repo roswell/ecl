@@ -167,8 +167,8 @@ _ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
 #else
   ECL_WITH_TEMP_BIGNUM(z,4);
   ECL_WITH_TEMP_BIGNUM(w,4);
-  _ecl_big_set_fixnum(z, x);
-  _ecl_big_set_fixnum(w, y);
+  _ecl_big_set_fix(z, x);
+  _ecl_big_set_fix(w, y);
   _ecl_big_mul(z, z, w);
 #endif
   {
@@ -208,7 +208,7 @@ _ecl_big_times_fix(cl_object b, cl_fixnum i)
 #else
   {
     ECL_WITH_TEMP_BIGNUM(w,4);
-    _ecl_big_set_fixnum(w, i);
+    _ecl_big_set_fix(w, i);
     _ecl_big_mul(z, b, w);
   }
 #endif
@@ -219,7 +219,7 @@ cl_object
 _ecl_big_plus_fix(cl_object a, cl_fixnum b)
 {
   ECL_WITH_TEMP_BIGNUM(big_b, 2);
-  _ecl_big_set_fixnum(big_b, b);
+  _ecl_big_set_fix(big_b, b);
   return _ecl_big_plus_big(a, big_b);
 }
 
@@ -251,7 +251,7 @@ _ecl_fix_minus_big(cl_fixnum a, cl_object b)
   cl_index size_b = ECL_BIGNUM_ABS_SIZE(b);
   cl_index size_z = size_b + limbs_per_fixnum;
   cl_object z = _ecl_alloc_compact_bignum(size_z);
-  _ecl_big_set_fixnum(z, a);
+  _ecl_big_set_fix(z, a);
   mpz_sub(ecl_bignum(z), ecl_bignum(z), ecl_bignum(b));
   return big_normalize(z);
 }
@@ -290,7 +290,7 @@ cl_object
 _ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
 {
   ECL_WITH_TEMP_BIGNUM(by, 2);
-  _ecl_big_set_fixnum(by, y);
+  _ecl_big_set_fix(by, y);
   return _ecl_big_divided_by_big(x, by);
 }
 
@@ -318,7 +318,7 @@ cl_object
 _ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
 {
   ECL_WITH_TEMP_BIGNUM(bx, 2);
-  _ecl_big_set_fixnum(bx, x);
+  _ecl_big_set_fix(bx, x);
   return _ecl_big_divided_by_big(bx, y);
 }
 
@@ -450,7 +450,7 @@ fixint(cl_object x)
     return ecl_fixnum(x);
   if (ECL_BIGNUMP(x)) {
     if (_ecl_big_fits_in_fixnum(x)) {
-      return _ecl_big_get_fixnum(x);
+      return _ecl_big_get_fix(x);
     }
   }
   FEwrong_type_argument(@[fixnum], x);
@@ -465,7 +465,7 @@ fixnnint(cl_object x)
       return i;
   } else if (ECL_BIGNUMP(x)) {
     if (_ecl_big_fits_in_index(x)) {
-      return _ecl_big_get_index(x);
+      return _ecl_big_get_idx(x);
     }
   }
   FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),

@@ -82,7 +82,7 @@ ecl_make_integer(cl_fixnum l)
 {
   if (l > MOST_POSITIVE_FIXNUM || l < MOST_NEGATIVE_FIXNUM) {
     cl_object z = _ecl_big_register0();
-    _ecl_big_set_fixnum(z, l);
+    _ecl_big_set_fix(z, l);
     return _ecl_big_register_copy(z);
   }
   return ecl_make_fixnum(l);
@@ -93,7 +93,7 @@ ecl_make_unsigned_integer(cl_index l)
 {
   if (l > MOST_POSITIVE_FIXNUM) {
     cl_object z = _ecl_big_register0();
-    _ecl_big_set_index(z, l);
+    _ecl_big_set_idx(z, l);
     return _ecl_big_register_copy(z);
   }
   return ecl_make_fixnum(l);
@@ -713,7 +713,7 @@ ratio_to_float(cl_object num, cl_object den)
 #else
   double output = ECL_FIXNUMP(mantissa)
     ? ecl_fixnum(mantissa)
-    : _ecl_big_to_double(mantissa);
+    : _ecl_big_get_d(mantissa);
 #endif
   return ldexpf(output, exponent);
 }
@@ -729,7 +729,7 @@ ratio_to_double(cl_object num, cl_object den)
 #else
   double output = ECL_FIXNUMP(mantissa)
     ? ecl_fixnum(mantissa)
-    : _ecl_big_to_double(mantissa);
+    : _ecl_big_get_d(mantissa);
 #endif
   return ldexp(output, exponent);
 }
@@ -745,7 +745,7 @@ ratio_to_long_double(cl_object num, cl_object den)
 #else
   long double output = ECL_FIXNUMP(mantissa)
     ? ecl_fixnum(mantissa)
-    : _ecl_big_to_long_double(mantissa);
+    : _ecl_big_get_lf(mantissa);
 #endif
   return ldexpl(output, exponent);
 }

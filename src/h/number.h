@@ -42,20 +42,16 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
 /* Type conversion (setters mutate the bignum structure). */
 #if ECL_LONG_BITS >= ECL_FIXNUM_BITS
-# define _ecl_big_set_index(x, f)  mpz_set_ui(ecl_bignum(x),(f))
-# define _ecl_big_set_fixnum(x, f) mpz_set_si(ecl_bignum(x),(f))
-# define _ecl_big_get_index(x)     mpz_get_ui(ecl_bignum(x))
-# define _ecl_big_get_fixnum(x)    mpz_get_si(ecl_bignum(x))
+# define _ecl_big_set_idx(x, f) mpz_set_ui(ecl_bignum(x),(f))
+# define _ecl_big_set_fix(x, f) mpz_set_si(ecl_bignum(x),(f))
+# define _ecl_big_get_idx(x)    mpz_get_ui(ecl_bignum(x))
+# define _ecl_big_get_fix(x)    mpz_get_si(ecl_bignum(x))
 #elif GMP_LIMB_BITS >= ECL_FIXNUM_BITS
 # define ECL_GMP_FIXNUM_TO_LIMBS
 extern ECL_API cl_index _ecl_big_get_idx(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_get_fix(cl_object x);
 extern ECL_API void _ecl_big_set_idx(cl_object x, cl_index y);
 extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
-# define _ecl_big_set_index(x, f)  _ecl_big_set_idx((x),(f))
-# define _ecl_big_get_index(x)     _ecl_big_get_idx((x))
-# define _ecl_big_set_fixnum(x, f) _ecl_big_set_fix((x),(f))
-# define _ecl_big_get_fixnum(x)    _ecl_big_get_fix((x))
 #else
 # error "ECL cannot build with GMP when both long and mp_limb_t are smaller than cl_fixnum"
 #endif
@@ -69,12 +65,7 @@ extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
 #define _ecl_big_get_d(x)           mpz_get_d(ecl_bignum(x))
 #define _ecl_big_get_str(buf,n,x,b) mpz_get_str(buf,-b,ecl_bignum(x))
 
-#define _ecl_big_to_ulong(x)        _ecl_big_get_ui(x)
-#define _ecl_big_to_long(x)         _ecl_big_get_si(x)
-#define _ecl_big_to_double(x)       _ecl_big_get_d(x)
-
 extern ECL_API long double _ecl_big_get_lf(cl_object x);
-#define _ecl_big_to_long_double(x) _ecl_big_get_lf((x))
 
 /* Type conversion predicates */
 #define _ecl_big_fits_ui(x) mpz_fits_ulong_p(ecl_bignum(x))
@@ -137,11 +128,6 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_set(x, f) (ecl_bignum(x) = f)
 #define _ecl_big_get(x)    (ecl_bignum(x))
 
-# define _ecl_big_set_index(x, f)  _ecl_big_set(x, (big_num_t)f)
-# define _ecl_big_set_fixnum(x, f) _ecl_big_set(x, (big_num_t)f)
-# define _ecl_big_get_index(x)     (cl_index) _ecl_big_get(x)
-# define _ecl_big_get_fixnum(x)    (cl_fixnum)_ecl_big_get(x)
-
 #define _ecl_big_set_idx(x, i)      _ecl_big_set(x, (cl_index)i)
 #define _ecl_big_set_fix(x, i)      _ecl_big_set(x, (cl_fixnum)i)
 #define _ecl_big_set_ui(x, i)       _ecl_big_set(x, (unsigned long int)i)
@@ -155,11 +141,6 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_get_d(x)           (double)_ecl_big_get(x)
 #define _ecl_big_get_lf(x)          (long double)_ecl_big_get(x)
 extern ECL_API void _ecl_big_get_str(char *buf, cl_index n, cl_object x, int base);
-
-#define _ecl_big_to_ulong(x)        _ecl_big_get_ui(x)
-#define _ecl_big_to_long(x)         _ecl_big_get_si(x)
-#define _ecl_big_to_double(x)       _ecl_big_get_d(x)
-#define _ecl_big_to_long_double(x)  _ecl_big_get_lf(x)
 
 #define _ecl_big_odd_p(x)           ((ecl_bignum(x) & 1) != 0)
 #define _ecl_big_even_p(x)          ((ecl_bignum(x) & 1) == 0)
