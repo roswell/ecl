@@ -221,30 +221,6 @@ _ecl_fix_divided_by_big(cl_fixnum xnum, cl_object y)
   return big_normalize(z);
 }
 
-static cl_object
-_big_truncate(cl_object x, cl_object y, cl_object *pr)
-{
-  cl_object q = _ecl_big_register0();
-  cl_object r = _ecl_big_register1();
-  ecl_bignum(q) = ecl_bignum(x) / ecl_bignum(y);
-  ecl_bignum(r) = ecl_bignum(x) % ecl_bignum(y);
-  *pr = _ecl_big_register_normalize(r);
-  return _ecl_big_register_normalize(q);
-}
-
-cl_object
-_ecl_big_ceiling(cl_object x, cl_object y, cl_object *pr)
-{
-  /* FIXME truncates towards 0, should be +infinity. */
-  return _big_truncate(x, y, pr);
-}
-
-cl_object
-_ecl_big_floor(cl_object x, cl_object y, cl_object *pr)
-{
-  /* FIXME truncates towards 0, should be -infinity. */
-  return _big_truncate(x, y, pr);
-}
 
 /* Multiplication */
 
@@ -373,6 +349,83 @@ _ecl_fix_minus_big(cl_fixnum xnum, cl_object y)
   cl_object x = _ecl_big_register0();
   _ecl_big_set_fix(x, xnum);
   return _ecl_big_minus_big(x, y);
+}
+
+/* Modulo
+   INV the second argument is never 0 (ensured by callers)
+
+   TRUNCATE truncates quotient towards 0
+   CEILING  truncates quotient towards +infinity
+   FLOOR    truncates quotient towards -infinity
+
+   quotient * divisor + remainder = number
+*/
+
+static void
+_big_div_qr(cl_object q, cl_object r, cl_object x, cl_object y)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
+  /* For a minimal signed int value num%-1 is UB. */
+  if (xnum == MOST_NEGATIVE_BIGNUM && ynum==-1)
+    storage_exhausted();
+  ecl_bignum(q) = xnum / ynum;  /* quotient */
+  ecl_bignum(r) = xnum % ynum;  /* remainder */
+}
+
+static cl_object
+_ecl_big_truncate(cl_object x, cl_object y, cl_object *pr)
+{
+  cl_object q = _ecl_big_register0();
+  cl_object r = _ecl_big_register1();
+  _big_div_qr(q, r, x, y);
+  *pr = _ecl_big_register_normalize(r);
+  return _ecl_big_register_normalize(q);
+}
+
+cl_object
+_ecl_big_ceiling(cl_object x, cl_object y, cl_object *pr)
+{
+  cl_object q = _ecl_big_register0();
+  cl_object r = _ecl_big_register1();
+  _big_div_qr(q, r, x, y);
+  /* adjust -> +inf */
+  {
+    sbig_num_t rnum = ecl_bignum(r);
+    int8_t xsig = (ecl_bignum(x)<0) ? -1 : 0;
+    int8_t ysig = (ecl_bignum(y)<0) ? -1 : 0;
+    if (rnum != 0 && (xsig == ysig)) {
+      cl_object h = _ecl_big_register2();
+      _ecl_big_set_ui(h, 1);
+      _ecl_big_add(q, q, h);
+      _ecl_big_sub(r, r, y);
+    }
+  }
+  *pr = _ecl_big_register_normalize(r);
+  return _ecl_big_register_normalize(q);
+}
+
+/* truncate towards -infinity */
+cl_object
+_ecl_big_floor(cl_object x, cl_object y, cl_object *pr)
+{
+  cl_object q = _ecl_big_register0();
+  cl_object r = _ecl_big_register1();
+  _big_div_qr(q, r, x, y);
+  /* adjust -> -inf */
+  {
+    sbig_num_t rnum = ecl_bignum(r);
+    int8_t xsig = (ecl_bignum(x)<0) ? -1 : 0;
+    int8_t ysig = (ecl_bignum(y)<0) ? -1 : 0;
+    if (rnum != 0 && (xsig != ysig)) {
+      cl_object h = _ecl_big_register2();
+      _ecl_big_set_ui(h, 1);
+      _ecl_big_sub(q, q, h);
+      _ecl_big_add(r, r, y);
+    }
+  }
+  *pr = _ecl_big_register_normalize(r);
+  return _ecl_big_register_normalize(q);
 }
 
 /* Boole */
