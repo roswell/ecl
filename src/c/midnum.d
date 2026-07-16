@@ -18,7 +18,6 @@
    [rev 20260716 jd] avoid UB and handle overflows
 
    FIXME implement stubs and incorrect functions:
-   coerce: fixnnint, fixint,
    access: _ecl_big_{get,set}_{idx,fix,ui,si,d,lf}
    mixing: _ecl_big_{mul,add}_ui
 
@@ -550,6 +549,19 @@ _ecl_big_boole_operator(int op)
 }
 
 /* Coerce */
+static inline bool
+_ecl_big_fits_in_fixnum(cl_object x)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  return (MOST_NEGATIVE_FIXNUM_VAL <= xnum && xnum <= MOST_POSITIVE_FIXNUM_VAL);
+}
+
+static inline bool
+_ecl_big_fits_in_index(cl_object x)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  return (0 <= xnum &&  xnum <= ECL_MAXIMUM_INDEX_VAL);
+}
 
 cl_fixnum
 fixint(cl_object x)
@@ -557,10 +569,14 @@ fixint(cl_object x)
   if (ECL_FIXNUMP(x))
     return ecl_fixnum(x);
   if (ECL_BIGNUMP(x)) {
-    ecl_internal_error("implement fixint");
+    if (_ecl_big_fits_in_fixnum(x)) {
+      return ecl_bignum(x);
+    }
   }
-  /* FIXME this error is not correct, cl_fixnum range is bigger. */
-  FEwrong_type_argument(@[fixnum], x);
+  FEwrong_type_argument(cl_list(3, @'integer',
+                                ecl_make_integer(MOST_NEGATIVE_FIXNUM_VAL),
+                                ecl_make_integer(MOST_POSITIVE_FIXNUM_VAL)),
+                        x);
 }
 
 cl_index
@@ -571,11 +587,13 @@ fixnnint(cl_object x)
     if (i >= 0)
       return i;
   } else if (ECL_BIGNUMP(x)) {
-    ecl_internal_error("implement fixnint");
+    if (_ecl_big_fits_in_index(x)) {
+      return ecl_bignum(x);
+    }
   }
-  /* FIXME this error is not correct, cl_index range is bigger. */
-  FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
-                                ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
+  FEwrong_type_argument(cl_list(3, @'integer',
+                                ecl_make_integer(0),
+                                ecl_make_integer(ECL_MAXIMUM_INDEX_VAL)),
                         x);
 }
 

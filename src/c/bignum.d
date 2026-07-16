@@ -453,7 +453,10 @@ fixint(cl_object x)
       return _ecl_big_get_fix(x);
     }
   }
-  FEwrong_type_argument(@[fixnum], x);
+  FEwrong_type_argument(cl_list(3, @'integer',
+                                ecl_make_integer(MOST_NEGATIVE_FIXNUM_VAL),
+                                ecl_make_integer(MOST_POSITIVE_FIXNUM_VAL)),
+                        x);
 }
 
 cl_index
@@ -468,8 +471,9 @@ fixnnint(cl_object x)
       return _ecl_big_get_idx(x);
     }
   }
-  FEwrong_type_argument(cl_list(3, @'integer', ecl_make_fixnum(0),
-                                ecl_make_fixnum(MOST_POSITIVE_FIXNUM)),
+  FEwrong_type_argument(cl_list(3, @'integer',
+                                ecl_make_integer(0),
+                                ecl_make_integer(ECL_MAXIMUM_INDEX_VAL)),
                         x);
 }
 

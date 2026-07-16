@@ -142,6 +142,7 @@
 #define MOST_NEGATIVE_FIXNUM    ((cl_fixnum)@CL_FIXNUM_MIN@)
 #define MOST_POSITIVE_FIXNUM_VAL @CL_FIXNUM_MAX@
 #define MOST_NEGATIVE_FIXNUM_VAL @CL_FIXNUM_MIN@
+#define ECL_MAXIMUM_INDEX_VAL    (((cl_index)@CL_FIXNUM_MAX@)*2+1)
 
 typedef @CL_FIXNUM_TYPE@ cl_fixnum;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_index;
