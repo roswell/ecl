@@ -49,7 +49,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
     _ecl_big_add_ui(integer_part, integer_part, d);
   }
   if (sign < 0) {
-    _ecl_big_complement(integer_part, integer_part);
+    _ecl_big_neg(integer_part, integer_part);
   }
   output = _ecl_big_register_normalize(integer_part);
   *ep = i;

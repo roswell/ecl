@@ -25,11 +25,11 @@
 @item @file{backq.d}
 @tab backquote mechanism
 
-@item @file{big.d}
-@tab bignum routines based on the GMP
+@item @file{bignum.d}
+@tab bignum based on the GMP
 
-@item @file{big_ll.d}
-@tab bignum emulation with long long
+@item @file{midnum_ll.d}
+@tab bignum with fixed precision
 
 @item @file{cfun.d}
 @tab compiled functions

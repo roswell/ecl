@@ -43,8 +43,8 @@ ecl_number_compare(cl_object x, cl_object y)
       else         return (ix != iy);
     }
     /* INV: (= x y) can't be zero since fixnum != bignum */
-    CASE_FIXNUM_BIGNUM { return _ecl_big_sign(y) < 0 ?  1 : -1; }
-    CASE_BIGNUM_FIXNUM { return _ecl_big_sign(x) < 0 ? -1 :  1; }
+    CASE_FIXNUM_BIGNUM { return ecl_bigsgn(y) < 0 ?  1 : -1; }
+    CASE_BIGNUM_FIXNUM { return ecl_bigsgn(x) < 0 ? -1 :  1; }
     CASE_BIGNUM_BIGNUM { return _ecl_big_compare(x, y); }
     CASE_FIXNUM_RATIO;
     CASE_BIGNUM_RATIO { return ecl_number_compare(ecl_times(x, y->ratio.den), y->ratio.num); }

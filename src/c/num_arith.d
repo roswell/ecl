@@ -58,7 +58,7 @@ ecl_gcd(cl_object x, cl_object y)
 
   switch (ecl_t_of(x)) {
   case t_fixnum:
-    _ecl_big_set_fixnum(x_big, ecl_fixnum(x));
+    _ecl_big_set_fix(x_big, ecl_fixnum(x));
     x = x_big;
   case t_bignum:
     break;
@@ -67,7 +67,7 @@ ecl_gcd(cl_object x, cl_object y)
   }
   switch (ecl_t_of(y)) {
   case t_fixnum:
-    _ecl_big_set_fixnum(y_big, ecl_fixnum(y));
+    _ecl_big_set_fix(y_big, ecl_fixnum(y));
     y = y_big;
   case t_bignum:
     break;
