@@ -85,7 +85,7 @@ _ecl_big_count_bits(cl_object x) {
         else {
                 cl_object z = _ecl_big_register0();
                 mpz_com(ecl_bignum(z),ecl_bignum(x));
-                count = mpz_popcount(ecl_bignum(x));
+                count = mpz_popcount(ecl_bignum(z));
                 _ecl_big_register_free(z);
         }
         return count;
