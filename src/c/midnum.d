@@ -21,15 +21,11 @@
    access: _ecl_big_{get,set}_{idx,fix,ui,si,d,lf}
    mixing: _ecl_big_{mul,add}_ui
 
-   FIXME implement a version using two limbs [intmax_t uintmax_t]. Necessary
-   when we want to be able to represent full range of standard C ints.
-
-   FIXME I've stubbed a naive implementation of float_to_digits that does not
-   rely on bignums because printing floats were unstable due to overflows.
-
-   NOTES representing a midnum as [sign, uint] is not practical, because boole
-   operations require 2-complement. That's why using a signed number works best.
-   It would be nice to provide "school-book" complete fallback implementation.
+   FIXME after hardening this file, we've ended up in the situation where ECL
+   does not compile due to STORAGE-EXHAUSTED conditions. To use it for real, we
+   need to provide true bignum implementation. If you want to try it regardless,
+   comment out the error in storage_exhausted and use dummy si_float_to_digits
+   that may be found in the file '/src/c/printer/float_to_digits_dummy.d'.
 
    -- jd 2026-07-14 */
 
