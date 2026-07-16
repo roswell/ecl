@@ -231,8 +231,8 @@ struct ecl_bignum {
 #else
 /* FIXME we want for this to be uintmax_t + sign in the header. This way midnum
    will be able to store all C integer ranges. */
-typedef long long int big_num_t;
-typedef long long int ecl_limb_t;
+typedef intmax_t big_num_t;
+typedef intmax_t ecl_limb_t;
 
 struct ecl_bignum {
         _ECL_HDR;

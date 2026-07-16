@@ -144,50 +144,27 @@ extern ECL_API void _ecl_big_get_str(char *buf, cl_index n, cl_object x, int bas
 
 #define _ecl_big_odd_p(x)           ((ecl_bignum(x) & 1) != 0)
 #define _ecl_big_even_p(x)          ((ecl_bignum(x) & 1) == 0)
-static inline int
-_ecl_big_compare(cl_object x, cl_object y) {
-        big_num_t ix = ecl_bignum(x), iy = ecl_bignum(y);
-        if (ix < iy) return -1;
-        else         return (ix != iy);
-}
-
-/* Bit fiddling */
-static inline cl_fixnum
-_ecl_big_count_bits(cl_object x) {
-        cl_fixnum count;
-        big_num_t i = ecl_bignum(x);
-        big_num_t j = (i < 0) ? ~i : i;
-        for(count=0 ; j ; j >>=1) if (j & 1) count++;
-        return count;
-}
-
-static inline cl_fixnum
-_ecl_big_integer_length(cl_object x) {
-        cl_fixnum count;
-        big_num_t i = ecl_bignum(x);
-        big_num_t j = (i < 0) ? ~i : i;
-        for(count=0 ; j ; j >>=1) count++;
-        return count;
-}
-
-#define _ecl_big_tstbit(x,n) (ecl_bignum(x) & ((big_num_t)1<<n))
 
 extern ECL_API void
 _ecl_big_div_2exp(cl_object result, cl_object base, cl_index bits);
-
 extern ECL_API void
 _ecl_big_mul_2exp(cl_object result, cl_object base, cl_index bits);
 
-extern ECL_API void _ecl_int_mul(cl_object z, big_num_t x, big_num_t y);
-#define _ecl_big_mul(z, x, y)    _ecl_int_mul(z, ecl_bignum(x), ecl_bignum(y))
-#define _ecl_big_mul_ui(z, x, y) _ecl_int_mul(z, ecl_bignum(x), y)
+extern ECL_API int _ecl_big_compare(cl_object x, cl_object y);
+extern ECL_API void _ecl_big_neg(cl_object z, cl_object x);
 
-extern ECL_API void _ecl_int_add(cl_object z, big_num_t x, big_num_t y);
-#define _ecl_big_add(z, x, y) _ecl_int_add(z, ecl_bignum(x), ecl_bignum(y))
-#define _ecl_big_add_ui(z, x, y) _ecl_int_add(z, ecl_bignum(x), y)
+extern ECL_API void _ecl_big_mul(cl_object z, cl_object x, cl_object y);
+extern ECL_API void _ecl_big_mul_ui(cl_object z, cl_object x, unsigned long int ynum);
 
-extern ECL_API cl_index _ecl_big_sizeinbase(cl_object x, int base);
-#define _ecl_big_neg(z, x) (ecl_bignum(z) = -ecl_bignum(x))
+extern ECL_API void _ecl_big_add(cl_object z, cl_object x, cl_object y);
+extern ECL_API void _ecl_big_add_ui(cl_object z, cl_object x, unsigned long int ynum);
+
+#define _ecl_big_tstbit(x,n) (ecl_bignum(x) & ((big_num_t)1<<n))
+extern ECL_API cl_fixnum _ecl_big_count_bits(cl_object x);
+extern ECL_API cl_fixnum _ecl_big_integer_length(cl_object x);
+extern ECL_API cl_fixnum _ecl_big_sizeinbase(cl_object x, int base);
+
+
 
 #endif  /* ECL_GMPLIB */
 

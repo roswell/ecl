@@ -103,6 +103,13 @@ _ecl_big_register_normalize(cl_object x)
   return x==z ? _ecl_big_register_copy(z) : z;
 }
 
+int
+_ecl_big_compare(cl_object x, cl_object y) {
+  sbig_num_t ix = ecl_bignum(x), iy = ecl_bignum(y);
+  if (ix < iy) return -1;
+  else         return (ix != iy);
+}
+
 /* Math  */
 
 cl_object
@@ -127,18 +134,6 @@ _ecl_big_gcd(cl_object x, cl_object y)
 
   ecl_bignum(z) = (sbig_num_t)ux;
   return _ecl_big_register_normalize(z);
-}
-
-/* Negation */
-cl_object
-_ecl_big_negate(cl_object x)
-{
-  cl_object z = ecl_alloc_object(t_bignum);
-  sbig_num_t xnum = ecl_bignum(x);
-  /* For a minimal signed int value num=-num is UB. */
-  if (xnum == MOST_NEGATIVE_BIGNUM) storage_exhausted();
-  ecl_bignum(z) = -xnum;
-  return big_normalize(z);
 }
 
 /* Bit shifts */
@@ -179,8 +174,28 @@ _ecl_big_mul_2exp(cl_object z, cl_object x, cl_index bits)
   ecl_bignum(z) = (ubig_num_t)xnum << bits;
 }
 
+/* Negation */
+
+void
+_ecl_big_neg(cl_object z, cl_object x)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  /* For a minimal signed int value num=-num is UB. */
+  if (xnum == MOST_NEGATIVE_BIGNUM) storage_exhausted();
+  ecl_bignum(z) = -xnum;
+}
+
+cl_object
+_ecl_big_negate(cl_object x)
+{
+  cl_object z = ecl_alloc_object(t_bignum);
+  _ecl_big_neg(z, x);
+  return big_normalize(z);
+}
+
 /* Division
    INV the second argument is never 0 (ensured by callers) */
+
 void
 _ecl_big_div(cl_object z, cl_object x, cl_object y)
 {
@@ -249,7 +264,8 @@ _ecl_big_mul(cl_object z, cl_object x, cl_object y)
 void
 _ecl_big_mul_ui(cl_object z, cl_object x, unsigned long int ynum)
 {
-  cl_object y = _ecl_big_register0();
+  /* KLUDGE ecl_parse_integer calls this function with z=reg0. */
+  cl_object y = _ecl_big_register1();
   _ecl_big_set_ui(y, ynum);
   _ecl_big_mul(z, x, y);
 }
@@ -297,8 +313,21 @@ _int_add_int(sbig_num_t xnum, sbig_num_t ynum)
 }
 
 void
-_ecl_int_add(cl_object z, sbig_num_t x, sbig_num_t y)
-{ ecl_bignum(z) = _int_add_int(x, y); }
+_ecl_big_add(cl_object z, cl_object x, cl_object y)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
+  ecl_bignum(z) = _int_add_int(xnum, ynum);
+}
+
+void
+_ecl_big_add_ui(cl_object z, cl_object x, unsigned long int ynum)
+{
+  /* KLUDGE ecl_parse_integer calls this function with z=reg0. */
+  cl_object y = _ecl_big_register1();
+  _ecl_big_set_ui(y, ynum);
+  _ecl_big_add(z, x, y);
+}
 
 cl_object
 _ecl_big_plus_big(cl_object x, cl_object y)
@@ -550,19 +579,40 @@ fixnnint(cl_object x)
                         x);
 }
 
-/* Printing */
+/* Bit fiddling */
 
-cl_index
+cl_fixnum
+_ecl_big_count_bits(cl_object x) {
+  cl_fixnum count;
+  sbig_num_t i = ecl_bignum(x);
+  sbig_num_t j = (i < 0) ? ~i : i;
+  for(count=0 ; j ; j >>=1) if (j & 1) count++;
+  return count;
+}
+
+cl_fixnum
+_ecl_big_integer_length(cl_object x) {
+  cl_fixnum count;
+  sbig_num_t i = ecl_bignum(x);
+  sbig_num_t j = (i < 0) ? ~i : i;
+  for(count=0 ; j ; j >>=1) count++;
+  return count;
+}
+
+/* This function returns number of digits (no sign nor \0).  */
+cl_fixnum
 _ecl_big_sizeinbase(cl_object x, int base)
 {
   sbig_num_t num = ecl_bignum(x);
-  cl_index result=0;
+  cl_fixnum result=0;
   do {
     result++;
     num = num / base;
   } while(num);
   return result;
 }
+
+/* Printing */
 
 void
 _ecl_big_get_str(char *buf, cl_index n, cl_object x, int base)
