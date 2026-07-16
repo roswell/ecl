@@ -219,24 +219,22 @@ struct ecl_long_float {
    mutate numbers, so bignums always operate on registers. */
 
 #ifdef ECL_GMPLIB
-typedef mpz_t big_num_t;
 typedef mp_limb_t ecl_limb_t;
 
 struct ecl_bignum {
         _ECL_HDR;
-        big_num_t value;
+        mpz_t value;
 };
 #define ecl_bignum(o) ((o)->big.value)
 #define ecl_bigsgn(o) mpz_sgn(ecl_bignum(o))
 #else
-/* FIXME we want for this to be uintmax_t + sign in the header. This way midnum
-   will be able to store all C integer ranges. */
-typedef intmax_t big_num_t;
-typedef intmax_t ecl_limb_t;
+typedef uintmax_t ubig_num_t;
+typedef intmax_t  sbig_num_t;
+typedef intmax_t  ecl_limb_t;
 
 struct ecl_bignum {
         _ECL_HDR;
-        big_num_t value;
+        sbig_num_t value;
 };
 #define ecl_bignum(o) ((o)->big.value)
 #define ecl_bigsgn(o) ((o)->big.value<0 ? -1 : +1)

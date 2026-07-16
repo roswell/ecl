@@ -36,16 +36,6 @@
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
 
-#define MOST_NEGATIVE_BIGNUM LLONG_MIN
-#define MOST_POSITIVE_BIGNUM LLONG_MAX
-#define BIGNUM_BITS ECL_LONG_LONG_BITS
-
-/* Unsigned variant is used in mul_exp for negative xnum. Casting is done after
-   ensuring that big_num_t won't overflow. */
-
-typedef signed   long long sbig_num_t;
-typedef unsigned long long ubig_num_t;
-
 static void
 storage_exhausted (void) {
   cl_error(1, @'ext::storage-exhausted');
@@ -141,7 +131,7 @@ void
 _ecl_big_div_2exp(cl_object z, cl_object x, cl_index bits)
 {
   sbig_num_t xnum = ecl_bignum(x);
-  if (xnum == 0 || bits >= BIGNUM_BITS) {
+  if (xnum == 0 || bits >= ECL_BIGNUM_LIMB_BITS) {
     /* Right-shift floor towards negative infinity. */
     ecl_bignum(z) = (xnum<0) ? -1 : 0;
   } else {
@@ -163,7 +153,7 @@ _ecl_big_mul_2exp(cl_object z, cl_object x, cl_index bits)
     ecl_bignum(z) = 0;
     return;
   }
-  if (bits >= BIGNUM_BITS)
+  if (bits >= ECL_BIGNUM_LIMB_BITS)
     storage_exhausted();
   if ((xnum > 0 && (ubig_num_t)xnum >   (positive_limit >> bits)) ||
       (xnum < 0 && (ubig_num_t)xnum <= ~(negative_limit >> bits)) )
@@ -598,6 +588,14 @@ fixnnint(cl_object x)
 }
 
 /* Bit fiddling */
+
+bool
+_ecl_big_tstbit(cl_object x, cl_index n)
+{
+  if (n>=ECL_BIGNUM_LIMB_BITS)
+    return ecl_bignum(x) < 0;
+  return (ecl_bignum(x) & ((ubig_num_t)1<<n)) != 0;
+}
 
 cl_fixnum
 _ecl_big_count_bits(cl_object x) {

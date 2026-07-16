@@ -114,7 +114,10 @@ _ecl_big_count_bits(cl_object x) {
 
 #define _ecl_big_init2(x,n) (void)0
 
-#define ECL_BIGNUM_LIMB_BITS ECL_LONG_LONG_BITS
+#define MOST_NEGATIVE_BIGNUM INTMAX_MIN
+#define MOST_POSITIVE_BIGNUM INTMAX_MAX
+#define ECL_BIGNUM_LIMB_BITS INTMAX_WIDTH
+
 #define ECL_BIGNUM_DIM(x)    1
 #define ECL_BIGNUM_SIZE(x)   ecl_bigsgn(x)
 #define ECL_BIGNUM_USIZE(x)  1
@@ -159,12 +162,10 @@ extern ECL_API void _ecl_big_mul_ui(cl_object z, cl_object x, unsigned long int 
 extern ECL_API void _ecl_big_add(cl_object z, cl_object x, cl_object y);
 extern ECL_API void _ecl_big_add_ui(cl_object z, cl_object x, unsigned long int ynum);
 
-#define _ecl_big_tstbit(x,n) (ecl_bignum(x) & ((big_num_t)1<<n))
+extern ECL_API bool _ecl_big_tstbit(cl_object x, cl_index n);
 extern ECL_API cl_fixnum _ecl_big_count_bits(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_integer_length(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_sizeinbase(cl_object x, int base);
-
-
 
 #endif  /* ECL_GMPLIB */
 
