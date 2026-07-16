@@ -6752,20 +6752,6 @@ if test "${enable_manual}" != "no"; then
   fi
 fi
 
-if test "x$GMP_INCDIR" != "x"; then
-  GMP_CPPFLAGS="-I$GMP_INCDIR"
-fi
-if test "x$GMP_LIBDIR" != "x"; then
-  GMP_LDFLAGS="-L$GMP_LIBDIR"
-  if test "$enable_rpath" = "yes"; then
-    if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
-      GMP_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$GMP_LIBDIR,"`" $GMP_LDFLAGS"
-    fi
-  fi
-fi
-CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
-LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
-
 
 case ${enable_gmp} in #(
   portable) :
@@ -6774,6 +6760,8 @@ case ${enable_gmp} in #(
     with_system_gmp=no ;; #(
   system) :
     with_system_gmp=yes ;; #(
+  no) :
+    without_gmp=yes ;; #(
   *) :
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
 printf %s "checking for __gmpz_init in -lgmp... " >&6; }
@@ -6828,9 +6816,35 @@ fi
  ;;
 esac
 
-ECL_GMP_HEADER=
-if test "${with_system_gmp}" = "yes"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
+if test "x${without_gmp}" = "xyes" ; then
+  EXTRA_OBJS="${EXTRA_OBJS} midnum.o"
+else
+
+printf "%s\n" "#define ECL_GMPLIB 1" >>confdefs.h
+
+  EXTRA_OBJS="${EXTRA_OBJS} bignum.o"
+fi
+
+if test "x${without_gmp}" == "x"; then
+  if test "x$GMP_INCDIR" != "x"; then
+    GMP_CPPFLAGS="-I$GMP_INCDIR"
+  fi
+  if test "x$GMP_LIBDIR" != "x"; then
+    GMP_LDFLAGS="-L$GMP_LIBDIR"
+    if test "$enable_rpath" = "yes"; then
+      if (echo "$ECL_LDRPATH" | grep '~A') > /dev/null; then
+        GMP_LDFLAGS=`echo $ECL_LDRPATH | sed "s,~A,$GMP_LIBDIR,"`" $GMP_LDFLAGS"
+      fi
+    fi
+  fi
+  CPPFLAGS="$CPPFLAGS $GMP_CPPFLAGS"
+  LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
+fi
+
+if test "x${without_gmp}" == "x"; then
+  ECL_GMP_HEADER=
+  if test "${with_system_gmp}" = "yes"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
 printf %s "checking for __gmpz_init in -lgmp... " >&6; }
 if test ${ac_cv_lib_gmp___gmpz_init+y}
 then :
@@ -6881,7 +6895,7 @@ else case e in #(
 esac
 fi
 
-  ac_header= ac_cache=
+    ac_header= ac_cache=
 for ac_item in $ac_header_c_list
 do
   if test $ac_cache; then
@@ -6916,71 +6930,74 @@ then :
   ECL_GMP_HEADER='gmp.h'
 fi
 
-  if test "x$ECL_GMP_HEADER" = "x"; then
-    ac_fn_c_check_header_compile "$LINENO" "gmp/gmp.h" "ac_cv_header_gmp_gmp_h" "$ac_includes_default"
+    if test "x$ECL_GMP_HEADER" = "x"; then
+      ac_fn_c_check_header_compile "$LINENO" "gmp/gmp.h" "ac_cv_header_gmp_gmp_h" "$ac_includes_default"
 if test "x$ac_cv_header_gmp_gmp_h" = xyes
 then :
   ECL_GMP_HEADER='gmp/gmp.h'
 fi
 
-  fi
-else
-  SUBDIRS="${SUBDIRS} gmp"
-  CORE_LIBS="-leclgmp ${CORE_LIBS}"
-  if test ${enable_shared} = "no"; then
-    LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
-  fi
-fi
-
-
-EXTRA_OBJS="${EXTRA_OBJS} big.o"
-if test "x${with_system_gmp}" = "xno" ; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Configuring included GMP library:" >&5
-printf "%s\n" "$as_me: Configuring included GMP library:" >&6;}
-  test -d gmp && rm -rf gmp
-  if test -z "$gmp_build"; then
-    gmp_build="${build}"
-  fi
-  if test "x$with_c_gmp" = "xyes"; then
-    gmp_build=`echo ${gmp_build} | sed 's,[^-]*\(-.*\),none\1,'`
-    echo '***'
-    echo '***' BUILDING GMP WITH C!
-    echo '***' This is a last resort, either because of license or
-    echo '***' porting issues.
-    echo '***'
-  fi
-  ECL_GMP_HEADER='ecl/gmp.h'
-  if test "x$ABI" = "x"; then
-    GMP_ABI=""
+    fi
   else
-    GMP_ABI="ABI=$ABI"
-  fi
-  # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
-  # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
-  mkdir gmp
-    (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
-     $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
-     -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
-     --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
-     CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
-     "$GMP_ABI" $with_gmp_args)
-  if test ! -f gmp/config.status; then
-    as_fn_error $? "Failed to configure the GMP library." "$LINENO" 5
-  fi
-else
-  if test "x$ECL_GMP_HEADER" = "x"; then
-    as_fn_error $? "Can not find GMP header." "$LINENO" 5
+    SUBDIRS="${SUBDIRS} gmp"
+    CORE_LIBS="-leclgmp ${CORE_LIBS}"
+    if test ${enable_shared} = "no"; then
+      LIBRARIES="${LIBRARIES} ${LIBPREFIX}eclgmp.${LIBEXT}"
+    fi
   fi
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking GMP autoconf" >&5
-printf %s "checking GMP autoconf... " >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"${with_system_gmp}.${enable_slow_config}\"" >&5
-printf "%s\n" "\"${with_system_gmp}.${enable_slow_config}\"" >&6; }
-if test "x${enable_slow_config}" = "xyes"; then
-  with_system_gmp=no
+if test "x${without_gmp}" == "x"; then
+
+  if test "x${with_system_gmp}" = "xno" ; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Configuring included GMP library:" >&5
+printf "%s\n" "$as_me: Configuring included GMP library:" >&6;}
+    test -d gmp && rm -rf gmp
+    if test -z "$gmp_build"; then
+      gmp_build="${build}"
+    fi
+    if test "x$with_c_gmp" = "xyes"; then
+      gmp_build=`echo ${gmp_build} | sed 's,[^-]*\(-.*\),none\1,'`
+      echo '***'
+      echo '***' BUILDING GMP WITH C!
+      echo '***' This is a last resort, either because of license or
+      echo '***' porting issues.
+      echo '***'
+    fi
+    ECL_GMP_HEADER='ecl/gmp.h'
+    if test "x$ABI" = "x"; then
+      GMP_ABI=""
+    else
+      GMP_ABI="ABI=$ABI"
+    fi
+    # Crosscompilation for Android on Darwin requires replacing 'NM=nm'
+    # below with 'NM=$PLATFORM_PREFIX/bin/arm-linux-androideabi-nm'.
+    mkdir gmp
+        (destdir=`${PWDCMD}`; cd gmp && CC="${CC} ${PICFLAG}" \
+       $srcdir/gmp/configure --disable-shared --prefix=${destdir} \
+       -infodir=${destdir}/doc --includedir=${destdir}/ecl --with-pic \
+       --libdir=${destdir} --build=${gmp_build} --host=${host_alias} \
+       CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" CPPFLAGS="$CPPFLAGS" CC="${CC} ${PICFLAG}" \
+       "$GMP_ABI" $with_gmp_args)
+    if test ! -f gmp/config.status; then
+      as_fn_error $? "Failed to configure the GMP library." "$LINENO" 5
+    fi
+  else
+    if test "x$ECL_GMP_HEADER" = "x"; then
+      as_fn_error $? "Can not find GMP header." "$LINENO" 5
+    fi
+  fi
 fi
-if test "x${with_system_gmp}" = "xno"; then
+
+if test "x${without_gmp}" == "x"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking GMP autoconf" >&5
+printf %s "checking GMP autoconf... " >&6; }
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"${with_system_gmp}.${enable_slow_config}\"" >&5
+printf "%s\n" "\"${with_system_gmp}.${enable_slow_config}\"" >&6; }
+  if test "x${enable_slow_config}" = "xyes"; then
+    with_system_gmp=no
+  fi
+  if test "x${with_system_gmp}" = "xno"; then
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Using the GMP library to guess good compiler/linker flags" >&5
 printf %s "checking Using the GMP library to guess good compiler/linker flags... " >&6; }
@@ -7005,6 +7022,7 @@ printf %s "checking Linker flags... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${LDFLAGS}" >&5
 printf "%s\n" "${LDFLAGS}" >&6; }
 
+  fi
 fi
 
 if test "x$LIBFFI_INCDIR" != "x"; then

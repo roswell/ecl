@@ -33,7 +33,7 @@ ecl_abs_fixnum(cl_object x)
 static cl_object
 ecl_abs_bignum(cl_object x)
 {
-  return (_ecl_big_sign(x) < 0)? _ecl_big_negate(x) : x;
+  return (ecl_bigsgn(x) < 0)? _ecl_big_negate(x) : x;
 }
 
 static cl_object

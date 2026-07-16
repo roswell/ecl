@@ -210,14 +210,35 @@ struct ecl_long_float {
 };
 #define ecl_long_float(o) ((o)->longfloat.value)
 
-typedef mpz_t big_num_t;
+/* ECL features two implementations of bignums. One (default) is based on GMP,
+   and the other has no external dependencies. The latter is conforming but only
+   superficially -- when we exceed the maximum size of the number, then we
+   signal the condition STORAGE-EXHAUSTED.
+
+   Both representations share the same structure. Note that operations may
+   mutate numbers, so bignums always operate on registers. */
+
+#ifdef ECL_GMPLIB
 typedef mp_limb_t ecl_limb_t;
 
 struct ecl_bignum {
         _ECL_HDR;
-        big_num_t value;
+        mpz_t value;
 };
 #define ecl_bignum(o) ((o)->big.value)
+#define ecl_bigsgn(o) mpz_sgn(ecl_bignum(o))
+#else
+typedef uintmax_t ubig_num_t;
+typedef intmax_t  sbig_num_t;
+typedef intmax_t  ecl_limb_t;
+
+struct ecl_bignum {
+        _ECL_HDR;
+        sbig_num_t value;
+};
+#define ecl_bignum(o) ((o)->big.value)
+#define ecl_bigsgn(o) ((o)->big.value<0 ? -1 : +1)
+#endif
 
 struct ecl_ratio {
         _ECL_HDR;
