@@ -142,10 +142,14 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 # define _ecl_big_get_index(x)     (cl_index) _ecl_big_get(x)
 # define _ecl_big_get_fixnum(x)    (cl_fixnum)_ecl_big_get(x)
 
+#define _ecl_big_set_idx(x, i)      _ecl_big_set(x, (cl_index)i)
+#define _ecl_big_set_fix(x, i)      _ecl_big_set(x, (cl_fixnum)i)
 #define _ecl_big_set_ui(x, i)       _ecl_big_set(x, (unsigned long int)i)
 #define _ecl_big_set_si(x, i)       _ecl_big_set(x, (long int)i)
 #define _ecl_big_set_d(x, d)        _ecl_big_set(x, (double)d)
 
+#define _ecl_big_get_idx(x)         (cl_index)_ecl_big_get(x)
+#define _ecl_big_get_fix(x)         (cl_fixnum)_ecl_big_get(x)
 #define _ecl_big_get_ui(x)          (unsigned long int)_ecl_big_get(x)
 #define _ecl_big_get_si(x)          (long int) _ecl_big_get(x)
 #define _ecl_big_get_d(x)           (double)_ecl_big_get(x)
@@ -198,7 +202,7 @@ extern ECL_API void _ecl_int_mul(cl_object z, big_num_t x, big_num_t y);
 #define _ecl_big_mul_ui(z, x, y) _ecl_int_mul(z, ecl_bignum(x), y)
 
 extern ECL_API void _ecl_int_add(cl_object z, big_num_t x, big_num_t y);
-#define _ecl_big_add(z, x, y)    _ecl_int_add(z, ecl_bignum(x), ecl_bignum(y))
+#define _ecl_big_add(z, x, y) _ecl_int_add(z, ecl_bignum(x), ecl_bignum(y))
 #define _ecl_big_add_ui(z, x, y) _ecl_int_add(z, ecl_bignum(x), y)
 
 extern ECL_API cl_index _ecl_big_sizeinbase(cl_object x, int base);

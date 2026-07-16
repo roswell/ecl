@@ -11,17 +11,19 @@
  *
  */
 
-/* FIXME This code currently assumes long long int, as originally proposed by
-   Maciek. That said this has numerous fail scenarios:
+/* Revisions
 
-   - no overflow handling (we should signal STORAGE-EXHAUSTED condition)
-   - overflowing signed values is UB in C99
-   - we only mock fixnnint and fixint (missing implementation for bignums)
-   - bignum has often the same number of bits as FIXNUM (this is bad!)
-     ecl_ash(1, ECL_FIXNUM_BITS) will wrap back to "1" or signal condition
+   [rev 20050919 mp] initial revision (implement big_ll)
+   [rev 20260714 jd] make big_ll work (address bitrot)
+   [rev 20260716 jd] avoid UB and handle overflows
 
-   FIXME When the operation is about to overflow, signal a STORAGE-EXHAUSTED
-   condition.
+   FIXME implement stubs and incorrect functions:
+   coerce: fixnnint, fixint,
+   access: _ecl_big_{get,set}_{idx,fix,ui,si,d,lf}
+   mixing: _ecl_big_{mul,add}_ui
+
+   FIXME implement a version using two limbs [intmax_t uintmax_t]. Necessary
+   when we want to be able to represent full range of standard C ints.
 
    FIXME I've stubbed a naive implementation of float_to_digits that does not
    rely on bignums because printing floats were unstable due to overflows.
@@ -34,6 +36,21 @@
 
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+
+#define MOST_NEGATIVE_BIGNUM LLONG_MIN
+#define MOST_POSITIVE_BIGNUM LLONG_MAX
+#define BIGNUM_BITS ECL_LONG_LONG_BITS
+
+/* Unsigned variant is used in mul_exp for negative xnum. Casting is done after
+   ensuring that big_num_t won't overflow. */
+
+typedef signed   long long sbig_num_t;
+typedef unsigned long long ubig_num_t;
+
+static void
+storage_exhausted (void) {
+  cl_error(1, @'ext::storage-exhausted');
+}
 
 /* Initialization */
 void init_big(void) {}
@@ -73,21 +90,17 @@ _ecl_big_register_copy(cl_object old)
 static cl_object
 big_normalize(cl_object x)
 {
-  if (ecl_bignum(x) == 0ll)
-    return(ecl_make_fixnum(0));
-  if (MOST_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
-    return(ecl_make_fixnum(ecl_bignum(x)));
+  sbig_num_t xnum = ecl_bignum(x);
+  if (MOST_NEGATIVE_FIXNUM <= xnum && xnum <= MOST_POSITIVE_FIXNUM)
+    return ecl_make_fixnum(xnum);
   return x;
 }
 
 cl_object
 _ecl_big_register_normalize(cl_object x)
 {
-  if (ecl_bignum(x) == 0ll)
-    return(ecl_make_fixnum(0));
-  if (MOST_NEGATIVE_FIXNUM <= ecl_bignum(x) && ecl_bignum(x) <= MOST_POSITIVE_FIXNUM)
-    return(ecl_make_fixnum(ecl_bignum(x)));
-  return _ecl_big_register_copy(x);
+  cl_object z = big_normalize(x);
+  return x==z ? _ecl_big_register_copy(z) : z;
 }
 
 /* Math  */
@@ -95,62 +108,116 @@ _ecl_big_register_normalize(cl_object x)
 cl_object
 _ecl_big_gcd(cl_object x, cl_object y)
 {
-  big_num_t i = ecl_bignum(x), j = ecl_bignum(y);
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
   cl_object z = _ecl_big_register0();
-  /* FIXME for MOST-NEGATIVE-BIGNUM num=-num is UB (special-case it).  */
-  if (i<0) i=-i;
-  if (j<0) j=-j;
-  while ( 1 ) {
-    big_num_t k;
-    if ( i<j ) {
-      k = i;
-      i = j;
-      j = k;
-    }
-    if ( j == 0 ) {
-      ecl_bignum(z) = i;
-      return _ecl_big_register_normalize(z);
-    }
-    k = i % j;
-    i = j;
-    j = k;
+
+  ubig_num_t ux = (xnum < 0) ? -(ubig_num_t)xnum : xnum;
+  ubig_num_t uy = (ynum < 0) ? -(ubig_num_t)ynum : ynum;
+
+  while (uy != 0) {
+    ubig_num_t rem = ux % uy;
+    ux = uy;
+    uy = rem;
   }
+
+  /* This happens only for x=y=MOST_NEGATIVE_BIGNUM. */
+  if (ux > (ubig_num_t)MOST_POSITIVE_BIGNUM)
+    storage_exhausted();
+
+  ecl_bignum(z) = (sbig_num_t)ux;
+  return _ecl_big_register_normalize(z);
 }
 
-/* Negation
-   FIXME -INT_MIN IS ub*/
+/* Negation */
 cl_object
 _ecl_big_negate(cl_object x)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = - ecl_bignum(x);
+  sbig_num_t xnum = ecl_bignum(x);
+  /* For a minimal signed int value num=-num is UB. */
+  if (xnum == MOST_NEGATIVE_BIGNUM) storage_exhausted();
+  ecl_bignum(z) = -xnum;
   return big_normalize(z);
 }
 
-/* Division and modulo
-   FIXME INT_MIN/-1 is UB
-   FIXME INT_MIN%-1 is UB */
+/* Bit shifts */
+
+void
+_ecl_big_div_2exp(cl_object z, cl_object x, cl_index bits)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  if (xnum == 0 || bits >= BIGNUM_BITS) {
+    /* Right-shift floor towards negative infinity. */
+    ecl_bignum(z) = (xnum<0) ? -1 : 0;
+  } else {
+    /* Right-shifting negative integers is implementation defined. */
+    if (xnum<0) ecl_bignum(z) = ~(~xnum >> bits);
+    else        ecl_bignum(z) =    xnum >> bits;
+  }
+}
+
+void
+_ecl_big_mul_2exp(cl_object z, cl_object x, cl_index bits)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  /* Right-shifting negative integers is implementation defined.
+     That's why we cast limits to ubig_num_t. */
+  const ubig_num_t positive_limit = MOST_POSITIVE_BIGNUM;
+  const ubig_num_t negative_limit = MOST_NEGATIVE_BIGNUM;
+  if (xnum == 0) {
+    ecl_bignum(z) = 0;
+    return;
+  }
+  if (bits >= BIGNUM_BITS)
+    storage_exhausted();
+  if ((xnum > 0 && (ubig_num_t)xnum >   (positive_limit >> bits)) ||
+      (xnum < 0 && (ubig_num_t)xnum <= ~(negative_limit >> bits)) )
+    storage_exhausted();
+  /* Left-shifting negative integers is UB. We've already checked that the
+     result will fit in sbig_num_t, so we can safely cast it to unsigned.*/
+  ecl_bignum(z) = (ubig_num_t)xnum << bits;
+}
+
+/* Division
+   INV the second argument is never 0 (ensured by callers) */
+void
+_ecl_big_div(cl_object z, cl_object x, cl_object y)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
+  /* For a minimal signed int value num/-1 is UB. */
+  if (xnum == MOST_NEGATIVE_BIGNUM && ynum==-1)
+    storage_exhausted();
+  ecl_bignum(z) = xnum / ynum;
+}
+
+
 cl_object
 _ecl_big_divided_by_big(cl_object x, cl_object y)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = ecl_bignum(x) / ecl_bignum(y);
+  _ecl_big_div(z, x, y);
   return big_normalize(z);
 }
 
 cl_object
-_ecl_big_divided_by_fix(cl_object x, cl_fixnum y)
+_ecl_big_divided_by_fix(cl_object x, cl_fixnum ynum)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = ecl_bignum(x) / y;
+  cl_object y = _ecl_big_register0();
+  _ecl_big_set_fix(y, ynum);
+  _ecl_big_div(z, x, y);
   return big_normalize(z);
 }
 
 cl_object
-_ecl_fix_divided_by_big(cl_fixnum x, cl_object y)
+_ecl_fix_divided_by_big(cl_fixnum xnum, cl_object y)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = x / ecl_bignum(y);
+  cl_object x = _ecl_big_register0();
+  _ecl_big_set_fix(x, xnum);
+  _ecl_big_div(z, x, y);
   return big_normalize(z);
 }
 
@@ -179,100 +246,133 @@ _ecl_big_floor(cl_object x, cl_object y, cl_object *pr)
   return _big_truncate(x, y, pr);
 }
 
-/* Bit shifts */
-/* FIXME integer overlow;
-   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign
-   FIXME right-shifting negative integers is implementation defined */
-
-void
-_ecl_big_div_2exp(cl_object z, cl_object x, cl_index bits)
-{ ecl_bignum(z) = ecl_bignum(x) >> bits; }
-
-void
-_ecl_big_mul_2exp(cl_object z, cl_object x, cl_index bits)
-{
-  /* FIXME this overflows in (random 3), because we shift by (1<<64)=1 bits. */
-  ecl_bignum(z) = ecl_bignum(x) << bits; }
-
 /* Multiplication */
-/* FIXME integer overlow
-   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign */
 
-static long long int
-_int_mul_int(big_num_t x, big_num_t y)
-{ return x * y; }
+static sbig_num_t
+_int_mul_int(sbig_num_t xnum, sbig_num_t ynum)
+{
+  if (xnum!=0 && ynum!=0) {
+    if ((xnum>0 && ynum>0 && xnum > MOST_POSITIVE_BIGNUM / ynum) ||
+        (xnum<0 && ynum<0 && xnum < MOST_POSITIVE_BIGNUM / ynum) ||
+        /* xnum>0, so we avoid UB  MOST_NEGATIVE_BIGNUM/-1. */
+        (xnum>0 && ynum<0 && ynum < MOST_NEGATIVE_BIGNUM / xnum) ||
+        (xnum<0 && ynum>0 && xnum < MOST_NEGATIVE_BIGNUM / ynum))
+      storage_exhausted();
+  }
+  return xnum * ynum;
+}
 
 void
-_ecl_int_mul(cl_object z, big_num_t x, big_num_t y)
-{ ecl_bignum(z) = _int_mul_int(x, y); }
+_ecl_big_mul(cl_object z, cl_object x, cl_object y)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
+  ecl_bignum(z) = _int_mul_int(xnum, ynum);
+}
+
+void
+_ecl_big_mul_ui(cl_object z, cl_object x, unsigned long int ynum)
+{
+  cl_object y = _ecl_big_register0();
+  _ecl_big_set_ui(y, ynum);
+  _ecl_big_mul(z, x, y);
+}
 
 cl_object
 _ecl_big_times_big(cl_object x, cl_object y)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  _ecl_int_mul(z, ecl_bignum(x), ecl_bignum(y));
+  _ecl_big_mul(z, x, y);
+  /* bignum x bignum is always bignum - no need for big_normalize. */
   return z;
 }
 
 cl_object
-_ecl_big_times_fix(cl_object x, cl_fixnum y)
+_ecl_big_times_fix(cl_object x, cl_fixnum ynum)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  _ecl_int_mul(z, ecl_bignum(x), y);
+  cl_object y = _ecl_big_register0();
+  _ecl_big_set_fix(y, ynum);
+  _ecl_big_mul(z, x, y);
   return big_normalize(z);
 }
 
 cl_object
-_ecl_fix_times_fix(cl_fixnum x, cl_fixnum y)
+_ecl_fix_times_fix(cl_fixnum xnum, cl_fixnum ynum)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  _ecl_int_mul(z, x, y);
+  cl_object x = _ecl_big_register0();
+  cl_object y = _ecl_big_register1();
+  _ecl_big_set_fix(x, xnum);
+  _ecl_big_set_fix(y, ynum);
+  _ecl_big_mul(z, x, y);
   return big_normalize(z);
 }
 
 /* Addition */
-/* FIXME integer overlow
-   FIXME overflow for signed numbers is UB, switch to uintmax_t + sign */
 
-static long long int
-_int_add_int(big_num_t x, big_num_t y)
-{ return x + y; }
+static sbig_num_t
+_int_add_int(sbig_num_t xnum, sbig_num_t ynum)
+{
+  if ((xnum > 0 && ynum > 0 && xnum > MOST_POSITIVE_BIGNUM - ynum) ||
+      (xnum < 0 && ynum < 0 && xnum < MOST_NEGATIVE_BIGNUM - ynum))
+    storage_exhausted();
+  return xnum+ynum;
+}
 
 void
-_ecl_int_add(cl_object z, big_num_t x, big_num_t y)
+_ecl_int_add(cl_object z, sbig_num_t x, sbig_num_t y)
 { ecl_bignum(z) = _int_add_int(x, y); }
 
 cl_object
 _ecl_big_plus_big(cl_object x, cl_object y)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  _ecl_int_add(z, ecl_bignum(x), ecl_bignum(y));
+  _ecl_big_add(z, x, y);
   return big_normalize(z);
 }
 
 cl_object
-_ecl_big_plus_fix(cl_object x, cl_fixnum y)
+_ecl_big_plus_fix(cl_object x, cl_fixnum ynum)
 {
-  cl_object z = ecl_alloc_object(t_bignum);
-  _ecl_int_add(z, ecl_bignum(x), y);
-  return big_normalize(z);
+  cl_object y = _ecl_big_register0();
+  _ecl_big_set_fix(y, ynum);
+  return _ecl_big_plus_big(x, y);
 }
 
 /* Subtraction */
-cl_object
-_ecl_fix_minus_big(cl_fixnum x, cl_object y)
+
+static sbig_num_t
+_int_sub_int(sbig_num_t xnum, sbig_num_t ynum)
 {
-  cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = x - ecl_bignum(y);
-  return big_normalize(z);
+  if ((xnum > 0 && ynum < 0 && xnum > MOST_POSITIVE_BIGNUM + ynum) ||
+      (xnum < 0 && ynum > 0 && xnum < MOST_NEGATIVE_BIGNUM + ynum))
+    storage_exhausted();
+  return xnum-ynum;
+}
+
+static void
+_ecl_big_sub(cl_object z, cl_object x, cl_object y)
+{
+  sbig_num_t xnum = ecl_bignum(x);
+  sbig_num_t ynum = ecl_bignum(y);
+  ecl_bignum(z) = _int_sub_int(xnum, ynum);
 }
 
 cl_object
 _ecl_big_minus_big(cl_object x, cl_object y)
 {
   cl_object z = ecl_alloc_object(t_bignum);
-  ecl_bignum(z) = ecl_bignum(x) - ecl_bignum(y);
+  _ecl_big_sub(z, x, y);
   return big_normalize(z);
+}
+
+cl_object
+_ecl_fix_minus_big(cl_fixnum xnum, cl_object y)
+{
+  cl_object x = _ecl_big_register0();
+  _ecl_big_set_fix(x, xnum);
+  return _ecl_big_minus_big(x, y);
 }
 
 /* Boole */
@@ -340,7 +440,7 @@ static void                     /* xnor */
 mid_bool_eqv(cl_object z, cl_object x, cl_object y)
 { ecl_bignum(z) = ~(ecl_bignum(x) ^ ecl_bignum(y)); }
 
-static _ecl_big_binary_op bignum_operations[16] = {
+static const _ecl_big_binary_op bignum_operations[16] = {
   mid_bool_clr,                 /* ECL_BOOLCLR */
   mid_bool_and,                 /* ECL_BOOLAND */
   mid_bool_andc2,               /* ECL_BOOLANDC2 */
@@ -397,10 +497,12 @@ fixnnint(cl_object x)
                         x);
 }
 
+/* Printing */
+
 cl_index
 _ecl_big_sizeinbase(cl_object x, int base)
 {
-  big_num_t num = ecl_bignum(x);
+  sbig_num_t num = ecl_bignum(x);
   cl_index result=0;
   do {
     result++;
