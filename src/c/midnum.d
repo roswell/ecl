@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * midnum.c - bignum with fixed precision
+ * midnum.c - bignum fallback for platforms without GMP support
  *
  * Copyright (c) 2005 Maciek Pasternacki
  * Copyright (c) 2026 Daniel Kochmański
@@ -27,7 +27,10 @@
    comment out the error in storage_exhausted and use dummy si_float_to_digits
    that may be found in the file '/src/c/printer/float_to_digits_dummy.d'.
 
-   -- jd 2026-07-14 */
+   Unfortunately this structure is not capable of storing all standard C types,
+   although its range is winder than fixnums.
+
+   -- jd 2026-07-16 */
 
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
