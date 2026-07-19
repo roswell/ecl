@@ -215,7 +215,7 @@ When embedding ECL it is normally advisable to set up an @code{unwind-protect} f
 
 Besides this, normal mechanisms for exit, such as @coderef{ext:quit}, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using @code{unwind-protect} blocks.
 
-@seealso ECL_CATCH_ALL
+@seealso{ECL_CATCH_ALL}
 @end defmac
 
 @cppdef ecl_clear_interrupts
