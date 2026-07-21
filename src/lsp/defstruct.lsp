@@ -334,6 +334,29 @@
                                (or (not certain) subtypep))))))))
         (return-from %struct-layout-compatible-p nil))))
 
+(defun cycle-include-p (name include &optional (visited nil))
+  ;; when in build process, no check.
+  (when (member :ecl-min *features*)
+    (return-from cycle-include-p nil))
+
+  (let ((parent (if (consp include) (car include) include)))
+    (when parent
+      (labels ((check (current-parent visited-list)
+                 ;; if (eq include name) => t
+                 (when (eq current-parent name)
+                   (return-from cycle-include-p t))
+
+                 (when (member current-parent visited-list)
+                   (return-from cycle-include-p nil))
+
+                 (let ((grand-parent-info (get-sysprop current-parent 'structure-include)))
+                   (when grand-parent-info
+                     (let ((grand-parent (if (consp grand-parent-info)
+                                             (car grand-parent-info)
+                                             grand-parent-info)))
+                       (check grand-parent (cons current-parent visited-list)))))))
+        (check parent visited)))))
+
 (defun define-structure (name conc-name type named slots slot-descriptions
                          copier include print-function print-object constructors
                          offset name-offset documentation predicate)
@@ -345,6 +368,10 @@
                          (member name descs :key #'car :test #'equal))
                 (error "Duplicate slot name ~a." name)))))
         slot-descriptions)
+  ;; Check circular inheritance
+  (when (cycle-include-p name include)
+    (error "Circular inheritance detected: ~s inherirts from ~s."
+           name include))
   (when (get-sysprop name 'is-a-structure)
     (let ((old-slot-descriptions (get-sysprop name 'structure-slot-descriptions)))
       (unless (%struct-layout-compatible-p old-slot-descriptions slot-descriptions)
