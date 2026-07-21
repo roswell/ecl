@@ -53,7 +53,7 @@ AC_ARG_ENABLE(boehm,
 AC_ARG_ENABLE(libatomic,
   AS_HELP_STRING( [--enable-libatomic],
                   [version of the libatomic-ops library]
-                  [(auto|included|system, default=auto)] ),
+                  [(no|included|system|auto, default=auto)] ),
   [], [enable_libatomic=auto] )
 
 AC_ARG_ENABLE(soname,
@@ -820,7 +820,7 @@ else
   ECL_ADD_FEATURE(cxx-core)
 fi
 
-ECL_LIBATOMIC_OPS
+ECL_ATOMICS
 
 dnl ----------------------------------------------------------------------
 dnl Lisp library and libecl features
