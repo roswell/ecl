@@ -117,7 +117,7 @@ ecl_bds_bind_inl(cl_env_ptr env, cl_object s, cl_object v)
                  * prevent segfaults when we are interrupted with a
                  * call to ecl_bds_unwind. */
                 slot->symbol = ECL_DUMMY_TAG;
-                AO_nop_full();
+                ecl_atomic_thread_fence();
                 ++env->bds_stack.top;
                 /* Then we disable interrupts to ensure that
                  * ecl_bds_unwind doesn't overwrite the symbol with
@@ -143,7 +143,7 @@ ecl_bds_push_inl(cl_env_ptr env, cl_object s)
                 slot = env->bds_stack.top+1;
                 if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
                 slot->symbol = ECL_DUMMY_TAG;
-                AO_nop_full();
+                ecl_atomic_thread_fence();
                 ++env->bds_stack.top;
                 ecl_disable_interrupts_env(env);
                 slot->symbol = s;

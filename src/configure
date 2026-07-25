@@ -11570,6 +11570,9 @@ else case e in #(
 esac
 fi
 
+  if test "x${use_stdatomic}" = "xno" -a "x${enable_libatomic}" = "xno"; then
+    as_fn_error $? "ECL needs either stdatomic.h or libatomic_ops" "$LINENO" 5
+  fi
   if test "x${use_stdatomic}" = "xno" -o "x${enable_libatomic}" = "xsystem"; then
     ac_fn_c_check_header_compile "$LINENO" "atomic_ops.h" "ac_cv_header_atomic_ops_h" "$ac_includes_default"
 if test "x$ac_cv_header_atomic_ops_h" = xyes

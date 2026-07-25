@@ -1087,6 +1087,9 @@ case "${enable_libatomic}" in
 esac
 if test "x${enable_threads}" != "xno"; then
   AC_CHECK_HEADER([stdatomic.h],[use_stdatomic=yes; system_libatomic=no],[use_stdatomic=no],[])
+  if test "x${use_stdatomic}" = "xno" -a "x${enable_libatomic}" = "xno"; then
+    AC_MSG_ERROR(ECL needs either stdatomic.h or libatomic_ops)
+  fi
   if test "x${use_stdatomic}" = "xno" -o "x${enable_libatomic}" = "xsystem"; then
     AC_CHECK_HEADER([atomic_ops.h],[system_libatomic=yes],[system_libatomic=no],[])
   fi
