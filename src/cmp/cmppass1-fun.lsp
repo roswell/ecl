@@ -88,6 +88,28 @@
                               :args local-funs body-c1form (eq origin 'LABELS))
         body-c1form)))
 
+(defun c1lambda (args)
+  (check-args-number 'LAMBDA args 1)
+
+  (when (eq (first args) 'EXT:LAMBDA-BLOCK)
+    (return-from c1lambda `(flet ((,@(cdr args))) #',(second args))))
+
+  (ext:when-let* ((decl (si:process-declarations (cddr args)))
+                  (name (function-block-name-declaration decl)))
+    (return-from c1lambda `(flet ((,name ,@(cdr args))) #',name)))
+
+  (let* ((fun (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
+                (c1compile-function (rest args))))
+         (var (fun-var fun))
+         (body-c1form (make-c1form* 'VARIABLE :args var nil)))
+    (setf (fun-ref-ccb fun) t)
+    (loop while (update-fun-closure-type fun))
+    (add-to-read-nodes var body-c1form)
+    ;; Treating (lambda ...) as (flet ((f ...)) #'f) keeps things
+    ;; simpler in the backend
+    (make-c1form* 'LOCALS :type (c1form-type body-c1form)
+                          :args (list fun) body-c1form nil)))
+
 ;;; During Pass1, a lambda-list
 ;;;
 ;;; (   { var }*
@@ -123,7 +145,8 @@
 ;;; supplied) and an implicit block.
 
 (defun c1compile-function (lambda-list-and-body
-                           &key (fun (make-fun)) (name (fun-name fun)))
+                           &key (fun (make-fun :var (make-var :name (gensym) :kind :object)))
+                                (name (fun-name fun)))
   (let ((lambda (if name
                     `(ext:lambda-block ,name ,@lambda-list-and-body)
                     `(lambda ,@lambda-list-and-body))))
@@ -152,7 +175,7 @@
       (setf (fun-lambda fun) lambda-expr)
       (if global
           (multiple-value-setq (cfun exported) (exported-fname name))
-          (setf cfun (next-cfun "LC~D~A" name) exported nil))
+          (setf cfun (next-cfun "LC~D~A" (or name 'lambda)) exported nil))
       (if exported
           ;; Check whether the function was proclaimed to have a certain
           ;; number of arguments, and otherwise produce a function with
