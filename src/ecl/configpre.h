@@ -76,6 +76,9 @@
 /* ECL_USE_MPROTECT */
 #undef ECL_USE_MPROTECT
 
+/* ECL_USE_STD_ATOMIC */
+#undef ECL_USE_STD_ATOMIC
+
 /* Allow loading dynamically linked code */
 #undef ENABLE_DLOPEN
 

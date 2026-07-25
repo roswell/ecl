@@ -22,8 +22,8 @@ ecl_atomic_get(cl_object *slot)
 {
   cl_object old;
   do {
-    old = (cl_object)AO_load((AO_t*)slot);
-  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)old, (AO_t)ECL_NIL));
+    old = (cl_object)ecl_atomic_load(slot);
+  } while (!ecl_atomic_compare_and_swap_full(slot, old, ECL_NIL));
   return old;
 }
 
@@ -32,9 +32,9 @@ ecl_atomic_psh(cl_object *slot, cl_object cons)
 {
   cl_object cdr;
   do {
-    cdr = (cl_object)AO_load((AO_t*)slot);
+    cdr = (cl_object)ecl_atomic_load(slot);
     ECL_RPLACD(cons, cdr);
-  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)cdr, (AO_t)cons));
+  } while (!ecl_atomic_compare_and_swap_full(slot, cdr, cons));
   return cdr;
 }
 
@@ -43,22 +43,22 @@ ecl_atomic_pop(cl_object *slot)
 {
   cl_object cons, rest;
   do {
-    cons = (cl_object)AO_load((AO_t*)slot);
+    cons = (cl_object)ecl_atomic_load(slot);
     rest = CDR(cons);
-  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)cons, (AO_t)rest));
+  } while (!ecl_atomic_compare_and_swap_full(slot, cons, rest));
   return cons;
 }
 
 cl_index
 ecl_atomic_index_incf(cl_index *slot)
 {
-  AO_t old;
-  AO_t next;
+  cl_index old;
+  cl_index next;
   do {
-    old = AO_load((AO_t*)slot);
+    old = ecl_atomic_load(slot);
     next = old+1;
-  } while (!AO_compare_and_swap_full((AO_t*)slot, (AO_t)old, (AO_t)next));
-  return (cl_index)next;
+  } while (!ecl_atomic_compare_and_swap_full(slot, old, next));
+  return next;
 }
 
 #endif /* ECL_THREADS */
