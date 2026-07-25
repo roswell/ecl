@@ -502,7 +502,7 @@ ecl_bds_bind(cl_env_ptr env, cl_object s, cl_object v)
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
-  AO_nop_full();
+  ecl_atomic_thread_fence();
   ++env->bds_stack.top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
@@ -534,7 +534,7 @@ ecl_bds_push(cl_env_ptr env, cl_object s)
   slot = env->bds_stack.top+1;
   if (slot >= env->bds_stack.limit) slot = ecl_bds_overflow();
   slot->symbol = ECL_DUMMY_TAG;
-  AO_nop_full();
+  ecl_atomic_thread_fence();
   ++env->bds_stack.top;
   ecl_disable_interrupts_env(env);
   slot->symbol = s;
@@ -695,7 +695,7 @@ _ecl_frs_push(cl_env_ptr env)
 {
   /* We store a dummy tag first, to make sure that it is safe to
    * interrupt this method with a call to ecl_unwind. Otherwise, a
-   * stray ECL_PROTECT_TAG will lead to segfaults. AO_nop_full is
+   * stray ECL_PROTECT_TAG will lead to segfaults. The memory fence is
    * needed to ensure that the CPU doesn't reorder the memory
    * stores. */
   ecl_frame_ptr output = env->frs_stack.top+1;
@@ -704,7 +704,7 @@ _ecl_frs_push(cl_env_ptr env)
     output = env->frs_stack.top+1;
   }
   output->frs_val = ECL_DUMMY_TAG;
-  AO_nop_full();
+  ecl_atomic_thread_fence();
   ++env->frs_stack.top;
   output->frs_bds_ndx = env->bds_stack.top - env->bds_stack.org;
   output->frs_run_ndx = ECL_STACK_INDEX(env);

@@ -407,7 +407,7 @@ ecl_alloc_instance(cl_index slots)
 static cl_index stamp = 0;
 cl_index ecl_next_stamp() {
 #if ECL_THREADS
-  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+  return ecl_atomic_fetch_and_add(&stamp, 1) + 1;
 #else
   return ++stamp;
 #endif
