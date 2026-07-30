@@ -44,7 +44,7 @@
       (dolist (def (nreverse defs))
         (let ((fun (first def)))
           ;; The closure type will be fixed later on by COMPUTE-...
-          (push (c1compile-function (rest def) :fun fun) local-funs))))
+          (push (c1compile-function (rest def) fun) local-funs))))
 
     ;; When we are in a LABELs form, we have to propagate the external
     ;; variables from one function to the other functions that use it.
@@ -90,25 +90,23 @@
 
 (defun c1lambda (args)
   (check-args-number 'LAMBDA args 1)
-
   (when (eq (first args) 'EXT:LAMBDA-BLOCK)
     (return-from c1lambda `(flet ((,@(cdr args))) #',(second args))))
-
   (ext:when-let* ((decl (si:process-declarations (cddr args)))
                   (name (function-block-name-declaration decl)))
     (return-from c1lambda `(flet ((,name ,@(cdr args))) #',name)))
-
-  (let* ((fun (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
-                (c1compile-function (rest args))))
-         (var (fun-var fun))
-         (body-c1form (make-c1form* 'VARIABLE :args var nil)))
+  (let* ((var (make-var :name (gensym) :kind :object))
+         (fun (make-fun :name nil :var var)))
+    (let ((*cmp-env* (cmp-env-copy *cmp-env*)))
+      (c1compile-function (rest args) fun))
     (setf (fun-ref-ccb fun) t)
     (loop while (update-fun-closure-type fun))
-    (add-to-read-nodes var body-c1form)
-    ;; Treating (lambda ...) as (flet ((f ...)) #'f) keeps things
-    ;; simpler in the backend
-    (make-c1form* 'LOCALS :type (c1form-type body-c1form)
-                          :args (list fun) body-c1form nil)))
+    (let ((body-c1form (make-c1form* 'VARIABLE :args var nil)))
+      (add-to-read-nodes var body-c1form)
+      ;; Treating (lambda ...) as (flet ((f ...)) #'f) keeps things
+      ;; simpler in the backend.
+      (make-c1form* 'LOCALS :type (c1form-type body-c1form)
+                            :args (list fun) body-c1form nil))))
 
 ;;; During Pass1, a lambda-list
 ;;;
@@ -144,14 +142,12 @@
 ;;; Body' is body possibly surrounded by a LET* (if &aux parameters are
 ;;; supplied) and an implicit block.
 
-(defun c1compile-function (lambda-list-and-body
-                           &key (fun (make-fun :var (make-var :name (gensym) :kind :object)))
-                                (name (fun-name fun)))
+(defun c1compile-function (lambda-list-and-body fun
+                           &aux (name (fun-name fun)))
   (let ((lambda (if name
                     `(ext:lambda-block ,name ,@lambda-list-and-body)
                     `(lambda ,@lambda-list-and-body))))
-    (setf (fun-name fun) name
-          (fun-lambda-expression fun) lambda 
+    (setf (fun-lambda-expression fun) lambda
           (fun-parent fun) *current-function*))
   (when *current-function*
     (push fun (fun-child-funs *current-function*)))
