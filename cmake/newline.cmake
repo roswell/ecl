@@ -1,0 +1,26 @@
+set(ECL_NEWLINE "" CACHE STRING "New line characters used")
+set(ECL_NEWLINE_IS_CRLF "" CACHE STRING "New line is CRLF (Windows)")
+set(ECL_NEWLINE_IS_LFCR "" CACHE STRING "New line is LFCR (WAT?)")
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/newline" "a\nb")
+
+file(READ "${CMAKE_CURRENT_BINARY_DIR}/newline" FILE_CONTENT HEX LIMIT 1024)
+
+string(FIND "${FILE_CONTENT}" "610d0a62" HAS_CRLF)
+string(FIND "${FILE_CONTENT}" "610a0d62" HAS_LFCR)
+string(FIND "${FILE_CONTENT}" "610a62" HAS_LF)
+string(FIND "${FILE_CONTENT}" "610d62" HAS_CR)
+
+if(HAS_CRLF GREATER -1)
+  set(ECL_NEWLINE "CRLF")
+  set(ECL_NEWLINE_IS_CRLF 1)
+elseif(HAS_LFCR GREATER -1)
+  set(ECL_NEWLINE "LFCR")
+  set(ECL_NEWLINE_IS_LFCR 1)
+elseif(HAS_LF GREATER -1)
+  set(ECL_NEWLINE "LF")
+elseif(HAS_CR GREATER -1)
+  set(ECL_NEWLINE "CR")
+else()
+  message(FATAL_ERROR "Unable to determine linefeed mode")
+endif()
