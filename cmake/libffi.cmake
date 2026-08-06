@@ -1,0 +1,5 @@
+if(ECL_WITH_LIBFFI)
+  set(HAVE_LIBFFI)
+else()
+  unset(HAVE_LIBFFI)
+endif()
