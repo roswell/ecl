@@ -346,10 +346,7 @@
                (when (member current-parent visited-list)
                  (return-from cycle-include-p nil))
                (ext:when-let ((grand-parent-info (get-sysprop current-parent 'structure-include)))
-                 (let ((grand-parent (if (consp grand-parent-info)
-                                         (car grand-parent-info)
-                                         grand-parent-info)))
-                   (check grand-parent (list* current-parent visited-list))))))
+                 (check grand-parent-info (list* current-parent visited-list)))))
       (check parent visited))))
 
 (defun define-structure (name conc-name type named slots slot-descriptions
@@ -365,7 +362,7 @@
         slot-descriptions)
   ;; Check circular inheritance
   (when (cycle-include-p name include)
-    (error "Circular inheritance detected: ~s inherirts from ~s." name include))
+    (error "Circular inheritance detected: ~s inherits from ~s." name include))
   (when (get-sysprop name 'is-a-structure)
     (let ((old-slot-descriptions (get-sysprop name 'structure-slot-descriptions)))
       (unless (%struct-layout-compatible-p old-slot-descriptions slot-descriptions)
