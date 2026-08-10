@@ -43,6 +43,10 @@
 - bugfix: MOP:WRITER-METHOD-CLASS correctly returns for non-standard
   classes STANDARD-WRITER-METHOD (was STANDARD-READER-METHOD)
 
+- bugfix: MOP:ENSURE-GENERIC-FUNCTION-USING-CLASS tested gf class variable
+  to determine whether the specified method class is a symbol (MOP mandates
+  transforming symbols to metaobjects)
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
