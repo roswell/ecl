@@ -285,7 +285,7 @@ their lambda lists ~A and ~A are not congruent."
                             funcallable-standard-class
                             structure-class))
                   'standard-optimized-writer-method
-                  'standard-reader-method)))
+                  'standard-writer-method)))
 
 ;;; Error messages
 (defmethod no-applicable-method (gf &rest args)
