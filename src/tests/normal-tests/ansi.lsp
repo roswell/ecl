@@ -120,6 +120,17 @@
         (signals error (defstruct (my-struct (:constructor make-my-struct)) slot-1))
         (finishes (make-my-struct))))
 
+;; Regression test
+;; Issue #840 ;; defstruct may lead to infinite recursion in printer and in other places
+;; https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/840
+(ext:with-clean-symbols (self-ref other-a other-b other-c)
+  (test ansi.8.defstruct-self-include
+        (signals error (eval '(defstruct (self-ref (:include self-ref)))))
+        (eval '(defstruct other-a))
+        (eval '(defstruct (other-b (:include other-a))))
+        (eval '(defstruct (other-c (:include other-b))))
+        (signals error (eval '(defstruct (other-a (:include other-c)))))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
