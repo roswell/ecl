@@ -1,25 +1,36 @@
 FILES= *.txi */*.txi figures/*
 
+MANNAME=ecl-manual
+HTMLDIR=$(MANNAME)
+PDFNAME=$(MANNAME).pdf
+# left this as "ecl" for historic reasons
+INFONAME=ecl.info
+
+CWD=$(shell pwd)
+
 .PHONY: all pdf info html
 
 all: pdf info html
 
-pdf: manual.pdf
-info: ecl.info.gz
-html: html/index.html
+pdf: $(PDFNAME)
+info: $(INFONAME).gz
+html: $(HTMLDIR)/index.html
 
-manual.pdf: $(FILES)
-	texi2pdf manual.txi
+$(PDFNAME): $(FILES)
+	texi2pdf manual.txi \
+	&& cp -pf manual.pdf $(PDFNAME)
 
-ecl.info.gz: $(FILES)
-	$(MAKEINFO) --no-split manual.txi
-	gzip < ecl.info > ecl.info.gz
+$(INFONAME).gz: $(FILES)
+	$(MAKEINFO) -o $(INFONAME) --no-split manual.txi
+	gzip < $(INFONAME) > $(INFONAME).gz
 
-html/index.html: $(FILES)
-	$(MAKEINFO) --html --css-include=ecl.css --split=section manual.txi
-	rm -rf html
-	mv ecl html
-	cp -r figures html
+$(HTMLDIR)/index.html: $(FILES)
+	-rm -rf $(HTMLDIR)/
+	$(MAKEINFO) -o $(HTMLDIR) --html --css-include=ecl.css --split=section manual.txi
+	cp -r figures $(HTMLDIR)/
 
 clean:
-	rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,info-1,info-2,info.gz,html} html
+	-rm -rf *.{aux,cf,cfs,cp,cpp,cpps,cps,ex,exs,fn,fns,ft,fts,log,lsp,lsps,toc,tp,tps,vr,vrs,pdf,info,info-1,info-2,info.gz,html} html/ \
+		manual.[ceflvpa]* manual.toc manual.tp manual.tps \
+		$(PDFNAME) $(HTMLDIR)/ \
+		$(INFONAME) $(INFONAME).gz
