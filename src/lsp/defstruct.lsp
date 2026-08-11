@@ -345,7 +345,8 @@
                  (return-from cycle-include-p t))
                (when (member current-parent visited-list)
                  (return-from cycle-include-p nil))
-               (ext:when-let ((grand-parent-info (get-sysprop current-parent 'structure-include)))
+               (ext:when-let ((grand-parent-info
+                               (get-sysprop current-parent 'structure-include)))
                  (check grand-parent-info (list* current-parent visited-list)))))
       (check parent visited))))
 
