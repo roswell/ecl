@@ -49,7 +49,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
     _ecl_big_add_ui(integer_part, integer_part, d);
   }
   if (sign < 0) {
-    _ecl_big_complement(integer_part, integer_part);
+    _ecl_big_neg(integer_part, integer_part);
   }
   output = _ecl_big_register_normalize(integer_part);
   *ep = i;
@@ -81,7 +81,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
       e = p.end;
     }
     while (s < e &&
-           ecl_readtable_get(rtbl, ecl_char(strng, s), NULL) == cat_whitespace) {
+           ecl_readtable_get(rtbl, ecl_char(strng, s), NULL, NULL) == cat_whitespace) {
       s++;
     }
     if (s >= e) {
@@ -104,7 +104,7 @@ ecl_parse_integer(cl_object str, cl_index start, cl_index end,
       @(return x ecl_make_fixnum(ep));
     }
     for (s = ep; s < e; s++) {
-      unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL)
+      unlikely_if (ecl_readtable_get(rtbl, ecl_char(strng, s), NULL, NULL)
                    != cat_whitespace) 
         {
         CANNOT_PARSE:           FEparse_error("Cannot parse an integer in the string ~S.",

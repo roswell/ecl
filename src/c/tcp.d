@@ -387,7 +387,7 @@ si_lookup_host_entry(cl_object host_or_address)
       l = ecl_fixnum(host_or_address);
       goto addr;
     case t_bignum:
-      l = _ecl_big_to_ulong(host_or_address);
+      l = _ecl_big_get_ui(host_or_address);
     addr:   address[0] = l & 0xFF;
       address[1] = (l >> 8) & 0xFF;
       address[2] = (l >> 16) & 0xFF;

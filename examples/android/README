@@ -18,4 +18,4 @@ directory with ECL intern files in the lib/ dir. Example:
 $ export ECL_ANDROID_DIR=../../ecl-android
 $ export ECL_LIB_DIR=../../ecl-android/lib/ecl-16.1.0
 
-Please direct further questions to ecl-devel@common-lisp.net
+Please direct further questions to ecl-devel@lists.common-lisp.net

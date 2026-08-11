@@ -120,7 +120,7 @@ int (*foo)(int) = (int (*)(int))#0;
 ;;;     mishandle complex float return values. See the commit message
 ;;;     in a commit ad5fe834.
 #+complex-float
-(defun ffi.0006.complex-floats ()
+(test ffi.0006.complex-floats
   ;; dffi
   (let* ((arg #C(10.0s0 0.5s0))
          (expect (atanh arg)))
@@ -136,3 +136,44 @@ int (*foo)(int) = (int (*)(int))#0;
                 :returning :csfloat))
     (compile 'catanhf)
     (is (= expect (catanhf arg)))))
+
+;;; Date: 2026-06-14 (Marius Gerbershagen)
+;;; Description:
+;;;     Check that a few basic functions of the UFFI interface work
+;;;     when backed by the SFFI interface
+(test ffi.0007.uffi-via-sffi
+  (with-open-file (s "ffi-0007-uffi-via-sffi.lsp" :direction :output
+                                          :if-exists :supersede
+                                          :if-does-not-exist :create)
+    (mapc #'(lambda (form) (print form s))
+          '((in-package #:cl-test)
+            (ffi:clines "
+int baz = 3;
+
+typedef struct {
+  int x;
+  double y;
+} foo_struct;
+
+foo_struct the_struct = { 42, 3.2 };
+
+int foo () {
+  return baz;
+}")
+            (ffi:def-struct foo-struct
+             (x :int)
+             (y :double))
+            (ffi:def-function ("foo" foo) ()
+             :returning :int
+             :module nil)
+            (ffi:def-foreign-var ("baz" *baz*) :int nil)
+            (ffi:def-foreign-var ("the_struct" *the-struct*) foo-struct nil))))
+  (is (not (null (compile-file "ffi-0007-uffi-via-sffi.lsp" :load t))))
+  (is (eval '(eql *baz* 3)))
+  (is (eval '(eql (incf *baz*) 4)))
+  (is (eval '(eql *baz* 4)))
+  (is (eql (foo) 4))
+  (is (eql (ffi:get-slot-value *the-struct* 'foo-struct 'x) 42))
+  (is (eql (ffi:get-slot-value *the-struct* 'foo-struct 'y) 3.2d0))
+  (is (eql (setf (ffi:get-slot-value *the-struct* 'foo-struct 'x) 43) 43))
+  (is (eql (ffi:get-slot-value *the-struct* 'foo-struct 'x) 43)))

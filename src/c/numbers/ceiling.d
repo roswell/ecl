@@ -110,7 +110,7 @@ ecl_ceiling2(cl_object x, cl_object y)
        *    y = - MOST_NEGATIVE_FIXNUM
        */
       ECL_WITH_TEMP_BIGNUM(bx,4);
-      _ecl_big_set_fixnum(bx, ecl_fixnum(x));
+      _ecl_big_set_fix(bx, ecl_fixnum(x));
       v0 = _ecl_big_ceiling(bx, y, &v1);
       break;
     }
@@ -150,7 +150,7 @@ ecl_ceiling2(cl_object x, cl_object y)
     switch(ecl_t_of(y)) {
     case t_fixnum: {        /* BIG / FIX */
       ECL_WITH_TEMP_BIGNUM(by,4);
-      _ecl_big_set_fixnum(by, ecl_fixnum(y));
+      _ecl_big_set_fix(by, ecl_fixnum(y));
       v0 = _ecl_big_ceiling(x, by, &v1);
       break;
     }
@@ -164,7 +164,7 @@ ecl_ceiling2(cl_object x, cl_object y)
       break;
     case t_singlefloat: {   /* BIG / SF */
       float n = ecl_single_float(y);
-      float p = _ecl_big_to_double(x)/n;
+      float p = _ecl_big_get_d(x)/n;
       float q = ceilf(p);
       v0 = _ecl_float_to_integer(q);
       v1 = ecl_make_single_float(p*n - q*n);
@@ -172,7 +172,7 @@ ecl_ceiling2(cl_object x, cl_object y)
     }
     case t_doublefloat: {   /* BIG / DF */
       double n = ecl_double_float(y);
-      double p = _ecl_big_to_double(x)/n;
+      double p = _ecl_big_get_d(x)/n;
       double q = ceil(p);
       v0 = _ecl_double_to_integer(q);
       v1 = ecl_make_double_float(p*n - q*n);
@@ -180,7 +180,7 @@ ecl_ceiling2(cl_object x, cl_object y)
     }
     case t_longfloat: {     /* BIG / LF */
       long double n = ecl_long_float(y);
-      long double p = _ecl_big_to_double(x)/n;
+      long double p = _ecl_big_get_d(x)/n;
       long double q = ceill(p);
       v0 = _ecl_long_double_to_integer(q);
       v1 = ecl_make_long_float(p*n - q*n);

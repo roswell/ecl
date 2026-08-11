@@ -56,7 +56,7 @@
          "")))
 
 #-externalizable
-(defun data-c-dump (filename)
+(defun data-c-dump (stream)
   (labels ((produce-strings ()
              ;; Only Windows has a size limit in the strings it creates.
              (if (member :windows *features*)
@@ -89,37 +89,33 @@
                            for i from 1
                            for name = (format nil "compiler_data_text~D" i)
                            collect (output-one-c-string name s stream)))))
-    (with-open-file (stream filename :direction :output :if-does-not-exist :create
-                                     :if-exists :supersede :external-format :default)
-      (let ((strings (produce-strings)))
-        (if strings
-            (output-c-strings strings stream)
-            (princ "#define compiler_data_text NULL" stream))
-        ;; Ensure a final newline or some compilers complain
-        (terpri stream)))))
-
-#+externalizable
-(defun data-c-dump (filename)
-  (with-open-file (stream filename :direction :output :if-does-not-exist :create
-                                   :if-exists :supersede :external-format :default)
-    (let ((data (data-dump-array)))
-      (if (plusp (length data))
-          (let ((s (with-output-to-string (stream)
-                     (loop for i below (length data) do
-                       (princ (elt data i) stream)
-                       (if (< i (1- (length data)))
-                           (princ "," stream))))))
-            (format stream "static uint8_t serialization_data[] = {~A};~%" s)
-            (format stream "static const struct ecl_vector compiler_data_text1[] = {{
-        (int8_t)t_vector, 0, ecl_aet_b8, 0,
-        ECL_NIL, (cl_index)~D, (cl_index)~D,
-        { .b8=serialization_data } }};~%"
-                    (length data) (length data))
-            (format stream "static const cl_object compiler_data_text[] = {
-(cl_object)compiler_data_text1}; "))
+    (let ((strings (produce-strings)))
+      (if strings
+          (output-c-strings strings stream)
           (princ "#define compiler_data_text NULL" stream))
       ;; Ensure a final newline or some compilers complain
       (terpri stream))))
+
+#+externalizable
+(defun data-c-dump (stream)
+  (let ((data (data-dump-array)))
+    (if (plusp (length data))
+        (let ((s (with-output-to-string (stream)
+                   (loop for i below (length data) do
+                     (princ (elt data i) stream)
+                     (if (< i (1- (length data)))
+                         (princ "," stream))))))
+          (format stream "static uint8_t serialization_data[] = {~A};~%" s)
+          (format stream "static const struct ecl_vector compiler_data_text1[] = {{
+        (int8_t)t_vector, 0, ecl_aet_b8, 0,
+        ECL_NIL, (cl_index)~D, (cl_index)~D,
+        { .b8=serialization_data } }};~%"
+                  (length data) (length data))
+          (format stream "static const cl_object compiler_data_text[] = {
+(cl_object)compiler_data_text1}; "))
+        (princ "#define compiler_data_text NULL" stream))
+    ;; Ensure a final newline or some compilers complain
+    (terpri stream)))
 
 
 

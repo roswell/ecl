@@ -142,7 +142,7 @@
   (let ((*package* (find-package "CL")))
     (print-unreadable-object (instance stream)
       (format stream "~S"
-              (class-name (si:instance-class instance)))))
+              (class-name (class-of instance)))))
   instance)
 
 (defmethod print-object ((instance standard-object) stream)

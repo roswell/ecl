@@ -120,6 +120,7 @@ struct cl_env_struct {
         /* -- Private variables used by different parts of ECL ---------------- */
         /* ... the reader and printer ... */
         cl_object string_pool;
+        cl_object token_pool;
         /* ... the compiler ... */
         struct cl_compiler_env *c_env;
         /* ... the formatter ... */
@@ -407,7 +408,7 @@ extern ECL_API cl_object mp_compare_and_swap_symbol_value(cl_object x, cl_object
 extern ECL_API cl_object mp_atomic_incf_symbol_value(cl_object x, cl_object increment);
 #endif
 
-/* big.c */
+/* bignum.c / midnum.c */
 
 /* Note: Needs to be adapted if ECL_BIGNUM_REGISTER_NUMBER changes */
 #define _ecl_big_register0()    ecl_process_env()->big_register[0]
@@ -808,7 +809,7 @@ extern ECL_API cl_object si_gc_stats(cl_object enable);
 extern ECL_API void _ecl_set_method_hash_size(cl_env_ptr env, cl_index size);
 extern ECL_API cl_object si_clear_gfun_hash(cl_object what);
 extern ECL_API cl_object clos_set_funcallable_instance_function(cl_object x, cl_object function_or_t);
-extern ECL_API cl_object si_generic_function_p(cl_object instance);
+extern ECL_API cl_object si_funcallable_object_p(cl_object instance);
 
 extern ECL_API cl_object _ecl_standard_dispatch(cl_object frame, cl_object fun);
 
@@ -862,6 +863,7 @@ extern ECL_API cl_object si_instance_obsolete_p(cl_object x);
 extern ECL_API cl_object si_instance_new_stamp(cl_object x);
 extern ECL_API cl_object si_instance_get_stamp(cl_object x);
 extern ECL_API cl_object si_instance_slotds(cl_object x);
+extern ECL_API cl_object si_instance_fun_set(cl_object x, cl_object isgf);
 extern ECL_API cl_object si_instance_sig_set(cl_object x);
 
 extern ECL_API cl_object ecl_allocate_instance(cl_object clas, cl_index size);
@@ -1569,10 +1571,17 @@ extern ECL_API cl_object si_read_object_or_ignore(cl_object stream, cl_object eo
 extern ECL_API cl_object si_readtable_lock _ECL_ARGS((cl_narg narg, cl_object readtable, ...));
 extern ECL_API cl_object si_make_backq_vector(cl_object dim, cl_object data, cl_object stream);
 
-extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro);
-extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro_or_table);
+extern ECL_API int ecl_readtable_get(cl_object rdtbl, int c, cl_object *macro, cl_object *table);
+extern ECL_API void ecl_readtable_set(cl_object rdtbl, int c, enum ecl_chattrib cat, cl_object macro, cl_object table);
+extern ECL_API cl_object ecl_read_constituent(cl_object in, bool not_first);
+extern ECL_API cl_object ecl_read_delimited_list(int d, cl_object strm, bool proper);
+extern ECL_API cl_object ecl_dispatch_reader_fun(cl_object in, cl_object dc);
+extern ECL_API cl_object ecl_read_eval(cl_object in);
 extern ECL_API cl_object ecl_read_object_non_recursive(cl_object in);
+extern ECL_API cl_object ecl_read_object_with_delimiter(cl_object rtbl, cl_object in, int del, int flags);
 extern ECL_API cl_object ecl_read_object(cl_object in);
+extern ECL_API cl_object ecl_read_token(cl_object rtbl, cl_object in, int flags);
+extern ECL_API cl_object ecl_parse_token(cl_object token, cl_object in, int flags);
 extern ECL_API cl_object ecl_parse_number(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API cl_object ecl_parse_integer(cl_object s, cl_index start, cl_index end, cl_index *ep, unsigned int radix);
 extern ECL_API bool ecl_invalid_character_p(int c);
@@ -1583,6 +1592,12 @@ extern ECL_API char ecl_current_read_default_float_format(void);
 #define ecl_read_from_cstring(s) si_string_to_object(1,ecl_make_constant_base_string(s,-1))
 #define ecl_read_from_cstring_safe(s,v) si_string_to_object(2,ecl_make_constant_base_string(s,-1),(v))
 extern ECL_API cl_object ecl_init_module(cl_object block, void (*entry)(cl_object));
+
+extern ECL_API cl_object si_parse_token(cl_object token);
+extern ECL_API cl_object si_read_object(cl_object, cl_object);
+extern ECL_API cl_object si_read_token(cl_object);
+extern ECL_API cl_object si_token_string(cl_object);
+extern ECL_API cl_object si_token_escape(cl_object);
 
 /* reference.c */
 
@@ -2006,6 +2021,7 @@ extern ECL_API cl_object _ecl_ucd_name_to_code(cl_object name);
 
 /* vector_push.d  */
 
+extern ECL_API cl_object ecl_extend_vector(cl_object v, cl_index s);
 extern ECL_API ecl_character ecl_string_push_extend(cl_object s, ecl_character c);
 extern ECL_API cl_object cl_vector_push _ECL_ARGS((cl_object V1, cl_object V2));
 extern ECL_API cl_object cl_vector_push_extend _ECL_ARGS((cl_narg narg, cl_object V1, cl_object V2, ...));
@@ -2228,6 +2244,7 @@ extern ECL_API cl_object cl_set_pprint_dispatch _ECL_ARGS((cl_narg narg, cl_obje
 /* combin.lsp */
 extern ECL_API cl_object cl_method_combination_error _ECL_ARGS((cl_narg narg, cl_object format, ...));
 extern ECL_API cl_object cl_invalid_method_error _ECL_ARGS((cl_narg narg, cl_object method, cl_object format, ...));
+extern ECL_API cl_object clos_std_compute_applicable_methods_using_classes(cl_object gf, cl_object classes);
 extern ECL_API cl_object clos_std_compute_applicable_methods(cl_object gf, cl_object arglist);
 extern ECL_API cl_object clos_std_compute_effective_method(cl_object gf, cl_object combination, cl_object methods_list);
 extern ECL_API cl_object clos_compute_effective_method_function(cl_object gf, cl_object combination, cl_object methods_list);

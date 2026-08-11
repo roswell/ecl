@@ -30,6 +30,25 @@
 * Pending changes since 26.5.5
 
 - build: support for Microsoft Visual Studio Compiler has been dropped
+- clos: ensure that the instance is not obsolete in optimized writer (#851)
+- reader: refactor reader and improve token parsing (escaping and packages)
+
+- bugfix: FUNCALLABLE-STANDARD-OBJECT instances are always treated as
+  functions and STANDARD-OBJECT instances can't be assigned the function
+  with SET_FUNCALLABLE_INSTANCE_FUNCTION (see tests MOP.0030-MOP.0034)
+
+- bugfix: FFI:MAKE-POINTER now accepts a pointer-sized address also on
+  WIN64 - on this platform `unsigned long' is too small to hold pointers
+
+- bugfix: MOP:WRITER-METHOD-CLASS correctly returns for non-standard
+  classes STANDARD-WRITER-METHOD (was STANDARD-READER-METHOD)
+
+- bugfix: MOP:ENSURE-GENERIC-FUNCTION-USING-CLASS tested gf class variable
+  to determine whether the specified method class is a symbol (MOP mandates
+  transforming symbols to metaobjects)
+
+- bugfix: DEFSTRUCT now correctly detects and errors when the structure
+  tries to include itself
 
 * 26.5.5 changes since 26.3.27
 

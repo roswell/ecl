@@ -1393,7 +1393,7 @@ if not possible."
                (KEYWORD NIL SYMBOL)
                (PACKAGE)
                (COMPILED-FUNCTION)
-               (FUNCTION (OR COMPILED-FUNCTION GENERIC-FUNCTION))
+               (FUNCTION (OR COMPILED-FUNCTION CLOS:FUNCALLABLE-STANDARD-OBJECT))
 
                (INTEGER (INTEGER * *))
                (FIXNUM (INTEGER #.most-negative-fixnum #.most-positive-fixnum))

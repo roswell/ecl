@@ -55,32 +55,24 @@
 /* float.h for epsilons, maximum real numbers, etc			*/
 #undef HAVE_FLOAT_H
 /* select()								*/
-#ifndef NACL
 #undef HAVE_SELECT
-#endif
 #undef HAVE_SYS_SELECT_H
 #undef HAVE_SYS_IOCTL_H
 /* putenv() or setenv()							*/
 #undef HAVE_SETENV
 #undef HAVE_PUTENV
 /* times() and sys/times.h						*/
-#ifndef NACL
 #undef HAVE_TIMES
-#endif
 /* gettimeofday() and sys/time.h					*/
 #undef HAVE_GETTIMEOFDAY
 /* clock_gettime()							*/
 #undef HAVE_CLOCK_GETTIME
 /* getrusage() and sys/resource.h					*/
-#ifndef NACL
 #undef HAVE_GETRUSAGE
-#endif
 /* user home directory, user name, etc...				*/
 #undef HAVE_PW_H
 /* symbolic links and checking their existence				*/
-#ifndef NACL
 #undef HAVE_LSTAT
-#endif
 /* safe creation of temporary files					*/
 #undef HAVE_MKSTEMP
 /* timer for userland threads						*/
@@ -92,9 +84,7 @@
 #undef HAVE_LINK_H
 #undef HAVE_MACH_O_DYLD_H
 /* POSIX signals							*/
-#ifndef NACL
 #undef HAVE_SIGPROCMASK
-#endif
 /* isatty() checks whether a file is connected to a			*/
 #undef HAVE_ISATTY
 /* do we want to have signed zeros                                      */

@@ -46,7 +46,7 @@ notice which is shipped with ECL.
   Examples are licensed under: (SPDX-License-Identifier) BSD-2-Clause
 
   Report bugs, comments, suggestions to the ecl mailing list:
-  ecl-devel@common-lisp.net.
+  ecl-devel@lists.common-lisp.net.
 
 ---- END OF COPYRIGHT FOR THE ECL CORE ENVIRONMENT ------------------
 @end verbatim

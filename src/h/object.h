@@ -84,6 +84,7 @@ typedef enum {
         t_codeblock,
         t_foreign,
         t_frame,
+        t_token,
         t_weak_pointer,
 #ifdef ECL_SSE2
         t_sse_pack,
@@ -103,6 +104,7 @@ typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
 typedef cl_object (*cl_objectfn_fixed)();
+typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 /*
         OBJect NULL value.
@@ -208,14 +210,35 @@ struct ecl_long_float {
 };
 #define ecl_long_float(o) ((o)->longfloat.value)
 
-typedef mpz_t big_num_t;
+/* ECL features two implementations of bignums. One (default) is based on GMP,
+   and the other has no external dependencies. The latter is conforming but only
+   superficially -- when we exceed the maximum size of the number, then we
+   signal the condition STORAGE-EXHAUSTED.
+
+   Both representations share the same structure. Note that operations may
+   mutate numbers, so bignums always operate on registers. */
+
+#ifdef ECL_GMPLIB
 typedef mp_limb_t ecl_limb_t;
 
 struct ecl_bignum {
         _ECL_HDR;
-        big_num_t value;
+        mpz_t value;
 };
 #define ecl_bignum(o) ((o)->big.value)
+#define ecl_bigsgn(o) mpz_sgn(ecl_bignum(o))
+#else
+typedef uintmax_t ubig_num_t;
+typedef intmax_t  sbig_num_t;
+typedef intmax_t  ecl_limb_t;
+
+struct ecl_bignum {
+        _ECL_HDR;
+        sbig_num_t value;
+};
+#define ecl_bignum(o) ((o)->big.value)
+#define ecl_bigsgn(o) ((o)->big.value<0 ? -1 : +1)
+#endif
 
 struct ecl_ratio {
         _ECL_HDR;
@@ -726,7 +749,8 @@ enum ecl_chattrib {             /*  character attribute  */
 
 struct ecl_readtable_entry {            /*  read table entry  */
         enum ecl_chattrib syntax_type;  /*  character attribute  */
-        cl_object dispatch;             /*  a macro, a hash or NIL  */
+        cl_object macro;                /*  character  macro  */
+        cl_object table;                /*  dispatch table or NIL*/
 };
 
 enum ecl_readtable_case {
@@ -740,6 +764,7 @@ struct ecl_readtable {          /*  read table  */
         _ECL_HDR1(locked);
         enum ecl_readtable_case read_case; /*  readtable-case  */
         struct ecl_readtable_entry *table; /*  read table itself  */
+        cl_objectfn_parse parse_token;     /*  token parser */
 #ifdef ECL_UNICODE
         cl_object hash;         /* hash for values outside base-char range */
 #endif
@@ -947,6 +972,13 @@ struct ecl_stack_frame {
         struct cl_env_struct *env;
 };
 
+/* Token is constructed by the reader from constituents and then parsed. */
+struct ecl_token {
+        _ECL_HDR1(escaped);
+        cl_object string;       /* the token string */
+        cl_object escape;       /* ranges of escaped characters */
+};
+
 struct ecl_weak_pointer {       /*  weak pointer to value  */
         _ECL_HDR;
         cl_object value;
@@ -1076,7 +1108,10 @@ struct ecl_condition_variable {
 };
 #endif /* ECL_THREADS */
 
+#define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+#define ECL_FUNCALLABLE_P(x)    (ECL_INSTANCEP(x) && (x)->instance.isgf)
 #define ECL_CLASS_OF(x)         (x)->instance.clas
+
 #define ECL_SPEC_FLAG(x)        (x)->instance.slots[0]
 #define ECL_SPEC_OBJECT(x)      (x)->instance.slots[3]
 #define ECL_CLASS_NAME(x)       (x)->instance.slots[3+0]
@@ -1084,19 +1119,21 @@ struct ecl_condition_variable {
 #define ECL_CLASS_INFERIORS(x)  (x)->instance.slots[3+2]
 #define ECL_CLASS_SLOTS(x)      (x)->instance.slots[3+3]
 #define ECL_CLASS_CPL(x)        (x)->instance.slots[3+4]
-#define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+
 #define ECL_NOT_FUNCALLABLE     0
 #define ECL_STANDARD_DISPATCH   1
 #define ECL_RESTRICTED_DISPATCH 2
 #define ECL_READER_DISPATCH     3
 #define ECL_WRITER_DISPATCH     4
 #define ECL_USER_DISPATCH       5
+#define ECL_NULL_DISPATCH       6 /* funcallable, but gfdef is null */
 
 struct ecl_instance {            /* -- instance header -- */
         _ECL_HDR1(isgf);         /*  gf type              */
-        cl_index length;         /*  instance length      */
         cl_object clas;          /*  instance class       */
-        cl_objectfn entry;       /*  entry address        */
+        cl_object gfdef;         /*  generic function definition */
+        cl_objectfn entry;       /*  entry address (matches cfun.entry) */
+        cl_index length;         /*  instance length      */
         cl_object slotds;        /*  slot definitions     */
         cl_object *slots;        /*  instance slots       */
         cl_index stamp;          /*  instance stamp       */
@@ -1175,6 +1212,7 @@ union cl_lispunion {
         struct ecl_cclosure     cclosure;       /*  compiled closure  */
         struct ecl_dummy        d;              /*  dummy  */
         struct ecl_instance     instance;       /*  clos instance */
+        struct ecl_token        token;          /*  token */
 #ifdef ECL_THREADS
         struct ecl_process      process;        /*  process  */
         struct ecl_lock         lock;           /*  lock  */

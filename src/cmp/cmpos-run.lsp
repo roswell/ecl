@@ -66,14 +66,14 @@
      #+cygwin
      (setf result (si:system (format nil "~A~{ ~A~}" program args)))))
   (cond ((null result)
-         (cerror "Continues anyway."
+         (cerror "Continue anyway."
                  "Unable to execute:~%(EXT:RUN-PROGRAM ~S ~S)"
                  program args result))
         ((not (zerop result))
-         (cerror "Continues anyway."
+         (cerror "Continue anyway."
                  "Error code ~D when executing~%(EXT:RUN-PROGRAM ~S ~S):~%~{~A~^~%~}"
                  result program args output)))
-  result)
+  (values result output))
 
 (defun split-program-options (string)
   (labels ((maybe-push (options current)

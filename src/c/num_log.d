@@ -166,7 +166,7 @@ ecl_boole(int op, cl_object x, cl_object y)
     }
     case t_bignum: {
       cl_object x_copy = _ecl_big_register0();
-      _ecl_big_set_fixnum(x_copy, ecl_fixnum(x));
+      _ecl_big_set_fix(x_copy, ecl_fixnum(x));
       (_ecl_big_boole_operator(op))(x_copy, x_copy, y);
       return _ecl_big_register_normalize(x_copy);
     }
@@ -179,7 +179,7 @@ ecl_boole(int op, cl_object x, cl_object y)
     switch (ecl_t_of(y)) {
     case t_fixnum: {
       cl_object z = _ecl_big_register1();
-      _ecl_big_set_fixnum(z,ecl_fixnum(y));
+      _ecl_big_set_fix(z,ecl_fixnum(y));
       (_ecl_big_boole_operator(op))(x_copy, x, z);
       _ecl_big_register_free(z);
       break;
@@ -218,14 +218,7 @@ count_bits(cl_object x)
     break;
   }
   case t_bignum:
-    if (_ecl_big_sign(x) >= 0)
-      count = _ecl_big_popcount(x);
-    else {
-      cl_object z = _ecl_big_register0();
-      _ecl_big_1com(z, x);
-      count = _ecl_big_popcount(z);
-      _ecl_big_register_free(z);
-    }
+    count = _ecl_big_count_bits(x);
     break;
   default:
     FEwrong_type_only_arg(@[logcount], x, @[integer]);
@@ -265,7 +258,7 @@ ecl_ash(cl_object x, cl_fixnum w)
     _ecl_big_div_2exp(y, x, bits);
   } else {
     if (ECL_FIXNUMP(x)) {
-      _ecl_big_set_fixnum(y, ecl_fixnum(x));
+      _ecl_big_set_fix(y, ecl_fixnum(x));
       x = y;
     }
     _ecl_big_mul_2exp(y, x, (unsigned long)w);
@@ -395,7 +388,7 @@ cl_logbitp(cl_object p, cl_object x)
     if (ECL_FIXNUMP(x))
       i = (ecl_fixnum(x) < 0);
     else
-      i = (_ecl_big_sign(x) < 0);
+      i = (ecl_bigsgn(x) < 0);
   }
   @(return (i ? ECL_T : ECL_NIL));
 }
@@ -424,8 +417,8 @@ cl_ash(cl_object x, cl_object y)
       else
         sign_x = 1;
     else
-      sign_x = _ecl_big_sign(x);
-    if (_ecl_big_sign(y) < 0)
+      sign_x = ecl_bigsgn(x);
+    if (ecl_bigsgn(y) < 0)
       if (sign_x < 0)
         r = ecl_make_fixnum(-1);
       else
@@ -456,9 +449,9 @@ ecl_integer_length(cl_object x)
     count = ecl_fixnum_bit_length(i);
     break;
   case t_bignum:
-    if (_ecl_big_sign(x) < 0)
+    if (ecl_bigsgn(x) < 0)
       x = cl_lognot(x);
-    count = _ecl_big_bits(x);
+    count = _ecl_big_integer_length(x);
     break;
   default:
     FEwrong_type_only_arg(@[integer-length], x, @[integer]);

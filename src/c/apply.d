@@ -95,7 +95,7 @@ ecl_apply_from_stack_frame(cl_object frame, cl_object x)
       ret = _ecl_standard_dispatch(frame, fun);
       break;
     case ECL_USER_DISPATCH:
-      fun = fun->instance.slots[fun->instance.length - 1];
+      fun = fun->instance.gfdef;
       goto AGAIN;
     case ECL_READER_DISPATCH:
     case ECL_WRITER_DISPATCH:

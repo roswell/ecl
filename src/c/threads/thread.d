@@ -299,9 +299,7 @@ static cl_object
 alloc_process(cl_object name, cl_object initial_bindings_p)
 {
   cl_env_ptr env = ecl_process_env();
-  cl_object process = ecl_alloc_object(t_process), array;
-  cl_index bindings_size;
-  cl_object* bindings;
+  cl_object process = ecl_alloc_object(t_process);
   process->process.phase = ECL_PROCESS_INACTIVE;
   process->process.name = name;
   process->process.function = ECL_NIL;

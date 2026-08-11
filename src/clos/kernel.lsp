@@ -109,6 +109,7 @@
               :declarations nil
               :dependents nil)
         ;; create a new gfun
+        (si:instance-fun-set gfun t)
         (set-funcallable-instance-function gfun 'standard-generic-function)
         (setf (fdefinition name) gfun)
         gfun)))

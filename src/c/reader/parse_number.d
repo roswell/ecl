@@ -141,7 +141,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
     c = ecl_char(str, i);
     if (c == '/') {
       cl_object den;
-      if (sign < 0) _ecl_big_complement(num, num);
+      if (sign < 0) _ecl_big_neg(num, num);
       num = _ecl_big_register_normalize(num);
       c = ecl_char(str, ++i);
       if (ecl_digitp(c, radix) < 0)
@@ -214,7 +214,7 @@ ecl_parse_number(cl_object str, cl_index start, cl_index end,
     return make_float(_ecl_big_register_normalize(num),
                       ecl_make_fixnum(decimal - i), 'e', sign);
   } else {
-    if (sign < 0) _ecl_big_complement(num, num);
+    if (sign < 0) _ecl_big_neg(num, num);
     return _ecl_big_register_normalize(num);
   }
 }

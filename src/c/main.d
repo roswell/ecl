@@ -103,7 +103,8 @@ ecl_boot(void)
 
 /* -- constants ----------------------------------------------------- */
 
-const cl_object ecl_ct_Jan1st1970UT = ecl_make_fixnum(39052800);
+/* (24*60*60)*(17+365*70) */
+const cl_object ecl_ct_Jan1st1970UT = ecl_make_fixnum(2208988800);
 
 ecl_def_ct_base_string(ecl_ct_null_string,"",0,,const);
 
@@ -252,6 +253,7 @@ init_env_aux(cl_env_ptr env)
 {
   /* Reader */
   env->string_pool = ECL_NIL;
+  env->token_pool = ECL_NIL;
   env->packages_to_be_created = ECL_NIL;
   env->packages_to_be_created_p = ECL_NIL;
   /* Format (written in C) */

@@ -92,6 +92,7 @@ out_of_memory(size_t requested_bytes)
   ecl_bds_bind(the_env, @'ext::*interrupts-enabled*', ECL_NIL);
   /* Free the input / output buffers */
   the_env->string_pool = ECL_NIL;
+  the_env->token_pool = ECL_NIL;
 
   /* The out of memory condition may happen in more than one thread */
   /* But then we have to ensure the error has not been solved */
@@ -119,6 +120,7 @@ out_of_memory(size_t requested_bytes)
         /* We can free some memory and try handling the error */
         GC_FREE(ecl_core.safety_region);
         the_env->string_pool = ECL_NIL;
+        the_env->token_pool = ECL_NIL;
         ecl_core.safety_region = 0;
         method = 0;
       } else {
@@ -337,6 +339,7 @@ ecl_alloc_object(cl_type t)
   case t_mailbox:
 #endif
   case t_foreign:
+  case t_token:
   case t_codeblock: {
     cl_object obj;
     ecl_disable_interrupts_env(the_env);
@@ -391,9 +394,11 @@ ecl_alloc_instance(cl_index slots)
 {
   cl_object i;
   i = ecl_alloc_object(t_instance);
+  i->instance.isgf = ECL_NOT_FUNCALLABLE;
   i->instance.slots = (cl_object *)ecl_alloc(sizeof(cl_object) * slots);
   i->instance.length = slots;
   i->instance.isgf = ECL_NOT_FUNCALLABLE;
+  i->instance.gfdef = ECL_NIL;
   i->instance.entry = FEnot_funcallable_vararg;
   i->instance.slotds = ECL_UNBOUND;
   return i;
@@ -402,7 +407,7 @@ ecl_alloc_instance(cl_index slots)
 static cl_index stamp = 0;
 cl_index ecl_next_stamp() {
 #if ECL_THREADS
-  return AO_fetch_and_add((AO_t*)&stamp, 1) + 1;
+  return ecl_atomic_fetch_and_add(&stamp, 1) + 1;
 #else
   return ++stamp;
 #endif
@@ -553,6 +558,7 @@ void init_type_info (void)
   init_tm(t_codeblock, "CODEBLOCK", sizeof(struct ecl_codeblock), -1);
   init_tm(t_foreign, "FOREIGN", sizeof(struct ecl_foreign), 2);
   init_tm(t_frame, "STACK-FRAME", sizeof(struct ecl_stack_frame), 0);
+  init_tm(t_token, "TOKEN", sizeof(struct ecl_token), 2);
   init_tm(t_weak_pointer, "WEAK-POINTER", sizeof(struct ecl_weak_pointer), 0);
 #ifdef ECL_SSE2
   init_tm(t_sse_pack, "SSE-PACK", sizeof(struct ecl_sse_pack), 0);
@@ -561,8 +567,12 @@ void init_type_info (void)
   type_info[t_list].descriptor =
     to_bitmap(&c, &(c.car)) |
     to_bitmap(&c, &(c.cdr));
+#ifdef ECL_GMPLIB
   type_info[t_bignum].descriptor =
     to_bitmap(&o, &(ECL_BIGNUM_LIMBS(&o)));
+#else
+  type_info[t_bignum].descriptor = 0;
+#endif
   type_info[t_ratio].descriptor =
     to_bitmap(&o, &(o.ratio.num)) |
     to_bitmap(&o, &(o.ratio.den));
@@ -712,6 +722,9 @@ void init_type_info (void)
     to_bitmap(&o, &(o.foreign.tag));
   type_info[t_frame].descriptor =
     to_bitmap(&o, &(o.frame.env));
+  type_info[t_token].descriptor =
+    to_bitmap(&o, &(o.token.string)) |
+    to_bitmap(&o, &(o.token.escape)));
   type_info[t_weak_pointer].descriptor = 0;
 #ifdef ECL_SSE2
   type_info[t_sse_pack].descriptor = 0;
@@ -1077,9 +1090,9 @@ si_gc_stats(cl_object enable)
   }
   if (ecl_core.bytes_consed == ECL_NIL) {
     ecl_core.bytes_consed = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(ecl_core.bytes_consed), 128);
     ecl_core.gc_counter = ecl_alloc_object(t_bignum);
-    mpz_init2(ecl_bignum(ecl_core.gc_counter), 128);
+    _ecl_big_init2(ecl_core.bytes_consed, 128/ECL_BIGNUM_LIMB_BITS);
+    _ecl_big_init2(ecl_core.gc_counter, 128/ECL_BIGNUM_LIMB_BITS);
   }
 
   update_bytes_consed();
@@ -1091,8 +1104,8 @@ si_gc_stats(cl_object enable)
     GC_print_stats = 0;
     ecl_core.gc_stats = 0;
   } else if (enable == ecl_make_fixnum(0)) {
-    mpz_set_ui(ecl_bignum(ecl_core.bytes_consed), 0);
-    mpz_set_ui(ecl_bignum(ecl_core.gc_counter), 0);
+    _ecl_big_set_ui(ecl_core.bytes_consed, 0);
+    _ecl_big_set_ui(ecl_core.gc_counter, 0);
   } else {
     ecl_core.gc_stats = 1;
     GC_print_stats = (enable == @':full');
@@ -1109,9 +1122,7 @@ gather_statistics()
   /* GC stats rely on bignums */
   if (ecl_core.gc_stats) {
     update_bytes_consed();
-    mpz_add_ui(ecl_bignum(ecl_core.gc_counter),
-               ecl_bignum(ecl_core.gc_counter),
-               1);
+    _ecl_big_add_ui(ecl_core.gc_counter, ecl_core.gc_counter, 1);
   }
   if (GC_old_start_callback)
     GC_old_start_callback();
@@ -1120,9 +1131,8 @@ gather_statistics()
 static void
 update_bytes_consed () {
 #if GBC_BOEHM == 0
-  mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-             ecl_bignum(ecl_core.bytes_consed),
-             GC_get_bytes_since_gc());
+  _ecl_big_add_ui(ecl_core.bytes_consed, ecl_core.bytes_consed,
+                  GC_get_bytes_since_gc());
 #else
   /* This is not accurate and may wrap around. We try to detect this
      assuming that an overflow in an unsigned integer will produce
@@ -1132,16 +1142,16 @@ update_bytes_consed () {
   if (bytes > new_bytes) {
     cl_index wrapped;
     wrapped = ~((cl_index)0) - bytes;
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               wrapped);
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               new_bytes);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    wrapped);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    new_bytes);
   } else {
-    mpz_add_ui(ecl_bignum(ecl_core.bytes_consed),
-               ecl_bignum(ecl_core.bytes_consed),
-               new_bytes - bytes);
+    _ecl_big_add_ui(ecl_core.bytes_consed,
+                    ecl_core.bytes_consed,
+                    new_bytes - bytes);
   }
   bytes = new_bytes;
 #endif

@@ -1313,13 +1313,14 @@ cl_symbols[] = {
 {SYS_ "WRITE-UGLY-OBJECT" ECL_FUN("si_write_ugly_object", si_write_ugly_object, 2) ECL_VAR(SI_SPECIAL, OBJNULL)},
 
 {SYS_ "COPY-INSTANCE" ECL_FUN("si_copy_instance", si_copy_instance, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
-{SYS_ "GENERIC-FUNCTION-P" ECL_FUN("si_generic_function_p", si_generic_function_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "FUNCALLABLE-OBJECT-P" ECL_FUN("si_funcallable_object_p", si_funcallable_object_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-REF" ECL_FUN("si_instance_ref", si_instance_ref, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-SET" ECL_FUN("si_instance_set", si_instance_set, 3) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-OBSOLETE-P" ECL_FUN("si_instance_obsolete_p", si_instance_obsolete_p, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-NEW-STAMP" ECL_FUN("si_instance_new_stamp", si_instance_new_stamp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-GET-STAMP" ECL_FUN("si_instance_get_stamp", si_instance_get_stamp, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-SLOTDS" ECL_FUN("si_instance_slotds", si_instance_slotds, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
+{SYS_ "INSTANCE-FUN-SET" ECL_FUN("si_instance_fun_set", si_instance_fun_set, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-SIG-SET" ECL_FUN("si_instance_sig_set", si_instance_sig_set, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-CLASS" ECL_FUN("si_instance_class", si_instance_class, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "INSTANCE-CLASS-SET" ECL_FUN("si_instance_class_set", si_instance_class_set, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
@@ -1786,8 +1787,8 @@ cl_symbols[] = {
 {CLOS_ "STANDARD-WRITER-METHOD" ECL_FUN(NULL, NULL, -1) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "STANDARD-OPTIMIZED-READER-METHOD" ECL_FUN(NULL, NULL, -1) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "STANDARD-OPTIMIZED-WRITER-METHOD" ECL_FUN(NULL, NULL, -1) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
+{CLOS_ "STD-COMPUTE-APPLICABLE-METHODS-USING-CLASSES" ECL_FUN("clos_std_compute_applicable_methods_using_classes", ECL_NAME(clos_std_compute_applicable_methods_using_classes), 2) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "STD-COMPUTE-APPLICABLE-METHODS" ECL_FUN("clos_std_compute_applicable_methods", ECL_NAME(clos_std_compute_applicable_methods), 2) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
-{CLOS_ "STD-COMPUTE-APPLICABLE-METHODS-USING-CLASSES" ECL_FUN(NULL, NULL, 2) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "STD-COMPUTE-EFFECTIVE-METHOD" ECL_FUN("clos_std_compute_effective_method", ECL_NAME(clos_std_compute_effective_method), 3) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "COMPUTE-EFFECTIVE-METHOD-FUNCTION" ECL_FUN("clos_compute_effective_method_function", ECL_NAME(clos_compute_effective_method_function), 3) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
 {CLOS_ "UPDATE-DEPENDENT" ECL_FUN(NULL, NULL, -1) ECL_VAR(CLOS_ORDINARY, OBJNULL)},
@@ -1847,6 +1848,7 @@ cl_symbols[] = {
 
 {SYS_ "CODE-BLOCK" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 
+{SYS_ "TOKEN" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "FRAME" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "APPLY-FROM-STACK-FRAME" ECL_FUN("si_apply_from_stack_frame", si_apply_from_stack_frame, 2) ECL_VAR(SI_ORDINARY, OBJNULL)},
 
@@ -1997,9 +1999,15 @@ cl_symbols[] = {
 {SYS_ "LONG-FLOAT-BITS" ECL_FUN(NULL, NULL, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 {SYS_ "BITS-LONG-FLOAT" ECL_FUN(NULL, NULL, 1) ECL_VAR(SI_ORDINARY, OBJNULL)},
 
+{SYS_ "PARSE-TOKEN" ECL_FUN("si_parse_token", si_parse_token, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 {SYS_ "READ-OBJECT-OR-IGNORE" ECL_FUN("si_read_object_or_ignore", si_read_object_or_ignore, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "READ-OBJECT" ECL_FUN("si_read_object", si_read_object, 2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "READ-TOKEN" ECL_FUN("si_read_token", si_read_token, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
 {EXT_ "READTABLE-LOCK" ECL_FUN("si_readtable_lock", si_readtable_lock, -2) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+
+{SYS_ "TOKEN-STRING" ECL_FUN("si_read_token", si_token_string, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
+{SYS_ "TOKEN-ESCAPE" ECL_FUN("si_read_token", si_token_escape, 1) ECL_VAR(EXT_ORDINARY, OBJNULL)},
 
 {SYS_ "+IO-SYNTAX-PROGV-LIST+" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_CONSTANT, OBJNULL)},
 {SYS_ "+ECL-SYNTAX-PROGV-LIST+" ECL_FUN(NULL, NULL, -1) ECL_VAR(SI_CONSTANT, OBJNULL)},

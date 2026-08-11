@@ -2055,10 +2055,10 @@ ecl_off_t_to_integer(ecl_off_t offset)
       ECL_BIGNUM_LIMBS(y)[0] = (cl_index)offset;
       offset >>= ECL_FIXNUM_BITS;
       ECL_BIGNUM_LIMBS(y)[1] = offset;
-      ECL_BIGNUM_SIZE(y) = offset? 2 : 1;
+      ECL_BIGNUM_SET_SIZE(y, (offset? 2 : 1));
     } else if (sizeof(ECL_BIGNUM_LIMBS(y)[0]) >= sizeof(ecl_off_t)) {
       ECL_BIGNUM_LIMBS(y)[0] = offset;
-      ECL_BIGNUM_SIZE(y) = 1;
+      ECL_BIGNUM_SET_SIZE(y, 1);
     }
     output = _ecl_big_register_normalize(y);
   }

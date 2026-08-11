@@ -44,10 +44,11 @@
 }
 
 body {
-    margin: 1em 125px 0 10%;
+    margin: 1em 8% 0 10%;
     line-height: 1.5em;
     padding: 0 2em 1em 2em;
-    font: 13px Verdana,Arial, sans-serif
+    font-family: Verdana, Arial, sans-serif;
+    font-size: 1rem;
 }
 ul, dd, dl, dt { margin-top: 0; margin-bottom: 0; }
 p, code, td, dl, dt {

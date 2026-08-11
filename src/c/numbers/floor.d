@@ -105,7 +105,7 @@ ecl_floor2(cl_object x, cl_object y)
          *    y = - MOST_NEGATIVE_FIXNUM
          */
         ECL_WITH_TEMP_BIGNUM(bx,4);
-        _ecl_big_set_fixnum(bx, ecl_fixnum(x));
+        _ecl_big_set_fix(bx, ecl_fixnum(x));
         v0 = _ecl_big_floor(bx, y, &v1);
         break;
       }
@@ -140,7 +140,7 @@ ecl_floor2(cl_object x, cl_object y)
       }
       CASE_BIGNUM_FIXNUM {
         ECL_WITH_TEMP_BIGNUM(by,4);
-        _ecl_big_set_fixnum(by, ecl_fixnum(y));
+        _ecl_big_set_fix(by, ecl_fixnum(y));
         v0 = _ecl_big_floor(x, by, &v1);
         break;
       }
@@ -155,7 +155,7 @@ ecl_floor2(cl_object x, cl_object y)
       }
       CASE_BIGNUM_SINGLE_FLOAT {
         float n = ecl_single_float(y);
-        float p = _ecl_big_to_double(x) / n;
+        float p = _ecl_big_get_d(x) / n;
         float q = floorf(p);
         v0 = _ecl_float_to_integer(q);
         v1 = ecl_make_single_float((p - q)*n);
@@ -163,7 +163,7 @@ ecl_floor2(cl_object x, cl_object y)
       }
       CASE_BIGNUM_DOUBLE_FLOAT {
         double n = ecl_double_float(y);
-        double p = _ecl_big_to_double(x) / n;
+        double p = _ecl_big_get_d(x) / n;
         double q = floor(p);
         v0 = _ecl_double_to_integer(q);
         v1 = ecl_make_double_float((p - q)*n);
@@ -171,7 +171,7 @@ ecl_floor2(cl_object x, cl_object y)
       }
       CASE_BIGNUM_LONG_FLOAT {
         long double n = ecl_long_float(y);
-        long double p = _ecl_big_to_double(x) / n;
+        long double p = _ecl_big_get_d(x) / n;
         long double q = floorl(p);
         v0 = _ecl_long_double_to_integer(q);
         v1 = ecl_make_long_float((p - q)*n);

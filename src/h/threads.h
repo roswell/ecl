@@ -522,11 +522,11 @@ ecl_cond_var_increment_wait_count(ecl_cond_var_t *cv)
 {
   cl_index old_state, new_state;
   do {
-    old_state = AO_load_acquire((AO_t*)&cv->state);
+    old_state = ecl_atomic_load_acquire(&cv->state);
     new_state = ecl_cond_var_make_state(ecl_cond_var_wait_count(old_state) + 1,
                                         ecl_cond_var_status(old_state));
   } while (ecl_cond_var_status(old_state) == ECL_COND_VAR_RESET ||
-           !AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+           !ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
 }
 
 static inline void
@@ -534,10 +534,10 @@ ecl_cond_var_decrement_wait_count(ecl_cond_var_t *cv)
 {
   cl_index old_state, new_state;
   do {
-    old_state = AO_load_acquire((AO_t*)&cv->state);
+    old_state = ecl_atomic_load_acquire(&cv->state);
     new_state = ecl_cond_var_make_state(ecl_cond_var_wait_count(old_state) - 1,
                                         ecl_cond_var_status(old_state));
-  } while (!AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+  } while (!ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
 }
 
 static inline int
@@ -550,27 +550,27 @@ ecl_cond_var_handle_event(DWORD rc, ecl_cond_var_t *cv, ecl_mutex_t *mutex)
     /* broadcast event */
     do {
       /* INV: ecl_cond_var_status(old_state) == ECL_COND_VAR_BROADCAST */
-      old_state = AO_load_acquire((AO_t*)&cv->state);
+      old_state = ecl_atomic_load_acquire(&cv->state);
       wait_count = ecl_cond_var_wait_count(old_state) - 1;
       if (wait_count == 0) {
         new_state = ecl_cond_var_make_state(0, ECL_COND_VAR_RESET);
-        while (!AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+        while (!ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
         ResetEvent(cv->broadcast_event);
-        AO_store_release((AO_t*)&cv->state, 0);
+        ecl_atomic_store_release(&cv->state, 0);
         break;
       }
       new_state = ecl_cond_var_make_state(wait_count, ECL_COND_VAR_BROADCAST);
-    } while(!AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+    } while(!ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
     return ecl_mutex_lock(mutex);
   case WAIT_OBJECT_0 + 1:
   case WAIT_ABANDONED + 1:
     /* signal event */
     do {
       /* INV: ecl_cond_var_status(old_state) == ECL_COND_VAR_SIGNAL */
-      old_state = AO_load_acquire((AO_t*)&cv->state);
+      old_state = ecl_atomic_load_acquire(&cv->state);
       wait_count = ecl_cond_var_wait_count(old_state) - 1;
       new_state = ecl_cond_var_make_state(wait_count, 0);
-    } while(!AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+    } while(!ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
     return ecl_mutex_lock(mutex);
   case WAIT_TIMEOUT:
     ecl_cond_var_decrement_wait_count(cv);
@@ -652,7 +652,7 @@ ecl_cond_var_signal(ecl_cond_var_t *cv)
 {
   cl_index old_state, new_state, wait_count, status;
   do {
-    old_state = AO_load_acquire((AO_t*)&cv->state);
+    old_state = ecl_atomic_load_acquire(&cv->state);
     wait_count = ecl_cond_var_wait_count(old_state);
     status = ecl_cond_var_status(old_state);
     if (wait_count == 0 || status == ECL_COND_VAR_BROADCAST) {
@@ -660,7 +660,7 @@ ecl_cond_var_signal(ecl_cond_var_t *cv)
     }
     new_state = ecl_cond_var_make_state(wait_count, ECL_COND_VAR_SIGNAL);
   } while(status != 0 ||
-          !AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+          !ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
   return SetEvent(cv->signal_event) ? ECL_MUTEX_SUCCESS : GetLastError();
 }
 
@@ -669,7 +669,7 @@ ecl_cond_var_broadcast(ecl_cond_var_t *cv)
 {
   cl_index old_state, new_state, wait_count, status;
   do {
-    old_state = AO_load_acquire((AO_t*)&cv->state);
+    old_state = ecl_atomic_load_acquire(&cv->state);
     wait_count = ecl_cond_var_wait_count(old_state);
     status = ecl_cond_var_status(old_state);
     if (wait_count == 0 || status == ECL_COND_VAR_BROADCAST) {
@@ -677,7 +677,7 @@ ecl_cond_var_broadcast(ecl_cond_var_t *cv)
     }
     new_state = ecl_cond_var_make_state(wait_count, ECL_COND_VAR_BROADCAST);
   } while(status != 0 ||
-          !AO_compare_and_swap_full((AO_t*)&cv->state, (AO_t)old_state, (AO_t)new_state));
+          !ecl_atomic_compare_and_swap_full(&cv->state, old_state, new_state));
   return SetEvent(cv->broadcast_event) ? ECL_MUTEX_SUCCESS : GetLastError();
 }
 

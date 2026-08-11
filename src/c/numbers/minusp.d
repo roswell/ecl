@@ -30,7 +30,7 @@ ecl_minusp_fixnum(cl_object x)
 static int
 ecl_minusp_big(cl_object x)
 {
-  return _ecl_big_sign(x) < 0;
+  return ecl_bigsgn(x) < 0;
 }
 
 static int

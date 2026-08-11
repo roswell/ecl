@@ -31,7 +31,7 @@ ecl_plusp_fixnum(cl_object x)
 static int
 ecl_plusp_big(cl_object x)
 {
-  return _ecl_big_sign(x) > 0;
+  return ecl_bigsgn(x) > 0;
 }
 
 static int

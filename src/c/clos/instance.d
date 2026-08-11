@@ -70,6 +70,15 @@ si_instance_slotds(cl_object x)
 }
 
 cl_object
+si_instance_fun_set(cl_object x, cl_object isgf)
+{
+  x->instance.isgf = (Null(isgf)
+                      ? ECL_NOT_FUNCALLABLE
+                      : ECL_NULL_DISPATCH);
+  @(return x);
+}
+
+cl_object
 si_instance_sig_set(cl_object x)
 {
   x->instance.stamp = ECL_CLASS_OF(x)->instance.class_stamp;
@@ -394,6 +403,7 @@ enum ecl_built_in_classes {
   ECL_BUILTIN_CODE_BLOCK,
   ECL_BUILTIN_FOREIGN_DATA,
   ECL_BUILTIN_FRAME,
+  ECL_BUILTIN_TOKEN,
   ECL_BUILTIN_WEAK_POINTER,
   ECL_BUILTIN_PROCESS,
   ECL_BUILTIN_LOCK,
@@ -511,6 +521,8 @@ cl_class_of(cl_object x)
     index = ECL_BUILTIN_FOREIGN_DATA; break;
   case t_frame:
     index = ECL_BUILTIN_FRAME; break;
+  case t_token:
+    index = ECL_BUILTIN_TOKEN; break;
   case t_weak_pointer:
     index = ECL_BUILTIN_WEAK_POINTER; break;
 #ifdef ECL_SSE2

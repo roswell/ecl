@@ -745,7 +745,7 @@ handler_fn_prototype(fpe_signal_handler, int sig, siginfo_t *info, void *data)
   feclearexcept(FE_ALL_EXCEPT);
 # endif
 #endif /* !_MSC_VER */
-#if defined(SA_SIGINFO) && !defined(NACL)
+#if defined(SA_SIGINFO)
   if (info) {
     if (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV) {
       condition = @'division-by-zero';
@@ -804,7 +804,7 @@ handler_fn_prototype(sigsegv_handler, int sig, siginfo_t *info, void *aux)
   the_env = ecl_process_env();
   unlikely_if (zombie_process(the_env))
     return;
-#if defined(SA_SIGINFO) && !defined(NACL)
+#if defined(SA_SIGINFO)
 # if defined(ECL_USE_MPROTECT)
   /* We access disable_interrupts when the environment was
    * protected. That means there was a pending signal. */

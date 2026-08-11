@@ -179,8 +179,7 @@
                               &rest initargs)
   (declare (ignore slot-names))
   (call-next-method)
-  (when (generic-function-methods gfun)
-    (compute-g-f-spec-list gfun))
+  (compute-g-f-spec-list gfun)
   (update-dependents gfun initargs)
   gfun)
 
@@ -231,7 +230,7 @@
   (remf args :declare)
   (remf args :environment)
   (remf args :delete-methods)
-  (when (and method-class-p (symbolp generic-function-class))
+  (when (and method-class-p (symbolp method-class))
     (setf args (list* :method-class (find-class method-class) args)))
   (apply #'make-instance generic-function-class :name name args))
 

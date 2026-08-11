@@ -50,6 +50,7 @@
     "src:cmp;cmpbackend-cxx;cmpc-wt.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-arg-inl.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-fun-inl.lsp"
+    "src:cmp;cmpbackend-cxx;cmpc-init-name.lsp"
     ;; Inliner definitions
     "src:cmp;cmpbackend-cxx;cmpc-inl-lspfun.lsp"
     "src:cmp;cmpbackend-cxx;cmpc-inl-sysfun.lsp"
@@ -71,7 +72,6 @@
     "src:cmp;cmpbackend-cxx;cmpbackend-cxx.lsp"
     ;; Optimizations
     "src:cmp;cmpmap.lsp"
-    "src:cmp;cmpname.lsp"
     "src:cmp;cmpopt.lsp"
     "src:cmp;cmpopt-num.lsp"
     "src:cmp;cmpopt-clos.lsp"

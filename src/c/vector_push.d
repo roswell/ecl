@@ -41,6 +41,13 @@ extend_vector(cl_object v, cl_index amount)
   return si_replace_array(v, other);
 }
 
+cl_object
+ecl_extend_vector(cl_object v, cl_index amount)
+{
+  extend_vector(v, amount);
+  return v;
+}
+
 ecl_character
 ecl_string_push_extend(cl_object s, ecl_character c)
 {

@@ -76,6 +76,7 @@ static cl_index object_size[] = {
   ROUNDED_SIZE(ecl_codeblock), /* t_codeblock */
   ROUNDED_SIZE(ecl_foreign), /* t_foreign */
   ROUNDED_SIZE(ecl_stack_frame), /* t_frame */
+  ROUNDED_SIZE(ecl_token), /* t_token */
   ROUNDED_SIZE(ecl_weak_pointer) /* t_weak_pointer */
 #ifdef ECL_SSE2
   , ROUNDED_SIZE(ecl_sse_pack) /* t_sse_pack */
@@ -202,9 +203,9 @@ serialize_vector(pool_t pool, cl_object v)
 static void
 serialize_bignum(pool_t pool, cl_object buffer)
 {
-  int8_t sign = _ecl_big_sign(buffer);
+  int8_t sign = ecl_bigsgn(buffer);
   serialize_bits(pool, &sign, 1);
-  cl_index bytes = (_ecl_big_bits(buffer) + 7) / 8;
+  cl_index bytes = (_ecl_big_integer_length(buffer) + 7) / 8;
   serialize_bits(pool, &bytes, sizeof(cl_index));
   cl_index index = alloc(pool, bytes);
   cl_index bytes_written;

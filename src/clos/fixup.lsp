@@ -33,7 +33,7 @@
         (when (eq 'T (class-id (si:instance-class gfun)))
           ;; complete the generic function object
           (si:instance-class-set gfun (find-class 'STANDARD-GENERIC-FUNCTION))
-          (si::instance-sig-set gfun)
+          (si:instance-sig-set gfun)
           (setf (slot-value gfun 'method-class) standard-method-class)
           (setf (slot-value gfun 'docstring) nil)))
       (dolist (method (cdr method-info))
@@ -285,7 +285,7 @@ their lambda lists ~A and ~A are not congruent."
                             funcallable-standard-class
                             structure-class))
                   'standard-optimized-writer-method
-                  'standard-reader-method)))
+                  'standard-writer-method)))
 
 ;;; Error messages
 (defmethod no-applicable-method (gf &rest args)

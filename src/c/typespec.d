@@ -181,6 +181,8 @@ ecl_type_to_symbol(cl_type t)
     return @'si::foreign-data';
   case t_frame:
     return @'si::frame';
+  case t_token:
+    return @'si::token';
   case t_weak_pointer:
     return @'ext::weak-pointer';
 #ifdef ECL_SSE2
@@ -218,7 +220,7 @@ assert_type_non_negative_integer(cl_object p)
     if (!ecl_fixnum_minusp(p))
       return;
   } else if (t == t_bignum) {
-    if (_ecl_big_sign(p) >= 0)
+    if (ecl_bigsgn(p) >= 0)
       return;
   }
   FEwrong_type_argument(cl_list(3,@'integer',ecl_make_fixnum(0),@'*'), p);
