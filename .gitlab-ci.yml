@@ -1,20 +1,25 @@
 build:
   stage: build
-  # instead of calling g++ directly you can also use some build toolkit like make
-  # install the necessary build tools when needed
-  # before_script: 
-  #   - apt update && apt -y install make autoconf 
+  before_script:
+    - apt update && apt -y install texinfo texlive-base texlive-plain-generic
+    # instead of calling g++ directly you can also use some build toolkit like make
+    # install the necessary build tools when needed
+  #   - apt update && apt -y install make autoconf
   artifacts:
     paths:
     - target-dir
-  script: 
+  script:
     - ./configure --prefix=${CI_PROJECT_DIR}/target-dir/
+    - echo Building ECL
     - make
+    - echo Building the PDF of the ECL manual
+    - mkdir -p ${CI_PROJECT_DIR}/target-dir/ ; make doc && ( cd build/doc/ ; make manual && cd manual ; make ecl-manual.pdf && cp -p ecl-manual.pdf ${CI_PROJECT_DIR}/target-dir/ )
+    - echo Installing ECL
     - make install
   rules:
     - if: $CI_COMMIT_BRANCH == "develop"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  
+
 # run self-tests using the binary built before
 test-self:
   stage: test
