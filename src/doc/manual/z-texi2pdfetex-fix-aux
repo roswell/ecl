@@ -1,0 +1,19 @@
+#! /bin/sh -
+
+for f in x *.aux ; do
+	if [ -f $f ] ; then
+		sed -e 's/@unhbox @voidb@x @kern .07em @vbox {@hrule width.3em height.1ex}@kern .07em//' \
+		< ${f} > temp
+		mv temp $f
+	fi
+done
+
+pdfetex $*
+
+for f in x *.aux ; do
+	if [ -f $f ] ; then
+		sed -e 's/@unhbox @voidb@x @kern .07em @vbox {@hrule width.3em height.1ex}@kern .07em//' \
+		< ${f} > temp
+		mv temp $f
+	fi
+done

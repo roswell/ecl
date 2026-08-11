@@ -17,7 +17,7 @@ info: $(INFONAME).gz
 html: $(HTMLDIR)/index.html
 
 $(PDFNAME): $(FILES)
-	texi2pdf manual.txi \
+	PDFTEX=$(CWD)/z-texi2pdfetex-fix-aux texi2pdf manual.txi \
 	&& cp -pf manual.pdf $(PDFNAME)
 
 $(INFONAME).gz: $(FILES)
