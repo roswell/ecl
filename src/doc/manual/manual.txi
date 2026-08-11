@@ -26,9 +26,7 @@
 
 @noindent
 Copyright @copyright{} 2015, Daniel Kochmański
-@noindent
 Copyright @copyright{} 2000, Juan Jose Garcia-Ripoll
-@noindent
 Copyright @copyright{} 1990, Giuseppe Attardi
 @end ifinfo
 
