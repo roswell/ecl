@@ -101,7 +101,7 @@ point exception for the conditions passed in @var{condition}.
 obtained from an earlier call to @coderef{ext:trap-fpe} with
 @code{last}.
 
-@seealso{ECL_WITH_LISP_FPE}
+@alsoref{ECL_WITH_LISP_FPE}
 
 @end defun
 

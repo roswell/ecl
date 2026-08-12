@@ -34,6 +34,9 @@ info: manual
 html: manual
 	$(MAKE) MAKEINFO=$(MAKEINFO) -C manual html
 
+pdf: manual
+	$(MAKE) MAKEINFO=$(MAKEINFO) -C manual pdf
+
 install: $(MANUAL_INSTALL_TARGET)
 	$(mkinstalldirs) $(DESTDIR)$(mandir)/man$(manext)
 	$(INSTALL_DATA) ecl.man $(DESTDIR)$(mandir)/man$(manext)/ecl.$(manext)

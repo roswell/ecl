@@ -116,7 +116,7 @@ True if the thread was successfully imported, false otherwise.
 @paragraph Description
 External threads, i.e. threads which are not created in the Lisp world using the routines described in @ref{Processes (native threads)}, need to be imported with @coderef{ecl_import_current_thread} before Lisp code can be executed.
 
-@seealso{ecl_release_current_thread}
+@alsoref{ecl_release_current_thread}
 @end deftypefun
 
 @cppdef ecl_release_current_thread
@@ -174,7 +174,7 @@ This is a set of three macros that create an @code{unwind-protect} region that p
 
 As explained in @coderef{ECL_UNWIND_PROTECT}, it is normally advisable to set up an unwind-protect frame to avoid the embedded lisp code to perform arbitrary transfers of control.
 
-@seealso{ECL_UNWIND_PROTECT}
+@alsoref{ECL_UNWIND_PROTECT}
 @end defmac
 
 
@@ -215,7 +215,7 @@ When embedding ECL it is normally advisable to set up an @code{unwind-protect} f
 
 Besides this, normal mechanisms for exit, such as @coderef{ext:quit}, and uncaught exceptions, such as serious signals (@xref{Signals and Interrupts - Synchronous signals}), are best handled using @code{unwind-protect} blocks.
 
-@seealso{ECL_CATCH_ALL}
+@alsoref{ECL_CATCH_ALL}
 @end defmac
 
 @cppdef ecl_clear_interrupts
@@ -301,6 +301,6 @@ will output
 inf 0
 @end verbatim
 
-@seealso{ext:trap-fpe}
+@alsoref{ext:trap-fpe}
 
 @end defmac
