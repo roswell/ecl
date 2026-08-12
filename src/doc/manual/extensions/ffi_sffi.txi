@@ -34,7 +34,7 @@ being signaled, either at the compilation time or when loading the
 file.
 
 @paragraph Examples
-@exindex @coderef{ffi:clines} adding c toplevel declarations
+@exindex @code{ffi:clines} adding c toplevel declarations
 In this example the @coderef{ffi:clines} statement is required to get
 access to the C function @code{cos}:
 @lisp
@@ -108,7 +108,7 @@ automatic. Note also that @coderef{ffi:c-inline} cannot be used in
 interpreted or bytecompiled code! Such usage will signal an error.
 
 @paragraph Examples
-@exindex @coderef{ffi:c-inline} inlining c code
+@exindex @code{ffi:c-inline} inlining c code
 The following example implements the transcendental function SIN using
 the C equivalent:
 
@@ -136,7 +136,7 @@ as follows:
 The following example is slightly more complicated as it involves loops
 and two output values:
 
-@exindex @coderef{ffi:c-inline} returning multiple values
+@exindex @code{ffi:c-inline} returning multiple values
 @lisp
 @verbatim
 (defun sample (x)
@@ -174,7 +174,7 @@ declared – in such case the objects type in the C world will be
 @code{cl_object}.
 
 @paragraph Examples
-@exindex @coderef{ffi:c-progn} interleaving c and lisp code
+@exindex @code{ffi:c-progn} interleaving c and lisp code
 @lisp
 @verbatim
 (lambda (i)
@@ -300,7 +300,7 @@ Depending on whether the bytecodes or C compiler is used, this form will
 emit the code given in the corresponding keyword argument.
 
 @paragraph Examples
-@exindex @coderef{ext:with-backend} use different code for c and bytecodes compiler
+@exindex @code{ext:with-backend} use different code for c and bytecodes compiler
 @verbatim
 CL-USER> (defmacro test ()
            '(ext:with-backend :c/c++ "c/c++" :bytecodes "bytecodes"))

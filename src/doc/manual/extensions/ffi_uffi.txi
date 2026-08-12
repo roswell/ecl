@@ -123,7 +123,7 @@ This is a thin wrapper around @code{defconstant}. It evaluates at
 compile-time and optionally exports the symbol from the package.
 
 @paragraph Examples
-@exindex @coderef{ffi:def-constant} defining constants
+@exindex @code{ffi:def-constant} defining constants
 @lisp
 (ffi:def-constant pi2 (* 2 pi))
 (ffi:def-constant exported-pi2 (* 2 pi) :export t)
@@ -153,7 +153,7 @@ Foreign type designator (@var{value}).
 Defines a new foreign type
 
 @paragraph Examples
-@exindex @coderef{ffi:def-foreign-type} examples
+@exindex @code{ffi:def-foreign-type} examples
 @lisp
 (ffi:def-foreign-type my-generic-pointer :pointer-void)
 (ffi:def-foreign-type a-double-float :double-float)
@@ -184,7 +184,7 @@ the difference in implementations where some return a character and some
 return a integer whence dereferencing a C character pointer.
 
 @paragraph Examples
-@exindex @coderef{ffi:null-char-p} example
+@exindex @code{ffi:null-char-p} example
 @lisp
 (ffi:def-array-pointer ca :unsigned-char)
   (let ((fs (ffi:convert-to-foreign-string "ab")))
@@ -232,7 +232,7 @@ separator-string, and field symbol. Also creates a foreign type with the
 name name of type @code{:int}.
 
 @paragraph Examples
-@exindex @coderef{ffi:def-enum} sample enumerations
+@exindex @code{ffi:def-enum} sample enumerations
 @lisp
 (ffi:def-enum abc (:a :b :c)) 
 ;; Creates constants abc#a (1), abc#b (2), abc#c (3) and defines
@@ -268,7 +268,7 @@ field. It is a pointer that points to an instance of the parent
 structure. It's type is @code{:pointer-self}.
 
 @paragraph Examples
-@exindex @coderef{ffi:def-struct} defining C structure
+@exindex @code{ffi:def-struct} defining C structure
 @lisp
 (ffi:def-struct foo (a :unsigned-int) 
   (b    (* :char)) 
@@ -303,7 +303,7 @@ Accesses a slot value from a structure. This is generalized and can be
 used with @code{setf}.
 
 @paragraph Examples
-@exindex @coderef{ffi:get-slot-value} manipulating a struct field
+@exindex @code{ffi:get-slot-value} manipulating a struct field
 @lisp
 (ffi:get-slot-value foo-ptr 'foo-structure 'field-name)
 (setf (ffi:get-slot-value foo-ptr 'foo-structure 'field-name) 10)
@@ -333,7 +333,7 @@ This is similar to @coderef{ffi:get-slot-value}. It is used when the
 value of a slot is a pointer type.
 
 @paragraph Examples
-@exindex @coderef{ffi:get-slot-value} usage
+@exindex @code{ffi:get-slot-value} usage
 @lisp
 (ffi:get-slot-pointer foo-ptr 'foo-structure 'my-char-ptr)
 @end lisp
@@ -357,7 +357,7 @@ The foreign type of the array elements.
 Defines a type that is a pointer to an array of @var{type}.
 
 @paragraph Examples
-@exindex @coderef{ffi:def-array-pointer} usage
+@exindex @code{ffi:def-array-pointer} usage
 @lisp
 (ffi:def-array-pointer byte-array-pointer :unsigned-char)
 @end lisp
@@ -389,7 +389,7 @@ Dereferences (retrieves) the value of the foreign array
 element. @code{setf}-able.
 
 @paragraph Examples
-@exindex @coderef{ffi:deref-array} retrieving array element
+@exindex @code{ffi:deref-array} retrieving array element
 @lisp
 (ffi:def-array-pointer ca :char)
   (let ((fs (ffi:convert-to-foreign-string "ab")))
@@ -417,7 +417,7 @@ A list of fields of the union in form @code{(field-name field-type)}.
 Defines a foreign union type. 
 
 @paragraph Examples
-@exindex @coderef{ffi:def-union} union definition and usage
+@exindex @code{ffi:def-union} union definition and usage
 @lisp
 (ffi:def-union test-union
   (a-char :char)
@@ -466,7 +466,7 @@ Allocates an instance of a foreign object. It returns a pointer to the
 object.
 
 @paragraph Examples
-@exindex @coderef{ffi:allocate-foreign-object} allocating structure object
+@exindex @code{ffi:allocate-foreign-object} allocating structure object
 @lisp
 (ffi:def-struct ab (a :int) (b :double))
 ;; => (:STRUCT (A :INT) (B :DOUBLE))
@@ -511,7 +511,7 @@ This function wraps the allocation, binding, and destruction of a
 foreign object around the body of code.
 
 @paragraph Examples
-@exindex @coderef{ffi:with-foreign-object} macro usage
+@exindex @code{ffi:with-foreign-object} macro usage
 @lisp
 (defun gethostname2 ()
   "Returns the hostname"
@@ -539,7 +539,7 @@ Returns the number of data bytes used by a foreign object type. This
 does not include any Lisp storage overhead.
 
 @paragraph Examples
-@exindex @coderef{ffi:size-of-foreign-type}
+@exindex @code{ffi:size-of-foreign-type}
 @lisp
 (ffi:size-of-foreign-type :unsigned-byte)
 ;; => 1
@@ -587,7 +587,7 @@ Casting of the pointer may be performed with
 @coderef{ffi:deref-pointer}/@coderef{ffi:deref-array}.
 
 @paragraph Examples
-@exindex @coderef{ffi:deref-pointer}
+@exindex @code{ffi:deref-pointer}
 @lisp
 (let ((intp (ffi:allocate-foreign-object :int)))
   (setf (ffi:deref-pointer intp :int) 10)
@@ -615,7 +615,7 @@ Ensures that an objects obtained by dereferencing @code{:char} and
 @code{:unsigned-char} pointers is a lisp character.
 
 @paragraph Examples
-@exindex @coderef{ffi:ensure-char-character}
+@exindex @code{ffi:ensure-char-character}
 @lisp
 (let ((fs (ffi:convert-to-foreign-string "a")))
   (prog1 
@@ -646,7 +646,7 @@ Ensures that an objects obtained by dereferencing @code{:char} and
 @code{:unsigned-char} pointers is a lisp integer.
 
 @paragraph Examples
-@exindex @coderef{ffi:ensure-char-integer}
+@exindex @code{ffi:ensure-char-integer}
 @lisp
 (let ((fs (ffi:convert-to-foreign-string "a")))
   (prog1 
@@ -714,7 +714,7 @@ Executes @var{body} with @var{ptr} cast to be a pointer to type
 execution of @var{body}.
 
 @paragraph Examples
-@exindex @coderef{ffi:with-cast-pointer}
+@exindex @code{ffi:with-cast-pointer}
 @lisp
 (ffi:with-foreign-object (size :int)
   ;; FOO is a foreign function returning a :POINTER-VOID
@@ -755,7 +755,7 @@ Defines a symbol macro which can be used to access (get and set) the
 value of a variable in foreign code.
 
 @paragraph Examples
-@exindex @coderef{ffi:def-foreign-var} places in foreign world
+@exindex @code{ffi:def-foreign-var} places in foreign world
 
 C code defining foreign structure, standalone integer and the accessor:
 @example
@@ -1091,7 +1091,7 @@ A declaration specifying the result type of the foreign function.
 @paragraph Description
 Declares a foreign function.
 @paragraph Examples
-@exindex @coderef{ffi:def-function}
+@exindex @code{ffi:def-function}
 @lisp
 (ffi:def-function "gethostname"
     ((name (* :unsigned-char))
@@ -1128,7 +1128,7 @@ successfully or if the library has been previously loaded, otherwise
 Loads a foreign library. Ensures that a library is only loaded once
 during a session.
 @paragraph Examples
-@exindex @coderef{ffi:load-foreign-library}
+@exindex @code{ffi:load-foreign-library}
 @lisp
 (ffi:load-foreign-library #p"/usr/lib/libmagic.so.1")
 ;; => #<codeblock "/usr/lib/libmagic.so">
@@ -1163,7 +1163,7 @@ A path containing the path to the @emph{first} file found, or
 Finds a foreign library by searching through a number of possible
 locations. Returns the path of the first found file.
 @paragraph Examples
-@exindex @coderef{ffi:find-foreign-library}
+@exindex @code{ffi:find-foreign-library}
 @lisp
 (ffi:find-foreign-library '("libz" "libmagic")
                           '("/usr/local/lib/" "/usr/lib/")

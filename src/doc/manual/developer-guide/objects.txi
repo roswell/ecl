@@ -302,7 +302,7 @@ lisp string, and therefore it is less useful.
 @end itemize
 
 @subsubheading Example
-@exindex @coderef{ecl_read_from_cstring} constructing Lisp objects in C
+@exindex @code{ecl_read_from_cstring} constructing Lisp objects in C
 
 Using a C string
 @example

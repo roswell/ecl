@@ -131,7 +131,7 @@ this function a new thread will be created in which the associated
 function will be executed.  Returns @var{process} if the thread
 creation was successful and @code{nil} otherwise.
 
-@exindex Possible implementation of @coderef{mp:process-run-function}:
+@exindex Possible implementation of @code{mp:process-run-function}:
 
 @lisp
 (defun process-run-function (process-name process-function &rest args)
