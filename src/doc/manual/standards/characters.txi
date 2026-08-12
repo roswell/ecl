@@ -4,12 +4,12 @@
 ECL is fully ANSI Common-Lisp compliant in all aspects of the character data type, with the following peculiarities.
 
 @menu
-* Characters - Unicode vs. POSIX locale::
+* Characters - Unicode vs POSIX locale::
 * Characters - Newline characters::
 * Characters - C Reference::
 @end menu
 
-@node Characters - Unicode vs. POSIX locale
+@node Characters - Unicode vs POSIX locale
 @subsection Unicode vs. POSIX locale
 @cfindex --enable-unicode [32|16|no]
 
