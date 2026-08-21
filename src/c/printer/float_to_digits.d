@@ -47,17 +47,17 @@ setup(cl_object number, float_approx *approx)
   switch (ecl_t_of(number)) {
   case t_singlefloat:
     min_e = FLT_MIN_EXP;
-    limit_f = (number->SF.SFVAL ==
+    limit_f = (ecl_single_float(number) ==
                ldexpf(FLT_RADIX, FLT_MANT_DIG-1));
     break;
   case t_doublefloat:
     min_e = DBL_MIN_EXP;
-    limit_f = (number->DF.DFVAL ==
+    limit_f = (ecl_double_float(number) ==
                ldexp(FLT_RADIX, DBL_MANT_DIG-1));
     break;
   case t_longfloat:
     min_e = LDBL_MIN_EXP;
-    limit_f = (number->longfloat.value ==
+    limit_f = (ecl_long_float(number) ==
                ldexpl(FLT_RADIX, LDBL_MANT_DIG-1));
     break;
   default:
