@@ -85,7 +85,7 @@ si_setenv(cl_object var, cl_object value)
     unsetenv((char*)var->base_string.self);
 #else
 #if defined(ECL_MS_WINDOWS_HOST)
-    si_setenv(var, cl_core.null_string);
+    si_setenv(var, ecl_ct_null_string);
 #else
     putenv((char*)var->base_string.self);
 #endif
