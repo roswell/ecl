@@ -1,5 +1,3 @@
-Status
-======
 
 libffi-3.5.2 was released on August 2, 2025.
 

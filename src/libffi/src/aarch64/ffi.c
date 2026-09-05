@@ -916,8 +916,7 @@ ffi_prep_closure_loc (ffi_closure *closure,
   ffi_clear_cache(tramp, tramp + FFI_TRAMPOLINE_SIZE);
 
   /* Also flush the cache for code mapping.  */
-# if defined(_WIN32) || defined(__NetBSD__)
-  // ffi_data_to_code_pointer is broken on NetBSD
+# ifdef _WIN32
   // Not using dlmalloc.c for Windows ARM64 builds
   // so calling ffi_data_to_code_pointer() isn't necessary
   unsigned char *tramp_code = tramp;
