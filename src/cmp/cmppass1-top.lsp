@@ -190,7 +190,6 @@
                               fun-object ;; Function object
                               (let ((fname (second fname)))
                                 (add-object fname :permanent t
-                                                  :duplicate t
                                                   :always t
                                                   :used-p t))
                               macro
