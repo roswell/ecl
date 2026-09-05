@@ -74,7 +74,9 @@ struct ecl_core_struct ecl_core = {
   /* LIBRARIES is a list of objects. It behaves as a sequence of weak pointers
      thanks to the magic in the garbage collector. */
   .libraries = ECL_NIL,
-  .library_pathname = ECL_NIL
+  .library_pathname = ECL_NIL,
+  /* unixtime */
+  .Jan1st1970UT = ECL_NIL
 };
 
 /* note that this function does not create any environment */
@@ -102,9 +104,6 @@ ecl_boot(void)
 }
 
 /* -- constants ----------------------------------------------------- */
-
-/* (24*60*60)*(17+365*70) */
-const cl_object ecl_ct_Jan1st1970UT = ecl_make_fixnum(2208988800);
 
 ecl_def_ct_base_string(ecl_ct_null_string,"",0,,const);
 

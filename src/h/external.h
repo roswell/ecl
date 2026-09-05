@@ -198,6 +198,8 @@ struct ecl_core_struct {
 
   cl_object libraries;
   cl_object library_pathname;
+
+  cl_object Jan1st1970UT;
 };
 
 /* Common Lisp global environment. Modify main.d accordingly. */
@@ -249,7 +251,6 @@ extern ECL_API void ecl_copy(void *dst, void *src, cl_index ndx);
 /* cold_boot.c */
 extern ECL_API int ecl_boot(void);
 
-extern ECL_API const cl_object ecl_ct_Jan1st1970UT;
 extern ECL_API const cl_object ecl_ct_null_string;
 
 extern ECL_API const cl_object ecl_ct_default_rehash_size;

@@ -223,7 +223,7 @@ cl_get_universal_time()
 {
   cl_env_ptr env = ecl_process_env();
   cl_object utc = ecl_make_integer(time(0));
-  ecl_return1(env, ecl_plus(utc, ecl_ct_Jan1st1970UT));
+  ecl_return1(env, ecl_plus(utc, ecl_core.Jan1st1970UT));
 }
 
 void
@@ -231,4 +231,8 @@ init_unixtime(void)
 {
   ecl_get_internal_real_time(&beginning);
   ECL_SET(@'internal-time-units-per-second', ecl_make_fixnum(1000000));
+
+  ecl_core.Jan1st1970UT =
+    ecl_times(ecl_make_fixnum(24 * 60 * 60),
+              ecl_make_fixnum(17 + 365 * 70));
 }
