@@ -29,6 +29,8 @@
                     for object = (vv-value vv-record)
                     collect (cond ((gethash object *load-objects*)
                                    0)
+                                  ((eq object *empty-loc*)
+                                   0)
                                   ((vv-used-p vv-record)
                                    object)
                                   (t
