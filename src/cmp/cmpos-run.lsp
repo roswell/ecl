@@ -52,7 +52,8 @@
          (si:run-program-inner program args :default nil)
        (setf output (collect-lines output-stream))
        (multiple-value-setq (return-status result)
-         (si:waitpid pid t)))
+         (si:waitpid pid t))
+       (close output-stream))
      ;; ... otherwise we can use run-program and get proper
      ;; quoting of arguments ...
      #+(and (not ecl-min) (not cygwin))
@@ -60,7 +61,10 @@
          (ext:run-program program args :wait nil)
        (setf output (collect-lines output-stream))
        (multiple-value-setq (return-status result)
-         (ext:external-process-wait process-obj t)))
+         (ext:external-process-wait process-obj t))
+       (close (ext:external-process-input process-obj))
+       (close (ext:external-process-output process-obj))
+       (close (ext:external-process-error-stream process-obj)))
      ;; ... unless we're running on cygwin which has problems with
      ;; forking so we have to use si:system
      #+cygwin
