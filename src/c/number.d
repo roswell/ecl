@@ -542,7 +542,7 @@ ecl_make_long_float(long double f)
     return ecl_ct_longfloat_zero;
   }
   x = ecl_alloc_object(t_longfloat);
-  x->longfloat.value = f;
+  ecl_long_float(x) = f;
   return x;
 }
 

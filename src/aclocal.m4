@@ -1243,7 +1243,7 @@ fi
 ])
 
 dnl ----------------------------------------------------------------------
-dnl Configure included Boehm GC if needed
+dnl Configure included libffi if needed
 AC_DEFUN([ECL_LIBFFI],[
 AC_SUBST(ECL_LIBFFI_HEADER)
 case "${enable_libffi}" in

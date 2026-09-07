@@ -305,7 +305,7 @@ ecl_eql(cl_object x, cl_object y)
 #endif
 #ifdef ECL_SSE2
   case t_sse_pack:
-    return !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
+    return !memcmp(ECL_SSE_PACK_DATA(x).b8, ECL_SSE_PACK_DATA(y).b8, 16);
 #endif
   default:
     return FALSE;

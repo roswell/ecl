@@ -11,6 +11,7 @@
  *
  */
 
+#define ECL_MIN
 #include <stdio.h>
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
@@ -191,6 +192,9 @@ int
 main(int argc, char **args)
 {
   cl_object top_level, features;
+
+  /* Basic consistency check */
+  ecl_check_alignment();
 
   /* This should be always the first call */
   cl_boot(argc, args);

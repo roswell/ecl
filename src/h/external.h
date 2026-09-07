@@ -1649,15 +1649,15 @@ extern ECL_API cl_object si_sse_pack_to_vector(cl_object x, cl_object elt_type);
 
 extern ECL_API cl_object ecl_make_int_sse_pack(__m128i value);
 extern ECL_API __m128i ecl_unbox_int_sse_pack(cl_object value);
-#define ecl_unbox_int_sse_pack_unsafe(x) ((x)->sse.data.vi)
+#define ecl_unbox_int_sse_pack_unsafe(x) (ECL_SSE_PACK_DATA(x).vi)
 
 extern ECL_API cl_object ecl_make_float_sse_pack(__m128 value);
 extern ECL_API __m128 ecl_unbox_float_sse_pack(cl_object value);
-#define ecl_unbox_float_sse_pack_unsafe(x) ((x)->sse.data.vf)
+#define ecl_unbox_float_sse_pack_unsafe(x) (ECL_SSE_PACK_DATA(x).vf)
 
 extern ECL_API cl_object ecl_make_double_sse_pack(__m128d value);
 extern ECL_API __m128d ecl_unbox_double_sse_pack(cl_object value);
-#define ecl_unbox_double_sse_pack_unsafe(x) ((x)->sse.data.vd)
+#define ecl_unbox_double_sse_pack_unsafe(x) (ECL_SSE_PACK_DATA(x).vd)
 
 #endif
 

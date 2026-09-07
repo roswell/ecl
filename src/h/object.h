@@ -208,7 +208,7 @@ struct ecl_long_float {
         _ECL_HDR;
         long double value;
 };
-#define ecl_long_float(o) ((o)->longfloat.value)
+#define ecl_long_float(o) (((struct ecl_long_float*)o)->value)
 
 /* ECL features two implementations of bignums. One (default) is based on GMP,
    and the other has no external dependencies. The latter is conforming but only
@@ -269,7 +269,7 @@ struct ecl_clfloat {
         _ECL_HDR;
         long double _Complex value;
 };
-#define ecl_clfloat(o) ((o)->clfloat.value)
+#define ecl_clfloat(o) (((struct ecl_clfloat*)o)->value)
 #endif
 
 enum ecl_stype {                /*  symbol type  */
@@ -990,6 +990,7 @@ struct ecl_weak_pointer {       /*  weak pointer to value  */
 */
 struct ecl_dummy {
         _ECL_HDR;
+        cl_object dummy;
 };
 
 #ifdef ECL_THREADS
@@ -1141,6 +1142,8 @@ struct ecl_instance {            /* -- instance header -- */
 };
 
 #ifdef ECL_SSE2
+#define ECL_SSE_PACK_ELTTYPE(o) (((struct ecl_sse_pack*)o)->elttype)
+#define ECL_SSE_PACK_DATA(o) (((struct ecl_sse_pack*)o)->data)
 union ecl_sse_data {
         /* This member must be first in order for
            ecl_def_ct_sse_pack to work properly. */
@@ -1185,12 +1188,12 @@ union cl_lispunion {
         struct ecl_ratio        ratio;          /*  ratio  */
         struct ecl_singlefloat  SF;             /*  single floating-point number  */
         struct ecl_doublefloat  DF;             /*  double floating-point number  */
-        struct ecl_long_float   longfloat;      /*  long-float */
+        /* struct ecl_long_float   longfloat; *//*  not included in the union due to alignment issues */
         struct ecl_complex      gencomplex;     /*  generic complex number  */
 #ifdef ECL_COMPLEX_FLOAT
         struct ecl_csfloat      csfloat;        /*  complex single float */
         struct ecl_cdfloat      cdfloat;        /*  complex double float */
-        struct ecl_clfloat      clfloat;        /*  complex long float */
+        /* struct ecl_clfloat      clfloat; */  /*  not included in the union due to alignment issues */
 #endif
         struct ecl_symbol       symbol;         /*  symbol  */
         struct ecl_package      pack;           /*  package  */
@@ -1227,9 +1230,127 @@ union cl_lispunion {
         struct ecl_stack_frame  frame;          /*  stack frame  */
         struct ecl_weak_pointer weak;           /*  weak pointers  */
 #ifdef ECL_SSE2
-        struct ecl_sse_pack     sse;
+        /* struct ecl_sse_pack     sse; */      /*  not included in the union due to alignment issues */
 #endif
 };
+
+#ifdef ECL_MIN
+/* Verify that the alignment of all cl_object data structures is
+ * compatible. This will run as a first check in ecl_min. We can't do
+ * a compile-time check since alignof can not be used in the
+ * preprocessor. */
+# include <stdlib.h>
+# if __STDC_VERSION__ >= 201112
+#  include <stdalign.h>
+# else
+# define alignof(x) 0           /* nothing we can do here, let's just hope for the best */
+# endif
+static inline
+void ecl_check_alignment() {
+        if (
+#  ifndef ECL_SMALL_CONS
+            alignof(union cl_lispunion) != alignof(struct ecl_cons) ||
+#  endif
+            alignof(union cl_lispunion) != alignof(struct ecl_bignum) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_ratio) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_singlefloat) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_doublefloat) ||
+            /* alignof(union cl_lispunion) != alignof(struct ecl_long_float) || */
+            alignof(union cl_lispunion) != alignof(struct ecl_complex) ||
+#  ifdef ECL_COMPLEX_FLOAT
+            alignof(union cl_lispunion) != alignof(struct ecl_csfloat) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_cdfloat) ||
+            /* alignof(union cl_lispunion) != alignof(struct ecl_clfloat) || */
+#  endif
+            alignof(union cl_lispunion) != alignof(struct ecl_symbol) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_package) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_hashtable) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_array) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_vector) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_base_string) ||
+#  ifdef ECL_UNICODE
+            alignof(union cl_lispunion) != alignof(struct ecl_string) ||
+#  endif
+            alignof(union cl_lispunion) != alignof(struct ecl_stream) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_random) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_readtable) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_pathname) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_bytecodes) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_bclosure) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_cfun) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_cfunfixed) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_cclosure) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_dummy) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_instance) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_token) ||
+#  ifdef ECL_THREADS
+            alignof(union cl_lispunion) != alignof(struct ecl_process) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_lock) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_rwlock) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_condition_variable) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_semaphore) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_barrier) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_mailbox) ||
+#  endif
+            alignof(union cl_lispunion) != alignof(struct ecl_codeblock) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_foreign) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_stack_frame) ||
+            alignof(union cl_lispunion) != alignof(struct ecl_weak_pointer)
+            /* || alignof(union cl_lispunion) != alignof(struct ecl_sse_pack) */) {
+                fprintf(stderr, "********************************************************************************\n");
+                fprintf(stderr, "Incompatible alignment of internal data structures detected. ECL may not work correctly in this configuration.\nPlease report a bug on the ECL bug tracker.\n");
+                fprintf(stderr, "Alignments are as follows:\n");
+                fprintf(stderr, "alignof(union cl_lispunion) = %lu\n", alignof(union cl_lispunion)); 
+#  ifndef ECL_SMALL_CONS
+                fprintf(stderr, "alignof(struct ecl_cons) = %lu\n", alignof(struct ecl_cons));
+#  endif
+                fprintf(stderr, "alignof(struct ecl_bignum) = %lu\n", alignof(struct ecl_bignum));
+                fprintf(stderr, "alignof(struct ecl_ratio) = %lu\n", alignof(struct ecl_ratio));
+                fprintf(stderr, "alignof(struct ecl_singlefloat) = %lu\n", alignof(struct ecl_singlefloat));
+                fprintf(stderr, "alignof(struct ecl_doublefloat) = %lu\n", alignof(struct ecl_doublefloat));
+                fprintf(stderr, "alignof(struct ecl_complex) = %lu\n", alignof(struct ecl_complex));
+#  ifdef ECL_COMPLEX_FLOAT
+                fprintf(stderr, "alignof(struct ecl_csfloat) = %lu\n", alignof(struct ecl_csfloat));
+                fprintf(stderr, "alignof(struct ecl_cdfloat) = %lu\n", alignof(struct ecl_cdfloat));
+#  endif
+                fprintf(stderr, "alignof(struct ecl_symbol) = %lu\n", alignof(struct ecl_symbol));
+                fprintf(stderr, "alignof(struct ecl_package) = %lu\n", alignof(struct ecl_package));
+                fprintf(stderr, "alignof(struct ecl_hashtable) = %lu\n", alignof(struct ecl_hashtable));
+                fprintf(stderr, "alignof(struct ecl_array) = %lu\n", alignof(struct ecl_array));
+                fprintf(stderr, "alignof(struct ecl_vector) = %lu\n", alignof(struct ecl_vector));
+                fprintf(stderr, "alignof(struct ecl_base_string) = %lu\n", alignof(struct ecl_base_string));
+#  ifdef ECL_UNICODE
+                fprintf(stderr, "alignof(struct ecl_string) = %lu\n", alignof(struct ecl_string));
+#  endif
+                fprintf(stderr, "alignof(struct ecl_stream) = %lu\n", alignof(struct ecl_stream));
+                fprintf(stderr, "alignof(struct ecl_random) = %lu\n", alignof(struct ecl_random));
+                fprintf(stderr, "alignof(struct ecl_readtable) = %lu\n", alignof(struct ecl_readtable));
+                fprintf(stderr, "alignof(struct ecl_pathname) = %lu\n", alignof(struct ecl_pathname));
+                fprintf(stderr, "alignof(struct ecl_bytecodes) = %lu\n", alignof(struct ecl_bytecodes));
+                fprintf(stderr, "alignof(struct ecl_bclosure) = %lu\n", alignof(struct ecl_bclosure));
+                fprintf(stderr, "alignof(struct ecl_cfun) = %lu\n", alignof(struct ecl_cfun));
+                fprintf(stderr, "alignof(struct ecl_cfunfixed) = %lu\n", alignof(struct ecl_cfunfixed));
+                fprintf(stderr, "alignof(struct ecl_cclosure) = %lu\n", alignof(struct ecl_cclosure));
+                fprintf(stderr, "alignof(struct ecl_dummy) = %lu\n", alignof(struct ecl_dummy));
+                fprintf(stderr, "alignof(struct ecl_instance) = %lu\n", alignof(struct ecl_instance));
+                fprintf(stderr, "alignof(struct ecl_token) = %lu\n", alignof(struct ecl_token));
+#  ifdef ECL_THREADS
+                fprintf(stderr, "alignof(struct ecl_process) = %lu\n", alignof(struct ecl_process));
+                fprintf(stderr, "alignof(struct ecl_lock) = %lu\n", alignof(struct ecl_lock));
+                fprintf(stderr, "alignof(struct ecl_rwlock) = %lu\n", alignof(struct ecl_rwlock));
+                fprintf(stderr, "alignof(struct ecl_condition_variable) = %lu\n", alignof(struct ecl_condition_variable));
+                fprintf(stderr, "alignof(struct ecl_semaphore) = %lu\n", alignof(struct ecl_semaphore));
+                fprintf(stderr, "alignof(struct ecl_barrier) = %lu\n", alignof(struct ecl_barrier));
+                fprintf(stderr, "alignof(struct ecl_mailbox) = %lu\n", alignof(struct ecl_mailbox));
+#  endif
+                fprintf(stderr, "alignof(struct ecl_codeblock) = %lu\n", alignof(struct ecl_codeblock));
+                fprintf(stderr, "alignof(struct ecl_foreign) = %lu\n", alignof(struct ecl_foreign));
+                fprintf(stderr, "alignof(struct ecl_stack_frame) = %lu\n", alignof(struct ecl_stack_frame));
+                fprintf(stderr, "alignof(struct ecl_weak_pointer) = %lu\n", alignof(struct ecl_weak_pointer));
+                fprintf(stderr, "********************************************************************************\n");
+        }
+}
+#endif
 
 /*
         Type_of.
