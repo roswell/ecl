@@ -22,10 +22,10 @@ extern "C" {
 /* Allocate a number on the stack. */
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
         mp_limb_t name##data[n];                                        \
-        volatile struct ecl_bignum name##aux;                           \
-        const cl_object name = (name##aux.value->_mp_alloc = n,         \
-                                name##aux.value->_mp_size = 0,          \
-                                name##aux.value->_mp_d = name##data,    \
+        volatile ecl_object name##aux;                                  \
+        const cl_object name = (name##aux.big.value->_mp_alloc = n,     \
+                                name##aux.big.value->_mp_size = 0,      \
+                                name##aux.big.value->_mp_d = name##data, \
                                 (cl_object)(&name##aux))
 
 #define _ecl_big_init2(x,size) mpz_init2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
@@ -109,7 +109,7 @@ _ecl_big_count_bits(cl_object x) {
 #else  /* ECL_!GMPLIB */
 
 #define ECL_WITH_TEMP_BIGNUM(name,n)                                    \
-        volatile struct ecl_bignum name##aux;                           \
+        volatile ecl_object name##aux;                                  \
         const cl_object name = (cl_object)(&name##aux)
 
 #define _ecl_big_init2(x,n) (void)0
