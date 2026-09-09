@@ -39,8 +39,8 @@ ecl_abs_bignum(cl_object x)
 static cl_object
 ecl_abs_rational(cl_object x)
 {
-  return (ecl_minusp(x->ratio.num))?
-    ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
+  return (ecl_minusp(ecl_ratio_num(x)))?
+    ecl_make_ratio(ecl_negate(ecl_ratio_num(x)), ecl_ratio_den(x)) : x;
 }
 
 /* Example in ABS spec is a bit misleading because it says that
@@ -79,8 +79,8 @@ ecl_abs_complex(cl_object x)
   /* Compute sqrt(r*r + i*i) carefully to prevent overflow.
    * Assume |i| >= |r|. Then sqrt(i*i + r*r) = |i|*sqrt(1 +(r/i)^2).
    */
-  cl_object r = ecl_abs(x->gencomplex.real);
-  cl_object i = ecl_abs(x->gencomplex.imag);
+  cl_object r = ecl_abs(ecl_complex_real(x));
+  cl_object i = ecl_abs(ecl_complex_imag(x));
   int comparison;
   comparison = ecl_number_compare(r, i);
   if (comparison == 0) {

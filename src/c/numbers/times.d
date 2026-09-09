@@ -43,8 +43,8 @@ ecl_times(cl_object x, cl_object y)
       }
       CASE_FIXNUM_RATIO;
       CASE_BIGNUM_RATIO {
-        return ecl_make_ratio(ecl_times(x, y->ratio.num),
-                              y->ratio.den);
+        return ecl_make_ratio(ecl_times(x, ecl_ratio_num(y)),
+                              ecl_ratio_den(y));
       }
       CASE_FIXNUM_SINGLE_FLOAT {
         ret = ecl_make_single_float(ecl_fixnum(x) * ecl_single_float(y));
@@ -70,12 +70,12 @@ ecl_times(cl_object x, cl_object y)
       }
       CASE_RATIO_FIXNUM;
       CASE_RATIO_BIGNUM {
-        cl_object z = ecl_times(x->ratio.num, y);
-        return ecl_make_ratio(z, x->ratio.den);
+        cl_object z = ecl_times(ecl_ratio_num(x), y);
+        return ecl_make_ratio(z, ecl_ratio_den(x));
       }
       CASE_RATIO_RATIO {
-        cl_object num = ecl_times(x->ratio.num,y->ratio.num);
-        cl_object den = ecl_times(x->ratio.den,y->ratio.den);
+        cl_object num = ecl_times(ecl_ratio_num(x), ecl_ratio_num(y));
+        cl_object den = ecl_times(ecl_ratio_den(x), ecl_ratio_den(y));
         return ecl_make_ratio(num, den);
       }
       CASE_RATIO_SINGLE_FLOAT {
@@ -183,14 +183,14 @@ ecl_times(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return ecl_make_complex(ecl_times(x, y->gencomplex.real),
-                                ecl_times(x, y->gencomplex.imag));
+        return ecl_make_complex(ecl_times(x, ecl_complex_real(y)),
+                                ecl_times(x, ecl_complex_imag(y)));
       }
       CASE_COMPLEX_COMPLEX {
-        cl_object z11 = ecl_times(x->gencomplex.real, y->gencomplex.real);
-        cl_object z12 = ecl_times(x->gencomplex.imag, y->gencomplex.imag);
-        cl_object z21 = ecl_times(x->gencomplex.imag, y->gencomplex.real);
-        cl_object z22 = ecl_times(x->gencomplex.real, y->gencomplex.imag);
+        cl_object z11 = ecl_times(ecl_complex_real(x), ecl_complex_real(y));
+        cl_object z12 = ecl_times(ecl_complex_imag(x), ecl_complex_imag(y));
+        cl_object z21 = ecl_times(ecl_complex_imag(x), ecl_complex_real(y));
+        cl_object z22 = ecl_times(ecl_complex_real(x), ecl_complex_imag(y));
         return ecl_make_complex(ecl_minus(z11, z12), ecl_plus(z21, z22));
       }
 #ifdef ECL_COMPLEX_FLOAT

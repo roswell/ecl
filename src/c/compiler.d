@@ -2758,13 +2758,14 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   struct cl_compiler_env new_c_env = *old_c_env;
   cl_index handle;
   cl_object bytecodes;
-  struct ecl_stack_frame frame;
-  frame.t = t_frame;
-  frame.opened = 0;
-  frame.base = 0;
-  frame.size = 0;
-  frame.sp = 0;
-  frame.env = env;
+  ecl_object frame_object;
+  cl_object frame_aux = &frame_object;
+  frame_aux->frame.t = t_frame;
+  frame_aux->frame.opened = 0;
+  frame_aux->frame.base = 0;
+  frame_aux->frame.size = 0;
+  frame_aux->frame.sp = 0;
+  frame_aux->frame.env = env;
   env->nvalues = 0;
   env->values[0] = ECL_NIL;
   new_c_env.constants = si_make_vector(ECL_T, ecl_make_fixnum(16),
@@ -2787,9 +2788,7 @@ eval_nontrivial_form(cl_env_ptr env, cl_object form) {
   if (current_pc(env) != handle) {
     asm_op(env, OP_EXIT);
     bytecodes = asm_end(env, handle, form);
-    env->values[0] = ecl_interpret((cl_object)&frame,
-                                   new_c_env.lex_env,
-                                   bytecodes);
+    env->values[0] = ecl_interpret(frame_aux, new_c_env.lex_env, bytecodes);
 #ifdef GBC_BOEHM
     GC_FREE(bytecodes->bytecodes.code);
     GC_FREE(bytecodes);

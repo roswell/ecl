@@ -66,7 +66,7 @@ cl_numerator(cl_object x)
 {
   switch (ecl_t_of(x)) {
   case t_ratio:
-    x = x->ratio.num;
+    x = ecl_ratio_num(x);
     break;
   case t_fixnum:
   case t_bignum:
@@ -82,7 +82,7 @@ cl_denominator(cl_object x)
 {
   switch (ecl_t_of(x)) {
   case t_ratio:
-    x = x->ratio.den;
+    x = ecl_ratio_den(x);
     break;
   case t_fixnum:
   case t_bignum:
@@ -395,7 +395,7 @@ cl_realpart(cl_object x)
   case t_longfloat:
     break;
   case t_complex:
-    x = x->gencomplex.real;
+    x = ecl_complex_real(x);
     break;
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {
@@ -448,7 +448,7 @@ cl_imagpart(cl_object x)
       x = ecl_ct_longfloat_zero;
     break;
   case t_complex:
-    x = x->gencomplex.imag;
+    x = ecl_complex_imag(x);
     break;
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {

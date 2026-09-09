@@ -958,7 +958,7 @@ callback_executor(ffi_cif *cif, void *result, void **args, void *userdata)
   cl_object ret_type = (data = ECL_CONS_CDR(data), ECL_CONS_CAR(data));
   cl_object arg_types = (data = ECL_CONS_CDR(data), ECL_CONS_CAR(data));
   cl_env_ptr the_env = ecl_process_env();
-  struct ecl_stack_frame frame_aux;
+  ecl_object frame_aux;
   const cl_object frame = ecl_stack_frame_open(the_env, (cl_object)&frame_aux, 0);
   cl_object x;
   while (arg_types != ECL_NIL) {

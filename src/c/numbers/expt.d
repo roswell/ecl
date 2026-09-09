@@ -75,8 +75,8 @@ expt_zero(cl_object x, cl_object y)
   case t_longfloat:
     return longfloat_one;
   case t_complex:
-    z = expt_zero((tx == t_complex)? x->gencomplex.real : x,
-                  (ty == t_complex)? y->gencomplex.real : y);
+    z = expt_zero((tx == t_complex)? ecl_complex_real(x) : x,
+                  (ty == t_complex)? ecl_complex_real(y) : y);
     return ecl_make_complex(z, ecl_make_fixnum(0));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:

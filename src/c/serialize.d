@@ -259,13 +259,13 @@ serialize_one(pool_t pool, cl_object what)
     break;
   }
   case t_ratio: {
-    buffer->ratio.den = enqueue(pool, buffer->ratio.den);
-    buffer->ratio.num = enqueue(pool, buffer->ratio.num);
+    ecl_ratio_den(buffer) = enqueue(pool, ecl_ratio_den(buffer));
+    ecl_ratio_num(buffer) = enqueue(pool, ecl_ratio_num(buffer));
     break;
   }
   case t_complex: {
-    buffer->gencomplex.real = enqueue(pool, buffer->gencomplex.real);
-    buffer->gencomplex.imag = enqueue(pool, buffer->gencomplex.imag);
+    ecl_complex_real(buffer) = enqueue(pool, ecl_complex_real(buffer));
+    ecl_complex_imag(buffer) = enqueue(pool, ecl_complex_imag(buffer));
     break;
   }
   case t_hashtable:
@@ -575,12 +575,12 @@ fixup(cl_object o, cl_object *o_list)
   }
   switch (ecl_t_of(o)) {
   case t_ratio:
-    o->ratio.den = get_object(o->ratio.den, o_list);
-    o->ratio.num = get_object(o->ratio.num, o_list);
+    ecl_ratio_den(o) = get_object(ecl_ratio_den(o), o_list);
+    ecl_ratio_num(o) = get_object(ecl_ratio_num(o), o_list);
     break;
   case t_complex:
-    o->gencomplex.real = get_object(o->gencomplex.real, o_list);
-    o->gencomplex.imag = get_object(o->gencomplex.imag, o_list);
+    ecl_complex_real(o) = get_object(ecl_complex_real(o), o_list);
+    ecl_complex_imag(o) = get_object(ecl_complex_imag(o), o_list);
     break;
   case t_hashtable:
     fixup_hashtable(o, o_list);

@@ -402,10 +402,10 @@
     (def-inline cl:float :always (fixnum-float) :float "((float)(#0))" :exact-return-type t)
 
     (def-inline cl:numerator :unsafe (integer) integer "(#0)")
-    (def-inline cl:numerator :unsafe (ratio) integer "(#0)->ratio.num")
+    (def-inline cl:numerator :unsafe (ratio) integer "ecl_ratio_num(#0)")
 
     (def-inline cl:denominator :unsafe (integer) integer "ecl_make_fixnum(1)")
-    (def-inline cl:denominator :unsafe (ratio) integer "(#0)->ratio.den")
+    (def-inline cl:denominator :unsafe (ratio) integer "ecl_ratio_den(#0)")
 
     (def-inline cl:floor :always (t) (values &rest t) "ecl_floor1(#0)")
     (def-inline cl:floor :always (t t) (values &rest t) "ecl_floor2(#0,#1)")

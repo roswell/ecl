@@ -100,6 +100,7 @@ typedef enum {
         Definition of the type of LISP objects.
 */
 typedef union cl_lispunion *cl_object;
+typedef union cl_lispunion ecl_object;
 typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);
@@ -245,12 +246,17 @@ struct ecl_ratio {
         cl_object den;          /*  denominator, must be an integer  */
         cl_object num;          /*  numerator, must be an integer  */
 };
+#define ecl_ratio_den(o) ((o)->ratio.den)
+#define ecl_ratio_num(o) ((o)->ratio.num)
 
 struct ecl_complex {
         _ECL_HDR;
         cl_object real;         /*  real part, must be a number  */
         cl_object imag;         /*  imaginary part, must be a number  */
 };
+#define ecl_complex_real(o) ((o)->gencomplex.real)
+#define ecl_complex_imag(o) ((o)->gencomplex.imag)
+#define ecl_complex_value(o) ((o)->gencomplex)
 
 #ifdef ECL_COMPLEX_FLOAT
 struct ecl_csfloat {
@@ -1172,6 +1178,9 @@ struct ecl_sse_pack {
         _ECL_HDR1(elttype);
         union ecl_sse_data data;
 };
+
+#define ecl_sse_elttype(o) ((o)->sse.elttype)
+#define ecl_sse_data(o)    ((o)->sse.data)
 #endif
 
 /*

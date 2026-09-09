@@ -42,8 +42,8 @@ ecl_ceiling1(cl_object x)
     break;
   case t_ratio: {
     const cl_env_ptr the_env = ecl_process_env();
-    v0 = ecl_ceiling2(x->ratio.num, x->ratio.den);
-    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
+    v0 = ecl_ceiling2(ecl_ratio_num(x), ecl_ratio_den(x));
+    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(x));
     break;
   }
   case t_singlefloat: {
@@ -115,8 +115,8 @@ ecl_ceiling2(cl_object x, cl_object y)
       break;
     }
     case t_ratio:           /* FIX / RAT */
-      v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
-      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
+      v0 = ecl_ceiling2(ecl_times(x, ecl_ratio_den(y)), ecl_ratio_num(y));
+      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(y));
       break;
     case t_singlefloat: {   /* FIX / SF */
       float n = ecl_single_float(y);
@@ -159,8 +159,8 @@ ecl_ceiling2(cl_object x, cl_object y)
       break;
     }
     case t_ratio:           /* BIG / RAT */
-      v0 = ecl_ceiling2(ecl_times(x, y->ratio.den), y->ratio.num);
-      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
+      v0 = ecl_ceiling2(ecl_times(x, ecl_ratio_den(y)), ecl_ratio_num(y));
+      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(y));
       break;
     case t_singlefloat: {   /* BIG / SF */
       float n = ecl_single_float(y);
@@ -193,13 +193,14 @@ ecl_ceiling2(cl_object x, cl_object y)
   case t_ratio:
     switch(ecl_t_of(y)) {
     case t_ratio:           /* RAT / RAT */
-      v0 = ecl_ceiling2(ecl_times(x->ratio.num, y->ratio.den),
-                        ecl_times(x->ratio.den, y->ratio.num));
-      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_times(x->ratio.den, y->ratio.den));
+      v0 = ecl_ceiling2(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
+                        ecl_times(ecl_ratio_den(x), ecl_ratio_num(y)));
+      v1 = ecl_make_ratio(ecl_nth_value(the_env, 1),
+                          ecl_times(ecl_ratio_den(x), ecl_ratio_den(y)));
       break;
     default:                /* RAT / ANY */
-      v0 = ecl_ceiling2(x->ratio.num, ecl_times(x->ratio.den, y));
-      v1 = ecl_divide(ecl_nth_value(the_env, 1), x->ratio.den);
+      v0 = ecl_ceiling2(ecl_ratio_num(x), ecl_times(ecl_ratio_den(x), y));
+      v1 = ecl_divide(ecl_nth_value(the_env, 1), ecl_ratio_den(x));
     }
     break;
   case t_singlefloat: {           /* SF / ANY */

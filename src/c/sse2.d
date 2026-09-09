@@ -72,10 +72,10 @@ si_sse_pack_as_elt_type(cl_object x, cl_object type)
 
   rtype = symbol_to_sse_elttype(type);
 
-  if (x->sse.elttype != rtype) {
+  if (ecl_sse_elttype(x) != rtype) {
     cl_object new = ecl_alloc_object(t_sse_pack);
-    new->sse.elttype = rtype;
-    new->sse.data.vi = x->sse.data.vi;
+    ecl_sse_elttype(new) = rtype;
+    ecl_sse_data(new).vi = ecl_sse_data(x).vi;
     x = new;
   }
 
@@ -89,7 +89,8 @@ si_sse_pack_element_type(cl_object x)
     FEwrong_type_nth_arg(@[ext::sse-pack-element-type], 1, x, @[ext::sse-pack]);
   }
 
-  @(return ecl_elttype_to_symbol(x->sse.elttype) ecl_make_fixnum(x->sse.elttype));
+  cl_elttype etype = ecl_sse_elttype(x);
+  @(return ecl_elttype_to_symbol(etype) ecl_make_fixnum(etype));
 }
 
 /* Conversion to and from specialized vectors */
@@ -104,12 +105,12 @@ si_sse_pack_to_vector(cl_object x, cl_object elt_type)
     FEwrong_type_nth_arg(@[ext::sse-pack-to-vector], 1, x, @[ext::sse-pack]);
   }
 
-  etype = x->sse.elttype;
+  etype = ecl_sse_elttype(x);
   if (elt_type != ECL_NIL)
     etype = symbol_to_sse_elttype(elt_type);
 
   vec = ecl_alloc_simple_vector(16/ecl_aet_size[etype], etype);
-  memcpy(vec->vector.self.b8, x->sse.data.b8, 16);
+  memcpy(vec->vector.self.b8, ecl_sse_data(x).b8, 16);
 
   @(return vec);
 }
@@ -129,8 +130,8 @@ si_vector_to_sse_pack(cl_object x)
     FEerror("Wrong vector size in VECTOR-TO-SSE-PACK: ~S",1,ecl_make_fixnum(x->vector.dim));
 
   ssev = ecl_alloc_object(t_sse_pack);
-  ssev->sse.elttype = x->vector.elttype;
-  memcpy(ssev->sse.data.b8, x->vector.self.b8, 16);
+  ecl_sse_elttype(ssev) = x->vector.elttype;
+  memcpy(ecl_sse_data(ssev).b8, x->vector.self.b8, 16);
 
   @(return ssev);
 }
@@ -143,8 +144,8 @@ cl_object
 ecl_make_int_sse_pack(__m128i value)
 {
   cl_object obj = ecl_alloc_object(t_sse_pack);
-  obj->sse.elttype = ecl_aet_b8;
-  obj->sse.data.vi = value;
+  ecl_sse_elttype(obj) = ecl_aet_b8;
+  ecl_sse_data(obj).vi = value;
   @(return obj);
 }
 
@@ -153,7 +154,7 @@ ecl_unbox_int_sse_pack(cl_object x)
 {
   do {
     if (ECL_SSE_PACK_P(x))
-      return x->sse.data.vi;
+      return ecl_sse_data(x).vi;
     x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
   } while(1);
 }
@@ -162,8 +163,8 @@ cl_object
 ecl_make_float_sse_pack(__m128 value)
 {
   cl_object obj = ecl_alloc_object(t_sse_pack);
-  obj->sse.elttype = ecl_aet_sf;
-  obj->sse.data.vf = value;
+  ecl_sse_elttype(obj) = ecl_aet_sf;
+  ecl_sse_data(obj).vf = value;
   @(return obj);
 }
 
@@ -172,7 +173,7 @@ ecl_unbox_float_sse_pack(cl_object x)
 {
   do {
     if (ECL_SSE_PACK_P(x))
-      return x->sse.data.vf;
+      return ecl_sse_data(x).vf;
     x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
   } while(1);
 }
@@ -181,8 +182,8 @@ cl_object
 ecl_make_double_sse_pack(__m128d value)
 {
   cl_object obj = ecl_alloc_object(t_sse_pack);
-  obj->sse.elttype = ecl_aet_df;
-  obj->sse.data.vd = value;
+  ecl_sse_elttype(obj) = ecl_aet_df;
+  ecl_sse_data(obj).vd = value;
   @(return obj);
 }
 
@@ -191,7 +192,7 @@ ecl_unbox_double_sse_pack(cl_object x)
 {
   do {
     if (ECL_SSE_PACK_P(x))
-      return x->sse.data.vd;
+      return ecl_sse_data(x).vd;
     x = ecl_type_error(@'coerce', "variable", x, @'ext::sse-pack');
   } while(1);
 }

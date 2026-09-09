@@ -263,7 +263,7 @@
        (let* ((,var ,(or loc "_ecl_inner_frame"))
               (,hlp "_ecl_inner_frame_aux")
               (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
-         (wt-nl "struct ecl_stack_frame " ,hlp ";")
+         (wt-nl "ecl_object " ,hlp ";")
          (wt-nl *volatile* "cl_object " ,var
                 "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
          ,@body))))

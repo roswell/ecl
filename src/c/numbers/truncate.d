@@ -37,7 +37,7 @@ ecl_truncate1(cl_object x)
     v1 = ecl_make_fixnum(0);
     break;
   case t_ratio:
-    if (ecl_plusp(x->ratio.num))
+    if (ecl_plusp(ecl_ratio_num(x)))
       return ecl_floor1(x);
     else
       return ecl_ceiling1(x);

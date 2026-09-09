@@ -38,7 +38,8 @@ ecl_one_plus_big(cl_object x)
 static cl_object
 ecl_one_plus_ratio(cl_object x)
 {
-  return ecl_make_ratio(ecl_plus(x->ratio.num,x->ratio.den), x->ratio.den);
+  return ecl_make_ratio(ecl_plus(ecl_ratio_num(x), ecl_ratio_den(x)),
+                        ecl_ratio_den(x));
 }
 
 static cl_object
@@ -62,8 +63,8 @@ ecl_one_plus_long_float(cl_object x)
 static cl_object
 ecl_one_plus_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_one_plus(x->gencomplex.real),
-                          x->gencomplex.imag);
+  return ecl_make_complex(ecl_one_plus(ecl_complex_real(x)),
+                          ecl_complex_imag(x));
 }
 
 #ifdef ECL_COMPLEX_FLOAT

@@ -37,7 +37,7 @@ ecl_plusp_big(cl_object x)
 static int
 ecl_plusp_ratio(cl_object x)
 {
-  return ecl_plusp(x->ratio.num);
+  return ecl_plusp(ecl_ratio_num(x));
 }
 
 static int

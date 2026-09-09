@@ -218,11 +218,11 @@ do_patch_sharp(cl_object x, cl_object table)
     }
     break;
   case t_complex: {
-    cl_object r = do_patch_sharp(x->gencomplex.real, table);
-    cl_object i = do_patch_sharp(x->gencomplex.imag, table);
-    if (r != x->gencomplex.real || i != x->gencomplex.imag) {
+    cl_object r = do_patch_sharp(ecl_complex_real(x), table);
+    cl_object i = do_patch_sharp(ecl_complex_imag(x), table);
+    if (r != ecl_complex_real(x) || i != ecl_complex_imag(x)) {
       cl_object c = ecl_make_complex(r, i);
-      x->gencomplex = c->gencomplex;
+      ecl_complex_value(x) = ecl_complex_value(c);
     }
     break;
   }

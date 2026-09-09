@@ -281,8 +281,8 @@ ecl_eql(cl_object x, cl_object y)
   case t_bignum:
     return (_ecl_big_compare(x, y) == 0);
   case t_ratio:
-    return (ecl_eql(x->ratio.num, y->ratio.num) &&
-            ecl_eql(x->ratio.den, y->ratio.den));
+    return (ecl_eql(ecl_ratio_num(x), ecl_ratio_num(y)) &&
+            ecl_eql(ecl_ratio_den(x), ecl_ratio_den(y)));
   case t_singlefloat:
     return float_eql(ecl_single_float(x), ecl_single_float(y));
   case t_longfloat:
@@ -290,8 +290,8 @@ ecl_eql(cl_object x, cl_object y)
   case t_doublefloat:
     return double_eql(ecl_double_float(x), ecl_double_float(y));
   case t_complex:
-    return (ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
-            ecl_eql(x->gencomplex.imag, y->gencomplex.imag));
+    return (ecl_eql(ecl_complex_real(x), ecl_complex_real(y)) &&
+            ecl_eql(ecl_complex_imag(x), ecl_complex_imag(y)));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
     return (float_eql(crealf(ecl_csfloat(x)), crealf(ecl_csfloat(y))) &&
@@ -305,7 +305,7 @@ ecl_eql(cl_object x, cl_object y)
 #endif
 #ifdef ECL_SSE2
   case t_sse_pack:
-    return !memcmp(x->sse.data.b8, y->sse.data.b8, 16);
+    return !memcmp(ecl_sse_data(x).b8, ecl_sse_data(y).b8, 16);
 #endif
   default:
     return FALSE;
@@ -346,8 +346,8 @@ ecl_equal(cl_object x, cl_object y)
   case t_bignum:
     return (tx == ty) && (_ecl_big_compare(x,y) == 0);
   case t_ratio:
-    return (tx == ty) && ecl_eql(x->ratio.num, y->ratio.num) &&
-      ecl_eql(x->ratio.den, y->ratio.den);
+    return (tx == ty) && ecl_eql(ecl_ratio_num(x), ecl_ratio_num(y)) &&
+      ecl_eql(ecl_ratio_den(x), ecl_ratio_den(y));
   case t_singlefloat: {
     if (tx != ty) return 0;
     return float_eql(ecl_single_float(x), ecl_single_float(y));
@@ -361,8 +361,8 @@ ecl_equal(cl_object x, cl_object y)
     return long_double_eql(ecl_long_float(x), ecl_long_float(y));
   }
   case t_complex:
-    return (tx == ty) && ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
-      ecl_eql(x->gencomplex.imag, y->gencomplex.imag);
+    return (tx == ty) && ecl_eql(ecl_complex_real(x), ecl_complex_real(y)) &&
+      ecl_eql(ecl_complex_imag(x), ecl_complex_imag(y));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
     if (tx != ty) return 0;

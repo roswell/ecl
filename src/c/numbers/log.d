@@ -86,8 +86,8 @@ ecl_log1_simple(cl_object x)
 static cl_object
 ecl_log1_ratio(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= FLT_MAX_EXP) : (lden - lnum >= -FLT_MIN_EXP)) {
@@ -159,11 +159,11 @@ ecl_log1_complex(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_csfloat);
-  float _Complex fc = ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
+  float _Complex fc = ecl_to_float(ecl_complex_real(x)) + I * ecl_to_float(ecl_complex_imag(x));
   ecl_csfloat(result) = clogf(fc);
   return result;
 #else
-  return ecl_log1_complex_inner(x->gencomplex.real, x->gencomplex.imag);
+  return ecl_log1_complex_inner(ecl_complex_real(x), ecl_complex_imag(x));
 #endif
 }
 
@@ -235,8 +235,8 @@ ecl_log1_simple_double_precision(cl_object x)
 static cl_object
 ecl_log1_ratio_double_precision(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= DBL_MAX_EXP) : (lden - lnum >= -DBL_MIN_EXP)) {
@@ -259,11 +259,11 @@ ecl_log1_complex_double_precision(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_cdfloat);
-  double _Complex fc = ecl_to_double(x->gencomplex.real) + I * ecl_to_double(x->gencomplex.real);
+  double _Complex fc = ecl_to_double(ecl_complex_real(x)) + I * ecl_to_double(ecl_complex_real(x));
   ecl_cdfloat(result) = clog(fc);
   return result;
 #else
-  return ecl_log1_complex_inner(x->gencomplex.real, x->gencomplex.imag);
+  return ecl_log1_complex_inner(ecl_complex_real(x), ecl_complex_imag(x));
 #endif
 }
 
@@ -319,8 +319,8 @@ ecl_log1_simple_long_precision(cl_object x)
 static cl_object
 ecl_log1_ratio_long_precision(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= LDBL_MAX_EXP) : (lden - lnum >= -LDBL_MIN_EXP)) {
@@ -349,11 +349,11 @@ ecl_log1_complex_long_precision(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_clfloat);
-  long double _Complex fc = ecl_to_long_double(x->gencomplex.real) + I * ecl_to_long_double(x->gencomplex.real);
+  long double _Complex fc = ecl_to_long_double(ecl_complex_real(x)) + I * ecl_to_long_double(ecl_complex_real(x));
   ecl_clfloat(result) = clogl(fc);
   return result;
 #else
-  return ecl_log1_complex_inner(x->gencomplex.real, x->gencomplex.imag);
+  return ecl_log1_complex_inner(ecl_complex_real(x), ecl_complex_imag(x));
 #endif
 }
 
@@ -496,7 +496,8 @@ ecl_log1p_complex(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_csfloat);
-  float _Complex fc = ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.real);
+  float _Complex fc = (ecl_to_float(ecl_complex_real(x))
+                       + I * ecl_to_float(ecl_complex_real(x)));
   ecl_csfloat(result) = clogf(1+fc);
   return result;
 #else

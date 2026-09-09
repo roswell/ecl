@@ -38,8 +38,8 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
                        ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
   case t_ratio:
-    h = _hash_eql(h, x->ratio.num);
-    return _hash_eql(h, x->ratio.den);
+    h = _hash_eql(h, ecl_ratio_num(x));
+    return _hash_eql(h, ecl_ratio_den(x));
   case t_singlefloat:
     return hash_string(h, (unsigned char*)&ecl_single_float(x), sizeof(ecl_single_float(x)));
   case t_doublefloat:
@@ -53,8 +53,8 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
   case t_complex:
-    h = _hash_eql(h, x->gencomplex.real);
-    return _hash_eql(h, x->gencomplex.imag);
+    h = _hash_eql(h, ecl_complex_real(x));
+    return _hash_eql(h, ecl_complex_imag(x));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: return hash_string(h, (unsigned char*)&ecl_csfloat(x), sizeof(ecl_csfloat(x)));
   case t_cdfloat: return hash_string(h, (unsigned char*)&ecl_cdfloat(x), sizeof(ecl_cdfloat(x)));
@@ -79,7 +79,7 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_word(h, ECL_CHAR_CODE(x));
 #ifdef ECL_SSE2
   case t_sse_pack:
-    return hash_string(h, x->sse.data.b8, 16);
+    return hash_string(h, ecl_sse_data(x).b8, 16);
 #endif
   default:
     return hash_word(h, ((cl_hashkey)x >> 2));
@@ -157,8 +157,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
   case t_complex: {
-    h = _hash_equal(depth, h, x->gencomplex.real);
-    return _hash_equal(depth, h, x->gencomplex.imag);
+    h = _hash_equal(depth, h, ecl_complex_real(x));
+    return _hash_equal(depth, h, ecl_complex_imag(x));
   }
 # ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {
@@ -244,11 +244,11 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)ECL_BIGNUM_LIMBS(x),
                        ECL_BIGNUM_USIZE(x) * ECL_BIGNUM_LIMB_BITS);
   case t_ratio:
-    h = _hash_equalp(0, h, x->ratio.num);
-    return _hash_equalp(0, h, x->ratio.den);
+    h = _hash_equalp(0, h, ecl_ratio_num(x));
+    return _hash_equalp(0, h, ecl_ratio_den(x));
   case t_complex:
-    h = _hash_equalp(0, h, x->gencomplex.real);
-    return _hash_equalp(0, h, x->gencomplex.imag);
+    h = _hash_equalp(0, h, ecl_complex_real(x));
+    return _hash_equalp(0, h, ecl_complex_imag(x));
 #ifdef ECL_COMPLEX_FLOAT
     /* FIXME! We should be more precise here! */
   case t_csfloat: return hash_word(h, (cl_index)ecl_csfloat(x));

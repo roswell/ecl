@@ -40,7 +40,7 @@ user_function_dispatch(cl_narg narg, ...)
   cl_object output;
   cl_env_ptr env = ecl_process_env();
   cl_object fun = env->function;
-  struct ecl_stack_frame frame_aux;
+  ecl_object frame_aux;
   const cl_object frame = ecl_stack_frame_open(env, (cl_object)&frame_aux, narg);
   ecl_va_list args; ecl_va_start(args, narg, narg, 0);
   for (i = 0; i < narg; i++) {

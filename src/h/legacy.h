@@ -31,8 +31,8 @@
 #define fix(o)                  ecl_fixnum(o)
 #define FIXNUMP(o)              ECL_FIXNUMP(o)
 
-#define sf(obje)        (obje)->SF.SFVAL
-#define df(obje)        (obje)->DF.DFVAL
+#define sf(obje)        ecl_single_float(obje)
+#define df(obje)        ecl_double_float(obje)
 #define make_shortfloat(x) ecl_make_shortfloat(x);
 
 #define big_dim         big_num->_mp_alloc

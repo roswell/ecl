@@ -60,8 +60,8 @@ ecl_divide(cl_object x, cl_object y)
       }
       CASE_FIXNUM_RATIO;
       CASE_BIGNUM_RATIO {
-        return ecl_make_ratio(ecl_times(x, y->ratio.den),
-                              y->ratio.num);
+        return ecl_make_ratio(ecl_times(x, ecl_ratio_den(y)),
+                              ecl_ratio_num(y));
       }
       CASE_FIXNUM_SINGLE_FLOAT {
         ret = ecl_make_single_float(ecl_fixnum(x) / ecl_single_float(y));
@@ -87,12 +87,12 @@ ecl_divide(cl_object x, cl_object y)
         }
       }
       CASE_RATIO_BIGNUM {
-        cl_object z = ecl_times(x->ratio.den, y);
-        return ecl_make_ratio(x->ratio.num, z);
+        cl_object z = ecl_times(ecl_ratio_den(x), y);
+        return ecl_make_ratio(ecl_ratio_num(x), z);
       }
       CASE_RATIO_RATIO {
-        cl_object num = ecl_times(x->ratio.num,y->ratio.den);
-        cl_object den = ecl_times(x->ratio.den,y->ratio.num);
+        cl_object num = ecl_times(ecl_ratio_num(x),ecl_ratio_den(y));
+        cl_object den = ecl_times(ecl_ratio_den(x),ecl_ratio_num(y));
         return ecl_make_ratio(num, den);
       }
       CASE_SINGLE_FLOAT_FIXNUM {
@@ -178,8 +178,8 @@ ecl_divide(cl_object x, cl_object y)
       CASE_COMPLEX_RATIO;
       CASE_COMPLEX_SINGLE_FLOAT;
       CASE_COMPLEX_DOUBLE_FLOAT; COMPLEX_X: {
-        return ecl_make_complex(ecl_divide(x->gencomplex.real, y),
-                                ecl_divide(x->gencomplex.imag, y));
+        return ecl_make_complex(ecl_divide(ecl_complex_real(x), y),
+                                ecl_divide(ecl_complex_imag(x), y));
       }
       CASE_BIGNUM_COMPLEX;
       CASE_RATIO_COMPLEX;
@@ -187,11 +187,12 @@ ecl_divide(cl_object x, cl_object y)
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return complex_divide(x, ecl_make_fixnum(0), y->gencomplex.real, y->gencomplex.imag);
+        return complex_divide(x, ecl_make_fixnum(0),
+                              ecl_complex_real(y), ecl_complex_imag(y));
       }
       CASE_COMPLEX_COMPLEX {
-        return complex_divide(x->gencomplex.real, x->gencomplex.imag,
-                              y->gencomplex.real, y->gencomplex.imag);
+        return complex_divide(ecl_complex_real(x), ecl_complex_imag(x),
+                              ecl_complex_real(y), ecl_complex_imag(y));
       }
 #ifdef ECL_COMPLEX_FLOAT
       /* upgraded type csfloat */

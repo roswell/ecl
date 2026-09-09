@@ -463,8 +463,8 @@ ecl_make_ratio(cl_object num, cl_object den)
   if (den == ecl_make_fixnum(-1))
     return ecl_negate(num);
   r = ecl_alloc_object(t_ratio);
-  r->ratio.num = num;
-  r->ratio.den = den;
+  ecl_ratio_num(r) = num;
+  ecl_ratio_den(r) = den;
   return(r);
 }
 
@@ -542,7 +542,7 @@ ecl_make_long_float(long double f)
     return ecl_ct_longfloat_zero;
   }
   x = ecl_alloc_object(t_longfloat);
-  x->longfloat.value = f;
+  ecl_long_float(x) = f;
   return x;
 }
 
@@ -562,18 +562,18 @@ ecl_make_complex(cl_object r, cl_object i)
 #else
   case t_singlefloat:
     c = ecl_alloc_object(t_complex);
-    c->gencomplex.real = ecl_make_single_float(ecl_to_float(r));
-    c->gencomplex.imag = ecl_make_single_float(ecl_to_float(i));
+    ecl_complex_real(c) = ecl_make_single_float(ecl_to_float(r));
+    ecl_complex_imag(c) = ecl_make_single_float(ecl_to_float(i));
     return c;
   case t_doublefloat:
     c = ecl_alloc_object(t_complex);
-    c->gencomplex.real = ecl_make_double_float(ecl_to_double(r));
-    c->gencomplex.imag = ecl_make_double_float(ecl_to_double(i));
+    ecl_complex_real(c) = ecl_make_double_float(ecl_to_double(r));
+    ecl_complex_imag(c) = ecl_make_double_float(ecl_to_double(i));
     return c;
   case t_longfloat:
     c = ecl_alloc_object(t_complex);
-    c->gencomplex.real = ecl_make_long_float(ecl_to_long_double(r));
-    c->gencomplex.imag = ecl_make_long_float(ecl_to_long_double(i));
+    ecl_complex_real(c) = ecl_make_long_float(ecl_to_long_double(r));
+    ecl_complex_imag(c) = ecl_make_long_float(ecl_to_long_double(i));
     return c;
 #endif
   case t_fixnum:
@@ -582,8 +582,8 @@ ecl_make_complex(cl_object r, cl_object i)
     if (i == ecl_make_fixnum(0))
       return r;
     c = ecl_alloc_object(t_complex);
-    c->gencomplex.real = r;
-    c->gencomplex.imag = i;
+    ecl_complex_real(c) = r;
+    ecl_complex_imag(c) = i;
     return c;
   default:
     FEerror("ecl_make_complex: unexpected argument type.", 0);
@@ -761,7 +761,7 @@ ecl_to_float(cl_object x)
   case t_bignum:
     return ratio_to_float(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_float(x->ratio.num, x->ratio.den);
+    return ratio_to_float(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return ecl_single_float(x);
   case t_doublefloat:
@@ -782,7 +782,7 @@ ecl_to_double(cl_object x)
   case t_bignum:
     return ratio_to_double(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_double(x->ratio.num, x->ratio.den);
+    return ratio_to_double(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return (double)ecl_single_float(x);
   case t_doublefloat:
@@ -803,7 +803,7 @@ ecl_to_long_double(cl_object x)
   case t_bignum:
     return ratio_to_long_double(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_long_double(x->ratio.num, x->ratio.den);
+    return ratio_to_long_double(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return (long double)ecl_single_float(x);
   case t_doublefloat:
@@ -827,7 +827,7 @@ float _Complex ecl_to_csfloat(cl_object x) {
     return ecl_to_float(x);
   }
   case t_complex: {
-    return ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
+    return ecl_to_float(ecl_complex_real(x)) + I * ecl_to_float(ecl_complex_imag(x));
   }
   case t_csfloat: return ecl_csfloat(x);
   case t_cdfloat: return ecl_cdfloat(x);
@@ -847,7 +847,7 @@ double _Complex  ecl_to_cdfloat(cl_object x) {
   case t_longfloat:
     return ecl_to_double(x);
   case t_complex:
-    return ecl_to_double(x->gencomplex.real) + I * ecl_to_double(x->gencomplex.imag);
+    return ecl_to_double(ecl_complex_real(x)) + I * ecl_to_double(ecl_complex_imag(x));
   case t_csfloat: return ecl_csfloat(x);
   case t_cdfloat: return ecl_cdfloat(x);
   case t_clfloat: return ecl_clfloat(x);
@@ -866,7 +866,7 @@ long double _Complex ecl_to_clfloat(cl_object x) {
   case t_longfloat:
     return ecl_to_long_double(x);
   case t_complex:
-    return ecl_to_long_double(x->gencomplex.real) + I * ecl_to_long_double(x->gencomplex.imag);
+    return ecl_to_long_double(ecl_complex_real(x)) + I * ecl_to_long_double(ecl_complex_imag(x));
   case t_csfloat: return ecl_csfloat(x);
   case t_cdfloat: return ecl_cdfloat(x);
   case t_clfloat: return ecl_clfloat(x);
