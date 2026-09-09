@@ -79,7 +79,7 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_word(h, ECL_CHAR_CODE(x));
 #ifdef ECL_SSE2
   case t_sse_pack:
-    return hash_string(h, x->sse.data.b8, 16);
+    return hash_string(h, ecl_sse_data(x).b8, 16);
 #endif
   default:
     return hash_word(h, ((cl_hashkey)x >> 2));

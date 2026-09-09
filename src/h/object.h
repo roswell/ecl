@@ -1173,6 +1173,9 @@ struct ecl_sse_pack {
         _ECL_HDR1(elttype);
         union ecl_sse_data data;
 };
+
+#define ecl_sse_elttype(o) ((o)->sse.elttype)
+#define ecl_sse_data(o)    ((o)->sse.data)
 #endif
 
 /*
