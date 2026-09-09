@@ -36,7 +36,7 @@ ecl_minusp_big(cl_object x)
 static int
 ecl_minusp_ratio(cl_object x)
 {
-  return ecl_minusp(x->ratio.num);
+  return ecl_minusp(ecl_ratio_num(x));
 }
 
 static int

@@ -38,7 +38,8 @@ ecl_one_plus_big(cl_object x)
 static cl_object
 ecl_one_plus_ratio(cl_object x)
 {
-  return ecl_make_ratio(ecl_plus(x->ratio.num,x->ratio.den), x->ratio.den);
+  return ecl_make_ratio(ecl_plus(ecl_ratio_num(x), ecl_ratio_den(x)),
+                        ecl_ratio_den(x));
 }
 
 static cl_object

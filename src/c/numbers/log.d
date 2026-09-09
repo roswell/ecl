@@ -86,8 +86,8 @@ ecl_log1_simple(cl_object x)
 static cl_object
 ecl_log1_ratio(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= FLT_MAX_EXP) : (lden - lnum >= -FLT_MIN_EXP)) {
@@ -235,8 +235,8 @@ ecl_log1_simple_double_precision(cl_object x)
 static cl_object
 ecl_log1_ratio_double_precision(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= DBL_MAX_EXP) : (lden - lnum >= -DBL_MIN_EXP)) {
@@ -319,8 +319,8 @@ ecl_log1_simple_long_precision(cl_object x)
 static cl_object
 ecl_log1_ratio_long_precision(cl_object x)
 {
-  cl_object num = x->ratio.num;
-  cl_object den = x->ratio.den;
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
   cl_index lnum = ecl_integer_length(num);
   cl_index lden = ecl_integer_length(den);
   if ((lnum > lden) ? (lnum - lden >= LDBL_MAX_EXP) : (lden - lnum >= -LDBL_MIN_EXP)) {

@@ -41,23 +41,33 @@ ecl_number_equalp(cl_object x, cl_object y)
   /* INV: (= bignum ratio) => 0 */
   MATH_DISPATCH2_BEGIN(x,y) {
     /* rational x rational */
-    CASE_FIXNUM_FIXNUM       { return x == y; }
-    CASE_BIGNUM_BIGNUM       { return _ecl_big_compare(x,y) == 0; }
-    CASE_RATIO_RATIO         { return (ecl_number_equalp(x->ratio.num, y->ratio.num) &&
-                                       ecl_number_equalp(x->ratio.den, y->ratio.den)); }
+    CASE_FIXNUM_FIXNUM {
+      return x == y; }
+    CASE_BIGNUM_BIGNUM {
+      return _ecl_big_compare(x,y) == 0; }
+    CASE_RATIO_RATIO {
+      return (ecl_number_equalp(ecl_ratio_num(x), ecl_ratio_num(y)) &&
+              ecl_number_equalp(ecl_ratio_den(x), ecl_ratio_den(y))); }
     CASE_FIXNUM_BIGNUM;
     CASE_FIXNUM_RATIO;
     CASE_BIGNUM_FIXNUM;
     CASE_BIGNUM_RATIO;
     CASE_RATIO_FIXNUM;
-    CASE_RATIO_BIGNUM        { return 0; }
+    CASE_RATIO_BIGNUM {
+      return 0; }
     /* rational x float */
-    CASE_FIXNUM_SINGLE_FLOAT { return double_fix_compare(ecl_fixnum(x), ecl_single_float(y)) == 0; }
-    CASE_SINGLE_FLOAT_FIXNUM { return double_fix_compare(ecl_fixnum(y), ecl_single_float(x)) == 0; }
-    CASE_FIXNUM_DOUBLE_FLOAT { return double_fix_compare(ecl_fixnum(x), ecl_double_float(y)) == 0; }
-    CASE_DOUBLE_FLOAT_FIXNUM { return double_fix_compare(ecl_fixnum(y), ecl_double_float(x)) == 0; }
-    CASE_FIXNUM_LONG_FLOAT   { return long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)) == 0; }
-    CASE_LONG_FLOAT_FIXNUM   { return long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)) == 0; }
+    CASE_FIXNUM_SINGLE_FLOAT {
+      return double_fix_compare(ecl_fixnum(x), ecl_single_float(y)) == 0; }
+    CASE_SINGLE_FLOAT_FIXNUM {
+      return double_fix_compare(ecl_fixnum(y), ecl_single_float(x)) == 0; }
+    CASE_FIXNUM_DOUBLE_FLOAT {
+      return double_fix_compare(ecl_fixnum(x), ecl_double_float(y)) == 0; }
+    CASE_DOUBLE_FLOAT_FIXNUM {
+      return double_fix_compare(ecl_fixnum(y), ecl_double_float(x)) == 0; }
+    CASE_FIXNUM_LONG_FLOAT   {
+      return long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)) == 0; }
+    CASE_LONG_FLOAT_FIXNUM   {
+      return long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)) == 0; }
     CASE_BIGNUM_SINGLE_FLOAT;
     CASE_BIGNUM_DOUBLE_FLOAT;
     CASE_RATIO_SINGLE_FLOAT;

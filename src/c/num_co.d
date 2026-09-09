@@ -66,7 +66,7 @@ cl_numerator(cl_object x)
 {
   switch (ecl_t_of(x)) {
   case t_ratio:
-    x = x->ratio.num;
+    x = ecl_ratio_num(x);
     break;
   case t_fixnum:
   case t_bignum:
@@ -82,7 +82,7 @@ cl_denominator(cl_object x)
 {
   switch (ecl_t_of(x)) {
   case t_ratio:
-    x = x->ratio.den;
+    x = ecl_ratio_den(x);
     break;
   case t_fixnum:
   case t_bignum:

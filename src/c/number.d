@@ -463,8 +463,8 @@ ecl_make_ratio(cl_object num, cl_object den)
   if (den == ecl_make_fixnum(-1))
     return ecl_negate(num);
   r = ecl_alloc_object(t_ratio);
-  r->ratio.num = num;
-  r->ratio.den = den;
+  ecl_ratio_num(r) = num;
+  ecl_ratio_den(r) = den;
   return(r);
 }
 
@@ -761,7 +761,7 @@ ecl_to_float(cl_object x)
   case t_bignum:
     return ratio_to_float(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_float(x->ratio.num, x->ratio.den);
+    return ratio_to_float(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return ecl_single_float(x);
   case t_doublefloat:
@@ -782,7 +782,7 @@ ecl_to_double(cl_object x)
   case t_bignum:
     return ratio_to_double(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_double(x->ratio.num, x->ratio.den);
+    return ratio_to_double(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return (double)ecl_single_float(x);
   case t_doublefloat:
@@ -803,7 +803,7 @@ ecl_to_long_double(cl_object x)
   case t_bignum:
     return ratio_to_long_double(x, ecl_make_fixnum(1));
   case t_ratio:
-    return ratio_to_long_double(x->ratio.num, x->ratio.den);
+    return ratio_to_long_double(ecl_ratio_num(x), ecl_ratio_den(x));
   case t_singlefloat:
     return (long double)ecl_single_float(x);
   case t_doublefloat:

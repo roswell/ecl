@@ -39,8 +39,8 @@ ecl_abs_bignum(cl_object x)
 static cl_object
 ecl_abs_rational(cl_object x)
 {
-  return (ecl_minusp(x->ratio.num))?
-    ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den) : x;
+  return (ecl_minusp(ecl_ratio_num(x)))?
+    ecl_make_ratio(ecl_negate(ecl_ratio_num(x)), ecl_ratio_den(x)) : x;
 }
 
 /* Example in ABS spec is a bit misleading because it says that

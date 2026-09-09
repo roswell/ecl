@@ -86,11 +86,11 @@ write_ratio(cl_object r, cl_object stream)
 {
   cl_object s = si_get_buffer_string();
   int print_base = ecl_print_base();
-  si_integer_to_string(s, r->ratio.num, ecl_make_fixnum(print_base),
+  si_integer_to_string(s, ecl_ratio_num(r), ecl_make_fixnum(print_base),
                        ecl_symbol_value(@'*print-radix*'),
                        ECL_NIL /* decimal syntax */);
   ecl_string_push_extend(s, '/');
-  si_integer_to_string(s, r->ratio.den,
+  si_integer_to_string(s, ecl_ratio_den(r),
                        ecl_make_fixnum(print_base),
                        ECL_NIL, ECL_NIL);
   si_do_write_sequence(s, stream, ecl_make_fixnum(0), ECL_NIL);

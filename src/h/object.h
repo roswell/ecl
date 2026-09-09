@@ -246,6 +246,8 @@ struct ecl_ratio {
         cl_object den;          /*  denominator, must be an integer  */
         cl_object num;          /*  numerator, must be an integer  */
 };
+#define ecl_ratio_den(o) ((o)->ratio.den)
+#define ecl_ratio_num(o) ((o)->ratio.num)
 
 struct ecl_complex {
         _ECL_HDR;

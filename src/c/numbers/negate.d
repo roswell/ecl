@@ -30,7 +30,7 @@ ecl_negate_big(cl_object x)
 static cl_object
 ecl_negate_ratio(cl_object x)
 {
-  return ecl_make_ratio(ecl_negate(x->ratio.num), x->ratio.den);
+  return ecl_make_ratio(ecl_negate(ecl_ratio_num(x)), ecl_ratio_den(x));
 }
 
 static cl_object

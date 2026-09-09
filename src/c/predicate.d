@@ -281,8 +281,8 @@ ecl_eql(cl_object x, cl_object y)
   case t_bignum:
     return (_ecl_big_compare(x, y) == 0);
   case t_ratio:
-    return (ecl_eql(x->ratio.num, y->ratio.num) &&
-            ecl_eql(x->ratio.den, y->ratio.den));
+    return (ecl_eql(ecl_ratio_num(x), ecl_ratio_num(y)) &&
+            ecl_eql(ecl_ratio_den(x), ecl_ratio_den(y)));
   case t_singlefloat:
     return float_eql(ecl_single_float(x), ecl_single_float(y));
   case t_longfloat:
@@ -346,8 +346,8 @@ ecl_equal(cl_object x, cl_object y)
   case t_bignum:
     return (tx == ty) && (_ecl_big_compare(x,y) == 0);
   case t_ratio:
-    return (tx == ty) && ecl_eql(x->ratio.num, y->ratio.num) &&
-      ecl_eql(x->ratio.den, y->ratio.den);
+    return (tx == ty) && ecl_eql(ecl_ratio_num(x), ecl_ratio_num(y)) &&
+      ecl_eql(ecl_ratio_den(x), ecl_ratio_den(y));
   case t_singlefloat: {
     if (tx != ty) return 0;
     return float_eql(ecl_single_float(x), ecl_single_float(y));

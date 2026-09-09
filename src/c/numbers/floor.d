@@ -45,8 +45,8 @@ ecl_floor1(cl_object x)
     v1 = ecl_make_fixnum(0);
     break;
   case t_ratio:
-    v0 = ecl_floor2(x->ratio.num, x->ratio.den);
-    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
+    v0 = ecl_floor2(ecl_ratio_num(x), ecl_ratio_den(x));
+    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(x));
     break;
   case t_singlefloat: {
     float d = ecl_single_float(x);
@@ -110,8 +110,8 @@ ecl_floor2(cl_object x, cl_object y)
         break;
       }
       CASE_FIXNUM_RATIO {
-        v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
-        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
+        v0 = ecl_floor2(ecl_times(x, ecl_ratio_den(y)), ecl_ratio_num(y));
+        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(y));
         break;
       }
       CASE_FIXNUM_SINGLE_FLOAT {
@@ -149,8 +149,8 @@ ecl_floor2(cl_object x, cl_object y)
         break;
       }
       CASE_BIGNUM_RATIO {
-        v0 = ecl_floor2(ecl_times(x, y->ratio.den), y->ratio.num);
-        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), y->ratio.den);
+        v0 = ecl_floor2(ecl_times(x, ecl_ratio_den(y)), ecl_ratio_num(y));
+        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(y));
         break;
       }
       CASE_BIGNUM_SINGLE_FLOAT {
@@ -178,9 +178,10 @@ ecl_floor2(cl_object x, cl_object y)
         break;
       }
       CASE_RATIO_RATIO {
-        v0 = ecl_floor2(ecl_times(x->ratio.num, y->ratio.den),
-                        ecl_times(x->ratio.den, y->ratio.num));
-        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_times(x->ratio.den, y->ratio.den));
+        v0 = ecl_floor2(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
+                        ecl_times(ecl_ratio_den(x), ecl_ratio_num(y)));
+        v1 = ecl_make_ratio(ecl_nth_value(the_env, 1),
+                            ecl_times(ecl_ratio_den(x), ecl_ratio_den(y)));
         break;
       }
       CASE_RATIO_FIXNUM;
@@ -188,8 +189,8 @@ ecl_floor2(cl_object x, cl_object y)
       CASE_RATIO_SINGLE_FLOAT;
       CASE_RATIO_LONG_FLOAT;
       CASE_RATIO_DOUBLE_FLOAT {
-        v0 = ecl_floor2(x->ratio.num, ecl_times(x->ratio.den, y));
-        v1 = ecl_divide(ecl_nth_value(the_env, 1), x->ratio.den);
+        v0 = ecl_floor2(ecl_ratio_num(x), ecl_times(ecl_ratio_den(x), y));
+        v1 = ecl_divide(ecl_nth_value(the_env, 1), ecl_ratio_den(x));
         break;
       }
 

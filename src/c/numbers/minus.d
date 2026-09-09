@@ -46,9 +46,9 @@ ecl_minus(cl_object x, cl_object y)
       }
       CASE_FIXNUM_RATIO;
       CASE_BIGNUM_RATIO {
-        cl_object z = ecl_times(x, y->ratio.den);
-        z = ecl_minus(z, y->ratio.num);
-        return ecl_make_ratio(z, y->ratio.den);
+        cl_object z = ecl_times(x, ecl_ratio_den(y));
+        z = ecl_minus(z, ecl_ratio_num(y));
+        return ecl_make_ratio(z, ecl_ratio_den(y));
       }
       CASE_FIXNUM_SINGLE_FLOAT {
         ret = ecl_make_single_float(ecl_fixnum(x) - ecl_single_float(y));
@@ -77,15 +77,15 @@ ecl_minus(cl_object x, cl_object y)
       CASE_RATIO_FIXNUM;
       /* fallthrough */
       CASE_RATIO_BIGNUM {
-        cl_object z = ecl_times(x->ratio.den, y);
-        z = ecl_minus(x->ratio.num, z);
-        return ecl_make_ratio(z, x->ratio.den);
+        cl_object z = ecl_times(ecl_ratio_den(x), y);
+        z = ecl_minus(ecl_ratio_num(x), z);
+        return ecl_make_ratio(z, ecl_ratio_den(x));
       }
       CASE_RATIO_RATIO {
-        cl_object z1 = ecl_times(x->ratio.num,y->ratio.den);
-        cl_object z = ecl_times(x->ratio.den,y->ratio.num);
+        cl_object z1 = ecl_times(ecl_ratio_num(x), ecl_ratio_den(y));
+        cl_object z = ecl_times(ecl_ratio_den(x), ecl_ratio_num(y));
         z = ecl_minus(z1, z);
-        z1 = ecl_times(x->ratio.den,y->ratio.den);
+        z1 = ecl_times(ecl_ratio_den(x), ecl_ratio_den(y));
         return ecl_make_ratio(z, z1);
       }
       CASE_SINGLE_FLOAT_FIXNUM {

@@ -84,7 +84,7 @@ round_long_double(long double d)
 static cl_object
 ecl_round2_integer(const cl_env_ptr the_env, cl_object x, cl_object y, cl_object q)
 {
-  cl_object q1 = ecl_integer_divide(q->ratio.num, q->ratio.den);
+  cl_object q1 = ecl_integer_divide(ecl_ratio_num(q), ecl_ratio_den(q));
   cl_object r = ecl_minus(q, q1);
   if (ecl_minusp(r)) {
     int c = ecl_number_compare(ecl_ct_minus_half, r);
@@ -115,8 +115,8 @@ ecl_round1(cl_object x)
     v1 = ecl_make_fixnum(0);
     break;
   case t_ratio:
-    v0 = ecl_round2_integer(the_env, x->ratio.num, x->ratio.den, x);
-    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), x->ratio.den);
+    v0 = ecl_round2_integer(the_env, ecl_ratio_num(x), ecl_ratio_den(x), x);
+    v1 = ecl_make_ratio(ecl_nth_value(the_env, 1), ecl_ratio_den(x));
     break;
   case t_singlefloat: {
     float d = ecl_single_float(x);
