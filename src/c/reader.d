@@ -29,7 +29,7 @@
 int
 ecl_readtable_get(cl_object readtable, int c, cl_object *macro, cl_object *table)
 {
-  cl_object m, t;
+  cl_object m, t = ECL_NIL;
   enum ecl_chattrib cat;
 #ifdef ECL_UNICODE
   if (c >= RTABSIZE) {
