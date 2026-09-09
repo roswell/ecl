@@ -171,8 +171,8 @@ ecl_number_equalp(cl_object x, cl_object y)
     }
     /* complex x complex */
     CASE_COMPLEX_COMPLEX {
-      return (ecl_number_equalp(x->gencomplex.real, y->gencomplex.real) &&
-              ecl_number_equalp(x->gencomplex.imag, y->gencomplex.imag));
+      return (ecl_number_equalp(ecl_complex_real(x), ecl_complex_real(y)) &&
+              ecl_number_equalp(ecl_complex_imag(x), ecl_complex_imag(y)));
     }
 #ifdef ECL_COMPLEX_FLOAT
     /* complex x c?float */
@@ -180,14 +180,16 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_COMPLEX_CDFLOAT;
     CASE_COMPLEX_CLFLOAT {
       cl_object aux = ecl_alloc_object(t_csfloat);
-      ecl_csfloat(aux) = ecl_to_float(x->gencomplex.real) + I * ecl_to_float(x->gencomplex.imag);
+      ecl_csfloat(aux) = (ecl_to_float(ecl_complex_real(x))
+                          + I * ecl_to_float(ecl_complex_imag(x)));
       return ecl_number_equalp(aux, y);
     }
     CASE_CSFLOAT_COMPLEX;
     CASE_CDFLOAT_COMPLEX;
     CASE_CLFLOAT_COMPLEX {
       cl_object aux = ecl_alloc_object(t_csfloat);
-      ecl_csfloat(aux) = ecl_to_float(y->gencomplex.real) + I * ecl_to_float(y->gencomplex.imag);
+      ecl_csfloat(aux) = (ecl_to_float(ecl_complex_real(y))
+                          + I * ecl_to_float(ecl_complex_imag(y)));
       return ecl_number_equalp(x, aux);
     }
     /* c?float x c?float */

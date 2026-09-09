@@ -55,8 +55,8 @@ ecl_cos_complex(cl_object x)
   /* z = x + I y
      cos(z) = cosh(I z) = cosh(-y + I x)
   */
-  cl_object dx = x->gencomplex.real;
-  cl_object dy = x->gencomplex.imag;
+  cl_object dx = ecl_complex_real(x);
+  cl_object dy = ecl_complex_imag(x);
   cl_object a = ecl_times(ecl_cos(dx), ecl_cosh(dy));
   cl_object b = ecl_times(ecl_negate(ecl_sin(dx)), ecl_sinh(dy));
   return ecl_make_complex(a, b);

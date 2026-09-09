@@ -179,12 +179,12 @@ ecl_plus(cl_object x, cl_object y) {
       CASE_DOUBLE_FLOAT_COMPLEX;
       CASE_FIXNUM_COMPLEX {
       COMPLEX_Y:
-        return ecl_make_complex(ecl_plus(x, y->gencomplex.real),
-                                y->gencomplex.imag);
+        return ecl_make_complex(ecl_plus(x, ecl_complex_real(y)),
+                                ecl_complex_imag(y));
       }
       CASE_COMPLEX_COMPLEX {
-        cl_object z = ecl_plus(x->gencomplex.real, y->gencomplex.real);
-        cl_object z1 = ecl_plus(x->gencomplex.imag, y->gencomplex.imag);
+        cl_object z = ecl_plus(ecl_complex_real(x), ecl_complex_real(y));
+        cl_object z1 = ecl_plus(ecl_complex_imag(x), ecl_complex_imag(y));
         return ecl_make_complex(z, z1);
       }
 #ifdef ECL_COMPLEX_FLOAT

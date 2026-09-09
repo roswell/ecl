@@ -201,8 +201,8 @@ sharp_C_reader(cl_object in, cl_object c, cl_object d)
       !Null(ECL_SYM_VAL(the_env, @'si::*sharp-eq-context*')))
     {
       x = ecl_alloc_object(t_complex);
-      x->gencomplex.real = real;
-      x->gencomplex.imag = imag;
+      ecl_complex_real(x) = real;
+      ecl_complex_imag(x) = imag;
     } else {
     x = ecl_make_complex(real, imag);
   }

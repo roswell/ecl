@@ -252,6 +252,9 @@ struct ecl_complex {
         cl_object real;         /*  real part, must be a number  */
         cl_object imag;         /*  imaginary part, must be a number  */
 };
+#define ecl_complex_real(o) ((o)->gencomplex.real)
+#define ecl_complex_imag(o) ((o)->gencomplex.imag)
+#define ecl_complex_value(o) ((o)->gencomplex)
 
 #ifdef ECL_COMPLEX_FLOAT
 struct ecl_csfloat {

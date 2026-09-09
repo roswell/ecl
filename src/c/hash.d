@@ -53,8 +53,8 @@ _hash_eql(cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
   case t_complex:
-    h = _hash_eql(h, x->gencomplex.real);
-    return _hash_eql(h, x->gencomplex.imag);
+    h = _hash_eql(h, ecl_complex_real(x));
+    return _hash_eql(h, ecl_complex_imag(x));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: return hash_string(h, (unsigned char*)&ecl_csfloat(x), sizeof(ecl_csfloat(x)));
   case t_cdfloat: return hash_string(h, (unsigned char*)&ecl_cdfloat(x), sizeof(ecl_cdfloat(x)));
@@ -157,8 +157,8 @@ _hash_equal(int depth, cl_hashkey h, cl_object x)
     return hash_string(h, (unsigned char*)&aux, sizeof(aux));
   }
   case t_complex: {
-    h = _hash_equal(depth, h, x->gencomplex.real);
-    return _hash_equal(depth, h, x->gencomplex.imag);
+    h = _hash_equal(depth, h, ecl_complex_real(x));
+    return _hash_equal(depth, h, ecl_complex_imag(x));
   }
 # ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {
@@ -247,8 +247,8 @@ _hash_equalp(int depth, cl_hashkey h, cl_object x)
     h = _hash_equalp(0, h, x->ratio.num);
     return _hash_equalp(0, h, x->ratio.den);
   case t_complex:
-    h = _hash_equalp(0, h, x->gencomplex.real);
-    return _hash_equalp(0, h, x->gencomplex.imag);
+    h = _hash_equalp(0, h, ecl_complex_real(x));
+    return _hash_equalp(0, h, ecl_complex_imag(x));
 #ifdef ECL_COMPLEX_FLOAT
     /* FIXME! We should be more precise here! */
   case t_csfloat: return hash_word(h, (cl_index)ecl_csfloat(x));

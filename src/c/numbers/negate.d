@@ -54,8 +54,8 @@ ecl_negate_long_float(cl_object x)
 static cl_object
 ecl_negate_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_negate(x->gencomplex.real),
-                          ecl_negate(x->gencomplex.imag));
+  return ecl_make_complex(ecl_negate(ecl_complex_real(x)),
+                          ecl_negate(ecl_complex_imag(x)));
 }
 
 #ifdef ECL_COMPLEX_FLOAT

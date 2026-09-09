@@ -290,8 +290,8 @@ ecl_eql(cl_object x, cl_object y)
   case t_doublefloat:
     return double_eql(ecl_double_float(x), ecl_double_float(y));
   case t_complex:
-    return (ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
-            ecl_eql(x->gencomplex.imag, y->gencomplex.imag));
+    return (ecl_eql(ecl_complex_real(x), ecl_complex_real(y)) &&
+            ecl_eql(ecl_complex_imag(x), ecl_complex_imag(y)));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
     return (float_eql(crealf(ecl_csfloat(x)), crealf(ecl_csfloat(y))) &&
@@ -361,8 +361,8 @@ ecl_equal(cl_object x, cl_object y)
     return long_double_eql(ecl_long_float(x), ecl_long_float(y));
   }
   case t_complex:
-    return (tx == ty) && ecl_eql(x->gencomplex.real, y->gencomplex.real) &&
-      ecl_eql(x->gencomplex.imag, y->gencomplex.imag);
+    return (tx == ty) && ecl_eql(ecl_complex_real(x), ecl_complex_real(y)) &&
+      ecl_eql(ecl_complex_imag(x), ecl_complex_imag(y));
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat:
     if (tx != ty) return 0;

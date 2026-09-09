@@ -62,8 +62,8 @@ ecl_one_plus_long_float(cl_object x)
 static cl_object
 ecl_one_plus_complex(cl_object x)
 {
-  return ecl_make_complex(ecl_one_plus(x->gencomplex.real),
-                          x->gencomplex.imag);
+  return ecl_make_complex(ecl_one_plus(ecl_complex_real(x)),
+                          ecl_complex_imag(x));
 }
 
 #ifdef ECL_COMPLEX_FLOAT
