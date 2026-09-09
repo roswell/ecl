@@ -338,16 +338,16 @@ call_stepper(cl_env_ptr the_env, cl_object form, cl_object delta)
  * lexical environment needs to be saved.
  */
 
-#define INTERPRET_FUNCALL(reg0, the_env, frame, narg, fun) {        \
+#define INTERPRET_FUNCALL(reg0, the_env, aux_env, narg, fun) {      \
     cl_index __n = narg;                                            \
     cl_index __b = ECL_STACK_INDEX(the_env) - __n;                  \
     SETUP_ENV(the_env);                                             \
-    frame.opened = 1;                                               \
-    frame.base = __b;                                               \
-    frame.size = __n;                                               \
-    frame.sp = __b;                                                 \
-    reg0 = ecl_apply_from_stack_frame((cl_object)&frame, fun);      \
-    ecl_stack_frame_close((cl_object)&frame); }
+    aux_env->frame.opened = 1;                                      \
+    aux_env->frame.base = __b;                                      \
+    aux_env->frame.size = __n;                                      \
+    aux_env->frame.sp = __b;                                        \
+    reg0 = ecl_apply_from_stack_frame(aux_env, fun);                \
+    ecl_stack_frame_close(aux_env); }
 
 /* -------------------- THE INTERPRETER -------------------- */
 
@@ -358,27 +358,28 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
   const cl_env_ptr the_env = frame->frame.env;
   volatile cl_index frame_index = 0;
   cl_opcode *vector = (cl_opcode*)bytecodes->bytecodes.code;
-  cl_object lex_env = closure, lcl_env = ECL_NIL;
+  cl_object lex_env = closure, lcl_env = ECL_NIL, aux_env = ECL_NIL;
   cl_object dat_env = bytecodes->bytecodes.data;
   cl_object *data = Null(dat_env) ? NULL : dat_env->vector.self.t;
   cl_object reg0 = ECL_NIL, reg1 = ECL_NIL;
   cl_index narg = 0;
   cl_index nlcl = ecl_fixnum(bytecodes->bytecodes.nlcl);
-  struct ecl_stack_frame frame_aux;
-  struct ecl_stack_frame frame_lcl;
+  ecl_object frame_aux;
+  ecl_object frame_lcl;
   volatile struct ecl_ihs_frame ihs;
 
   /* INV: bytecodes is of type t_bytecodes */
+  aux_env = ecl_cast_ptr(cl_object, &frame_aux);
   lcl_env = ecl_cast_ptr(cl_object, &frame_lcl);
   ecl_cs_check(the_env, ihs);
   ecl_ihs_push(the_env, &ihs, bytecodes, closure, lcl_env);
   ecl_stack_frame_open(the_env, lcl_env, nlcl);
-  frame_aux.t = t_frame;
-  frame_aux.opened = 0;
-  frame_aux.base = 0;
-  frame_aux.size = 0;
-  frame_aux.sp = 0;
-  frame_aux.env = the_env;
+  aux_env->frame.t = t_frame;
+  aux_env->frame.opened = 0;
+  aux_env->frame.base = 0;
+  aux_env->frame.size = 0;
+  aux_env->frame.sp = 0;
+  aux_env->frame.env = the_env;
   BEGIN_SWITCH {
     CASE(OP_NOP); {
       reg0 = ECL_NIL;
@@ -552,7 +553,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     */
     CASE(OP_CALL); {
       GET_OPARG(narg, vector);
-      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      INTERPRET_FUNCALL(reg0, the_env, aux_env, narg, reg0);
       THREAD_NEXT;
     }
 
@@ -564,7 +565,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_CALLG); {
       GET_OPARG(narg, vector);
       GET_DATA(reg0, vector, data);
-      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      INTERPRET_FUNCALL(reg0, the_env, aux_env, narg, reg0);
       THREAD_NEXT;
     }
 
@@ -576,7 +577,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_FCALL); {
       GET_OPARG(narg, vector);
       reg0 = ECL_STACK_REF(the_env,-narg-1);
-      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      INTERPRET_FUNCALL(reg0, the_env, aux_env, narg, reg0);
       THREAD_NEXT;
     }
 
@@ -587,7 +588,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
     CASE(OP_MCALL); {
       narg = ecl_fixnum(ECL_STACK_POP_UNSAFE(the_env));
       reg0 = ECL_STACK_REF(the_env,-narg-1);
-      INTERPRET_FUNCALL(reg0, the_env, frame_aux, narg, reg0);
+      INTERPRET_FUNCALL(reg0, the_env, aux_env, narg, reg0);
       THREAD_NEXT;
     }
 
@@ -1342,7 +1343,7 @@ ecl_interpret(cl_object frame, cl_object closure, cl_object bytecodes)
       GET_OPARG(n, vector);
       SETUP_ENV(the_env);
       reg0 = call_stepper(the_env, reg0, ecl_make_fixnum(0));
-      INTERPRET_FUNCALL(reg0, the_env, frame_aux, n, reg0);
+      INTERPRET_FUNCALL(reg0, the_env, aux_env, n, reg0);
     }
     CASE(OP_STEPOUT); {
       cl_index n;

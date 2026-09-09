@@ -100,6 +100,7 @@ typedef enum {
         Definition of the type of LISP objects.
 */
 typedef union cl_lispunion *cl_object;
+typedef union cl_lispunion ecl_object;
 typedef cl_object cl_return;
 typedef cl_fixnum cl_narg;
 typedef cl_object (*cl_objectfn)(cl_narg narg, ...);

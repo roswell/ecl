@@ -23,7 +23,7 @@
     } else {
       cl_object out;
       cl_index i;
-      struct ecl_stack_frame frame_aux;
+      ecl_object frame_aux;
       const cl_object frame = ecl_stack_frame_open(the_env,
                                                    (cl_object)&frame_aux,
                                                    narg -= 2);

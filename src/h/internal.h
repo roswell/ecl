@@ -336,8 +336,8 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
-#define ECL_BUILD_STACK_FRAME(env,name,frame)   \
-        struct ecl_stack_frame frame;\
+#define ECL_BUILD_STACK_FRAME(env,name,frame)                           \
+        ecl_object frame;                                               \
         cl_object name = ecl_stack_frame_open(env, (cl_object)&frame, 0);
 
 #define ECL_STACK_FRAME_FROM_VA_LIST(e,f,va) do {                       \
@@ -352,7 +352,7 @@ extern cl_object si_constant_form_value _ECL_ARGS((cl_narg narg, cl_object form,
         } while (0)
 
 #define ECL_STACK_FRAME_VARARGS_BEGIN(narg,lastarg,frame)               \
-        struct ecl_stack_frame __ecl_frame;                             \
+        ecl_object __ecl_frame;                                         \
         const cl_object frame = (cl_object)&__ecl_frame;                \
         const cl_env_ptr env = ecl_process_env();                       \
         if (narg <= ECL_C_ARGUMENTS_LIMIT) {                            \

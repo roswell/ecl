@@ -16,7 +16,7 @@
 #include <string.h>
 
 #define PREPARE_MAP(env, list, cdrs_frame, cars_frame, narg)    \
-  struct ecl_stack_frame frames_aux[2];                         \
+  ecl_object frames_aux[2];                                     \
   const cl_object cdrs_frame = (cl_object)frames_aux;           \
   const cl_object cars_frame = (cl_object)(frames_aux+1);       \
   ECL_STACK_FRAME_FROM_VA_LIST(env,cdrs_frame,list);            \
