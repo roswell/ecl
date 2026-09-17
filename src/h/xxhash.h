@@ -14,14 +14,15 @@
 
    XXH3 implementation on the other hand is faithful to the original algorithm
    in that it operates on octets. This is useful for hash tables where hashes
-   are computed from objects of varying sizes.
+   are computed from objects of varying sizes. Moreover we implement streaming
+   mode because it is necessary for hashing using for EQUAL and similar tests.
 
    Tradeoffs: Lane-based XXH32/XXH64 do not produce the same hashes for equal
    byte arrays in upstream algorithm. XXH3 is scalar (so it could be improved
    for the large variant). On the other hand our versions for XXH32/XXH64 are
-   fast and the overall size of the implementation fits around 600LOC (upstream
-   header has around 7KLOC). Moreover we don't implement streaming API for XXH3.
-   We also rely on a default secret and seed.
+   fast and the overall size of the implementation is around 10x smaller. We
+   hardcode a default secret and seed, but the code to derive a custom one is
+   implemented for customization.
 
     -- jd 2026-06-05 */
 
@@ -30,6 +31,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 /* XXH32 */
 
@@ -54,7 +56,7 @@ xxh32_round(uint32_t accN, uint32_t laneN)
 }
 
 static inline uint32_t
-xxh32_small(uint32_t *vector, uint32_t length, uint32_t seed)
+xxh32_small(const uint32_t *vector, uint32_t length, uint32_t seed)
 {
   uint32_t acc, rem, idx, lane;
   rem = length, idx = 0;
@@ -80,7 +82,7 @@ xxh32_small(uint32_t *vector, uint32_t length, uint32_t seed)
 }
 
 static inline uint32_t
-xxh32(uint32_t *vector, uint32_t length, uint32_t seed)
+xxh32(const uint32_t *vector, uint32_t length, uint32_t seed)
 {
   uint32_t acc, rem, idx, lane;
   if (length<4)
@@ -152,7 +154,7 @@ xxh64_merge(uint64_t acc, uint64_t accN)
 }
 
 static inline uint64_t
-xxh64_small(uint64_t *vector, uint64_t length, uint64_t seed)
+xxh64_small(const uint64_t *vector, uint64_t length, uint64_t seed)
 {
   uint64_t acc, rem, idx, lane;
   rem = length, idx = 0;
@@ -179,7 +181,7 @@ xxh64_small(uint64_t *vector, uint64_t length, uint64_t seed)
 }
 
 static inline uint64_t
-xxh64(uint64_t *vector, uint64_t length, uint64_t seed)
+xxh64(const uint64_t *vector, uint64_t length, uint64_t seed)
 {
   uint64_t acc, rem, idx, lane;
   if (length<4)
@@ -581,6 +583,137 @@ xxh3_64(const uint8_t *input, const size_t length)
   if (length <= 128) return xxh3_64_17to128  (input, length);
   if (length <= 240) return xxh3_64_129to240 (input, length);
   return xxh3_64_large(input, length);
+}
+
+/* Streaming variant */
+
+/* The upstream algorithm is paramerize, we assume:
+   secret_length=192, stripes_per_block=16, block_size=1024
+
+   We could store the seend and the secret in this structure as well at a cost
+   of runtime dereferences (right now they are available at compile time). */
+typedef struct xxh3_state {
+  uint64_t acc[8];              /* accumulators */
+  uint8_t rem[64];              /* last 64 bytes for digest */
+  uint8_t buf[1024];            /* remaining data */
+  size_t buf_size;              /* buffer fill pointer */
+  uint64_t total_len;           /* total length */
+} xxh3_state;
+
+static inline void
+xxh3_reset(xxh3_state *state)
+{
+  state->acc[0]=PRIME32_3;
+  state->acc[1]=PRIME64_1;
+  state->acc[2]=PRIME64_2;
+  state->acc[3]=PRIME64_3;
+  state->acc[4]=PRIME64_4;
+  state->acc[5]=PRIME32_2;
+  state->acc[6]=PRIME64_5;
+  state->acc[7]=PRIME32_1;
+  state->buf_size=0;
+  state->total_len=0;
+}
+
+static inline void
+xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
+{
+  uint8_t *buffer = state->buf;
+  const uint8_t *block = input;
+  size_t bsize = state->buf_size;
+  size_t buf_size = bsize;
+  size_t len = length;
+  size_t delta;
+  uint64_t acc[8];
+  uint64_t n, i, secret_var;
+  if (length==0)
+    return;
+  memcpy(acc, state->acc, sizeof(acc));
+  /* Fill the current block and use it for update. */
+  if (bsize && bsize + len > 1024) {
+    delta = 1024-bsize;
+    memcpy(buffer+bsize, input, delta);
+    /* Step 2.1 Process stripes in the block */
+    for (n=0; n<16; n++) {
+      xxh3_64_large_acc(buffer+n*64, xxh3_secret+n*8, acc);
+    }
+    /* Step 2.2 Scramble accumulators */
+    for (i=0; i<8; i++) {
+      secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
+      acc[i] = acc[i] ^ (acc[i] >> 47);
+      acc[i] = acc[i] ^ secret_var;
+      acc[i] = acc[i] * PRIME32_1;
+    }
+    /* Advance! */
+    block = input + delta;
+    len -= delta;
+    bsize = 0;
+  }
+  /* Continue with input without copying. */
+  while(len > 1024) {
+    /* Step 2.1 Process stripes in the block */
+    for (n=0; n<16; n++) {
+      xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
+    }
+    /* Step 2.2 Scramble accumulators */
+    for (i=0; i<8; i++) {
+      secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
+      acc[i] = acc[i] ^ (acc[i] >> 47);
+      acc[i] = acc[i] ^ secret_var;
+      acc[i] = acc[i] * PRIME32_1;
+    }
+    /* Advance! */
+    block += 1024;
+    len -= 1024;
+  }
+  /* We need to remember the last 64 bytes. */
+  if (length >= 64) {
+    memcpy(state->rem, input+length-64, 64);
+  } else if (state->total_len >= 240) {
+    size_t take = 64-length;
+    memmove(state->rem, state->rem+length, take);
+    memcpy(state->rem+take, input, length);
+  } else if (state->total_len + length >= 240) {
+    size_t take = 64-length;
+    memcpy(state->rem, buffer+buf_size-take, take);
+    memcpy(state->rem+take, input, length);
+  }
+  /* store accumulators */
+  memcpy(state->acc, acc, sizeof(acc));
+  /* Put the reminder in the buffer. */
+  memcpy(buffer + bsize, block, len);
+  state->buf_size = bsize + len;
+  state->total_len += length;
+}
+
+static inline uint64_t
+xxh3_digest(const xxh3_state *state)
+{
+  uint64_t total = state->total_len;
+  uint64_t len = state->buf_size;
+  uint64_t acc[8];
+  uint64_t n, i, num, value;
+  const uint8_t *block = state->buf;
+  /* Don't modify the state. */
+  memcpy(acc, state->acc, sizeof(acc));
+  if (total <= 240)
+    return xxh3_64(block, total);
+  /* Step 3. Process the last block and the last 64 bytes */
+  num = (len-1)/64;
+  for (n=0; n<num; n++) {
+    xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
+  }
+  /* The last stripe is taken from the end and may overlap. */
+  block = state->rem;
+  xxh3_64_large_acc(block, xxh3_secret+192-71, acc);
+  /* Step 4. Finalization */
+  value = total*PRIME64_1;
+  for (i=0; i<4; i++) {
+    uint64_t a = acc[i*2]   ^ xxh3_read64(xxh3_secret+11+i*16);
+    uint64_t b = acc[i*2+1] ^ xxh3_read64(xxh3_secret+11+i*16+8);
+    value += xxh3_mul128_fold64(a, b);
+  }
+  return avalanche(value);
 }
 
 #endif
