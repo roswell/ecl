@@ -17,12 +17,15 @@
    are computed from objects of varying sizes. Moreover we implement streaming
    mode because it is necessary for hashing using for EQUAL and similar tests.
 
-   Tradeoffs: Lane-based XXH32/XXH64 do not produce the same hashes for equal
-   byte arrays in upstream algorithm. XXH3 is scalar (so it could be improved
-   for the large variant). On the other hand our versions for XXH32/XXH64 are
-   fast and the overall size of the implementation is around 10x smaller. We
-   hardcode a default secret and seed, but the code to derive a custom one is
-   implemented for customization.
+   Tradeoffs:
+
+   Lane-based XXH32/XXH64 will not produce the same hashes for equal byte arrays
+   in upstream algorithm when the host is big endian.
+
+   XXH3 is scalar (so it could be improved for the large variant). On the other
+   hand our versions for XXH32/XXH64 are fast and the overall size of the
+   implementation is around 10x smaller. We hardcode a default secret and seed,
+   but the code to derive a custom one is implemented for customization.
 
     -- jd 2026-06-05 */
 
@@ -32,6 +35,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* XXH32 */
 
@@ -328,15 +332,26 @@ xxh3_bswap32(uint32_t x)
 static inline uint32_t
 xxh3_read32(const uint8_t *src)
 {
+#ifndef WORDS_BIGENDIAN
+  uint32_t val;
+  memcpy(&val, src, 4);
+  return val;
+#else
   return ((uint32_t)src[0]      )
        | ((uint32_t)src[1] <<  8)
        | ((uint32_t)src[2] << 16)
        | ((uint32_t)src[3] << 24);
+#endif
 }
 
 static inline uint64_t
 xxh3_read64(const uint8_t *src)
 {
+#ifndef WORDS_BIGENDIAN
+  uint64_t val;
+  memcpy(&val, src, 8);
+  return val;
+#else
   return ((uint64_t)src[0])
        | ((uint64_t)src[1] <<  8)
        | ((uint64_t)src[2] << 16)
@@ -345,11 +360,15 @@ xxh3_read64(const uint8_t *src)
        | ((uint64_t)src[5] << 40)
        | ((uint64_t)src[6] << 48)
        | ((uint64_t)src[7] << 56);
+#endif
 }
 
 static inline void
 xxh3_write64(uint8_t *dst, uint64_t x)
 {
+#ifndef WORDS_BIGENDIAN
+  memcpy(dst, &x, 8);
+#else
   dst[0] = (uint8_t)(x);
   dst[1] = (uint8_t)(x >> 8);
   dst[2] = (uint8_t)(x >> 16);
@@ -358,6 +377,7 @@ xxh3_write64(uint8_t *dst, uint64_t x)
   dst[5] = (uint8_t)(x >> 40);
   dst[6] = (uint8_t)(x >> 48);
   dst[7] = (uint8_t)(x >> 56);
+#endif
 }
 
 static inline uint64_t
@@ -490,7 +510,7 @@ xxh3_64_17to128(const uint8_t *input, const size_t length)
   return avalanche(acc);
 }
 
-/* Deliberately not declared inline to keep xxh_64() small. */
+/* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
 xxh3_64_129to240(const uint8_t *input, const size_t length)
 {
@@ -523,7 +543,7 @@ xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, uint64_t acc[8])
   }
 }
 
-/* Deliberately not declared inline to keep xxh_64() small. */
+/* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
 xxh3_64_large(const uint8_t *input, const size_t length)
 {
@@ -621,13 +641,20 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
   uint8_t *buffer = state->buf;
   const uint8_t *block = input;
   size_t bsize = state->buf_size;
-  size_t buf_size = bsize;
   size_t len = length;
   size_t delta;
   uint64_t acc[8];
   uint64_t n, i, secret_var;
+  bool copy_rem = 1;
   if (length==0)
     return;
+  /* fast path for incomplete block. */
+  if (bsize + len <= 1024) {
+    memcpy(buffer+bsize, input, len);
+    state->buf_size = bsize + len;
+    state->total_len += len;
+    return;
+  }
   memcpy(acc, state->acc, sizeof(acc));
   /* Fill the current block and use it for update. */
   if (bsize && bsize + len > 1024) {
@@ -648,6 +675,10 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
     block = input + delta;
     len -= delta;
     bsize = 0;
+    if(len <= 1024) {
+      memcpy(state->rem, buffer+1024-64, 64);
+      copy_rem = 0;
+    }
   }
   /* Continue with input without copying. */
   while(len > 1024) {
@@ -666,17 +697,8 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
     block += 1024;
     len -= 1024;
   }
-  /* We need to remember the last 64 bytes. */
-  if (length >= 64) {
-    memcpy(state->rem, input+length-64, 64);
-  } else if (state->total_len >= 240) {
-    size_t take = 64-length;
-    memmove(state->rem, state->rem+length, take);
-    memcpy(state->rem+take, input, length);
-  } else if (state->total_len + length >= 240) {
-    size_t take = 64-length;
-    memcpy(state->rem, buffer+buf_size-take, take);
-    memcpy(state->rem+take, input, length);
+  if (copy_rem) {
+    memcpy(state->rem, block-64, 64);
   }
   /* store accumulators */
   memcpy(state->acc, acc, sizeof(acc));
@@ -694,18 +716,24 @@ xxh3_digest(const xxh3_state *state)
   uint64_t acc[8];
   uint64_t n, i, num, value;
   const uint8_t *block = state->buf;
-  /* Don't modify the state. */
-  memcpy(acc, state->acc, sizeof(acc));
   if (total <= 240)
     return xxh3_64(block, total);
+  /* Don't modify the state. */
+  memcpy(acc, state->acc, sizeof(acc));
   /* Step 3. Process the last block and the last 64 bytes */
   num = (len-1)/64;
   for (n=0; n<num; n++) {
     xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
   }
   /* The last stripe is taken from the end and may overlap. */
-  block = state->rem;
-  xxh3_64_large_acc(block, xxh3_secret+192-71, acc);
+  if (len>=64) {
+    xxh3_64_large_acc(block+len-64, xxh3_secret+192-71, acc);
+  } else {
+    uint8_t rem[64];
+    memcpy(rem, state->rem+len, 64-len);
+    memcpy(rem+64-len, block, len);
+    xxh3_64_large_acc(rem, xxh3_secret+192-71, acc);
+  }
   /* Step 4. Finalization */
   value = total*PRIME64_1;
   for (i=0; i<4; i++) {
