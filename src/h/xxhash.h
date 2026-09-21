@@ -620,26 +620,37 @@ xxh3_64(const uint8_t *input, const size_t length)
    We could store the seend and the secret in this structure as well at a cost
    of runtime dereferences (right now they are available at compile time). */
 typedef struct xxh3_state {
+  size_t buf_size;              /* buffer fill pointer */
+  uint64_t total_len;           /* total length */
+  bool ready_acc;
   uint64_t acc[8];              /* accumulators */
   uint8_t rem[64];              /* last 64 bytes for digest */
   uint8_t buf[1024];            /* remaining data */
-  size_t buf_size;              /* buffer fill pointer */
-  uint64_t total_len;           /* total length */
 } xxh3_state;
 
 static inline void
 xxh3_reset(xxh3_state *state)
 {
-  state->acc[0]=PRIME32_3;
-  state->acc[1]=PRIME64_1;
-  state->acc[2]=PRIME64_2;
-  state->acc[3]=PRIME64_3;
-  state->acc[4]=PRIME64_4;
-  state->acc[5]=PRIME32_2;
-  state->acc[6]=PRIME64_5;
-  state->acc[7]=PRIME32_1;
   state->buf_size=0;
   state->total_len=0;
+  state->ready_acc=0;
+}
+
+static inline void
+xxh3_ensure_acc(xxh3_state *state, uint64_t acc[8])
+{
+  if (state->ready_acc) {
+    memcpy(acc, state->acc, 8*sizeof(uint64_t));
+  } else {
+    acc[0]=PRIME32_3;
+    acc[1]=PRIME64_1;
+    acc[2]=PRIME64_2;
+    acc[3]=PRIME64_3;
+    acc[4]=PRIME64_4;
+    acc[5]=PRIME32_2;
+    acc[6]=PRIME64_5;
+    acc[7]=PRIME32_1;
+  }
 }
 
 static inline void
@@ -653,6 +664,7 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
   uint64_t acc[8];
   uint64_t n, i, secret_var;
   bool copy_rem = 1;
+  bool copy_acc = 0;
   if (length==0)
     return;
   /* fast path for incomplete block. */
@@ -662,11 +674,13 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
     state->total_len += len;
     return;
   }
-  memcpy(acc, state->acc, sizeof(acc));
   /* Fill the current block and use it for update. */
   if (bsize && bsize + len > 1024) {
     delta = 1024-bsize;
     memcpy(buffer+bsize, input, delta);
+    /* Ensure accumulators */
+    xxh3_ensure_acc(state, acc);
+    copy_acc = 1;
     /* Step 2.1 Process stripes in the block */
     for (n=0; n<16; n++) {
       xxh3_64_large_acc(buffer+n*64, xxh3_secret+n*8, acc);
@@ -684,6 +698,10 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
   }
   /* Continue with input without copying. */
   while(len > 1024) {
+    if (!copy_acc) {
+      xxh3_ensure_acc(state, acc);
+      copy_acc = 1;
+    }
     /* Step 2.1 Process stripes in the block */
     for (n=0; n<16; n++) {
       xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
@@ -698,7 +716,10 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
     memcpy(state->rem, block-64, 64);
   }
   /* store accumulators */
-  memcpy(state->acc, acc, sizeof(acc));
+  if (copy_acc) {
+    state->ready_acc = 1;
+    memcpy(state->acc, acc, sizeof(acc));
+  }
   /* Put the reminder in the buffer. */
   memcpy(buffer + bsize, block, len);
   state->buf_size = bsize + len;
@@ -706,7 +727,7 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
 }
 
 static inline uint64_t
-xxh3_digest(const xxh3_state *state)
+xxh3_digest(xxh3_state *state)
 {
   uint64_t total = state->total_len;
   uint64_t len = state->buf_size;
@@ -716,7 +737,7 @@ xxh3_digest(const xxh3_state *state)
   if (total <= 240)
     return xxh3_64(block, total);
   /* Don't modify the state. */
-  memcpy(acc, state->acc, sizeof(acc));
+  xxh3_ensure_acc(state, acc);
   /* Step 3. Process the last block and the last 64 bytes */
   num = (len-1)/64;
   for (n=0; n<num; n++) {
