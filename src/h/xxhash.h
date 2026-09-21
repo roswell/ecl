@@ -543,6 +543,18 @@ xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, uint64_t acc[8])
   }
 }
 
+static inline void
+xxh3_64_large_mix(uint64_t acc[8])
+{
+  uint64_t secret_var,i ;
+  for (i=0; i<8; i++) {
+    secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
+    acc[i] = acc[i] ^ (acc[i] >> 47);
+    acc[i] = acc[i] ^ secret_var;
+    acc[i] = acc[i] * PRIME32_1;
+  }
+}
+
 /* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
 xxh3_64_large(const uint8_t *input, const size_t length)
@@ -564,12 +576,7 @@ xxh3_64_large(const uint8_t *input, const size_t length)
       xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
     }
     /* Step 2.2 Scramble accumulators */
-    for (i=0; i<8; i++) {
-      secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
-      acc[i] = acc[i] ^ (acc[i] >> 47);
-      acc[i] = acc[i] ^ secret_var;
-      acc[i] = acc[i] * PRIME32_1;
-    }
+    xxh3_64_large_mix(acc);
     /* Advance! */
     block += 1024;
     len -= 1024;
@@ -665,12 +672,7 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
       xxh3_64_large_acc(buffer+n*64, xxh3_secret+n*8, acc);
     }
     /* Step 2.2 Scramble accumulators */
-    for (i=0; i<8; i++) {
-      secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
-      acc[i] = acc[i] ^ (acc[i] >> 47);
-      acc[i] = acc[i] ^ secret_var;
-      acc[i] = acc[i] * PRIME32_1;
-    }
+    xxh3_64_large_mix(acc);
     /* Advance! */
     block = input + delta;
     len -= delta;
@@ -687,12 +689,7 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
       xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
     }
     /* Step 2.2 Scramble accumulators */
-    for (i=0; i<8; i++) {
-      secret_var = xxh3_read64(xxh3_secret+192-64+i*8);
-      acc[i] = acc[i] ^ (acc[i] >> 47);
-      acc[i] = acc[i] ^ secret_var;
-      acc[i] = acc[i] * PRIME32_1;
-    }
+    xxh3_64_large_mix(acc);
     /* Advance! */
     block += 1024;
     len -= 1024;
