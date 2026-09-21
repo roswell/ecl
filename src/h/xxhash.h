@@ -485,30 +485,45 @@ xxh3_64_9to16(const uint8_t *input, const size_t length)
 /* Medium input */
 
 static inline uint64_t
-xxh3_64_medium_mix(const uint8_t *input, const size_t offset0, const size_t offset1)
+xxh3_64_medium_mix(const uint8_t *input, const uint8_t *secret)
 {
   uint64_t input0, input1, secret0, secret1;
-  input0 = xxh3_read64(input+offset0+0);
-  input1 = xxh3_read64(input+offset0+8);
-  secret0 = xxh3_read64(xxh3_secret+offset1+0);
-  secret1 = xxh3_read64(xxh3_secret+offset1+8);
-  return xxh3_mul128_fold64(input0 ^ (secret0 + xxh3_seed), input1 ^ (secret1 - xxh3_seed));
+  input0 = xxh3_read64(input);
+  input1 = xxh3_read64(input+8);
+  secret0 = xxh3_read64(secret);
+  secret1 = xxh3_read64(secret+8);
+  return xxh3_mul128_fold64(input0 ^ (secret0 + xxh3_seed),
+                            input1 ^ (secret1 - xxh3_seed));
 }
+
+#define xxh3_64_medium_mix2(i) do {                                     \
+  acc += xxh3_64_medium_mix(input+i*16,           xxh3_secret+i*32);    \
+  acc += xxh3_64_medium_mix(input+length-i*16-16, xxh3_secret+i*32+16); \
+  } while(0)
 
 static inline uint64_t
 xxh3_64_17to128(const uint8_t *input, const size_t length)
 {
-
-  uint64_t acc, num_rounds;
-  signed int i;                 /* must be signed */
+  uint64_t acc;
   acc = length * PRIME64_1;
-  num_rounds = ((length-1) >> 5) + 1;
-  for (i = num_rounds-1; i>=0; i--) {
-    acc += xxh3_64_medium_mix(input, i*16, i*32);
-    acc += xxh3_64_medium_mix(input, length-i*16-16, i*32+16);
+  if (length <= 32) {
+    xxh3_64_medium_mix2(0);
+  } else if (length <= 64) {
+    xxh3_64_medium_mix2(1);
+    xxh3_64_medium_mix2(0);
+  } else if (length <= 96) {
+    xxh3_64_medium_mix2(2);
+    xxh3_64_medium_mix2(1);
+    xxh3_64_medium_mix2(0);
+  } else /*if (length <= 128)*/ {
+    xxh3_64_medium_mix2(3);
+    xxh3_64_medium_mix2(2);
+    xxh3_64_medium_mix2(1);
+    xxh3_64_medium_mix2(0);
   }
   return avalanche(acc);
 }
+#undef xxh3_64_medium_mix2
 
 /* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
@@ -518,13 +533,14 @@ xxh3_64_129to240(const uint8_t *input, const size_t length)
   acc = length * PRIME64_1;
   num_chunks = length >> 4;
   for (i=0; i<8; i++) {
-    acc += xxh3_64_medium_mix(input, i*16, i*16);
+    acc += xxh3_64_medium_mix(input+i*16, xxh3_secret+i*16);
   }
   acc = avalanche(acc);
   for (i=8; i<num_chunks; i++) {
-    acc += xxh3_64_medium_mix(input, i*16, (i-8)*16+3);
+    /* Unrolling this into a switch makes xxh3 slower (!) */
+    acc += xxh3_64_medium_mix(input+i*16, xxh3_secret+(i-8)*16+3);
   }
-  acc += xxh3_64_medium_mix(input, length-16, 119);
+  acc += xxh3_64_medium_mix(input+length-16, xxh3_secret+119);
   return avalanche(acc);
 }
 
