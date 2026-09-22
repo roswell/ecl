@@ -147,7 +147,6 @@
 
 typedef @CL_FIXNUM_TYPE@ cl_fixnum;
 typedef unsigned @CL_FIXNUM_TYPE@ cl_index;
-typedef unsigned @CL_FIXNUM_TYPE@ cl_hashkey;
 
 #define ECL_BIGNUM_REGISTER_NUMBER 3
 
