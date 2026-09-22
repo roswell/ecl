@@ -71,6 +71,17 @@
   (xxh32_rol(acc1,1) + xxh32_rol(acc2,7) + xxh32_rol(acc3,12) + xxh32_rol(acc4,18))
 
 static inline uint32_t
+xxh32_avalanche(uint32_t x)
+{
+  x = x ^ (x >> 15);
+  x = x * PRIME32_2;
+  x = x ^ (x >> 13);
+  x = x * PRIME32_3;
+  x = x ^ (x >> 16);
+  return x;
+}
+
+static inline uint32_t
 xxh32_round(uint32_t accN, uint32_t laneN)
 {
   accN = accN + (laneN * PRIME32_2);
@@ -95,11 +106,7 @@ xxh32_small(const uint32_t *vector, uint32_t length, uint32_t seed)
     acc = xxh32_rol(acc, 17) * PRIME32_4;
   }
   /* Step 6. Final mix (avalanche) */
-  acc = acc ^ (acc >> 15);
-  acc = acc * PRIME32_2;
-  acc = acc ^ (acc >> 13);
-  acc = acc * PRIME32_3;
-  acc = acc ^ (acc >> 16);
+  acc = xxh32_avalanche(acc);
   /* Step 7. Output */
   return acc;
 }
@@ -135,12 +142,7 @@ xxh32(const uint32_t *vector, uint32_t length, uint32_t seed)
     acc = xxh32_rol(acc, 17) * PRIME32_4;
   }
   /* Step 6. Final mix (avalanche) */
-  acc = acc ^ (acc >> 15);
-  acc = acc * PRIME32_2;
-  acc = acc ^ (acc >> 13);
-  acc = acc * PRIME32_3;
-  acc = acc ^ (acc >> 16);
-
+  acc = xxh32_avalanche(acc);
   /* Step 7. Output */
   return acc;
 }
@@ -159,6 +161,17 @@ xxh32(const uint32_t *vector, uint32_t length, uint32_t seed)
 
 #define xxh64_cvg(acc1,acc2,acc3,acc4) \
   (xxh64_rol(acc1,1) + xxh64_rol(acc2,7) + xxh64_rol(acc3,12) + xxh64_rol(acc4,18))
+
+static inline uint64_t
+xxh64_avalanche(uint64_t x)
+{
+  x = x ^ (x >> 33);
+  x = x * PRIME64_2;
+  x = x ^ (x >> 29);
+  x = x * PRIME64_3;
+  x = x ^ (x >> 32);
+  return x;
+}
 
 static inline uint64_t
 xxh64_round(uint64_t accN, uint64_t laneN)
@@ -194,11 +207,7 @@ xxh64_small(const uint64_t *vector, uint64_t length, uint64_t seed)
     acc = acc + PRIME64_4;
   }
   /* Step 6. Final mix (avalanche) */
-  acc = acc ^ (acc >> 33);
-  acc = acc * PRIME64_2;
-  acc = acc ^ (acc >> 29);
-  acc = acc * PRIME64_3;
-  acc = acc ^ (acc >> 32);
+  acc = xxh64_avalanche(acc);
   /* Step 7. Output */
   return acc;
 }
@@ -239,12 +248,7 @@ xxh64(const uint64_t *vector, uint64_t length, uint64_t seed)
     acc = acc + PRIME64_4;
   }
   /* Step 6. Final mix (avalanche) */
-  acc = acc ^ (acc >> 33);
-  acc = acc * PRIME64_2;
-  acc = acc ^ (acc >> 29);
-  acc = acc * PRIME64_3;
-  acc = acc ^ (acc >> 32);
-
+  acc = xxh64_avalanche(acc);
   /* Step 7. Output */
   return acc;
 }
@@ -413,21 +417,10 @@ xxh3_write64(uint8_t *dst, uint64_t x)
 }
 
 static inline uint64_t
-avalanche(uint64_t x)
+xxh3_avalanche(uint64_t x)
 {
   x = x ^ (x >> 37);
   x = x * PRIME_MX1;
-  x = x ^ (x >> 32);
-  return x;
-}
-
-static inline uint64_t
-avalanche_xxh64(uint64_t x)
-{
-  x = x ^ (x >> 33);
-  x = x * PRIME64_2;
-  x = x ^ (x >> 29);
-  x = x * PRIME64_3;
   x = x ^ (x >> 32);
   return x;
 }
@@ -457,7 +450,7 @@ xxh3_64_empty(const uint8_t *input, const size_t length)
   uint64_t secret0, secret1;
   secret0 = xxh3_read64(xxh3_secret+56);
   secret1 = xxh3_read64(xxh3_secret+56+8);
-  return avalanche_xxh64(xxh3_seed ^ secret0 ^ secret1);
+  return xxh64_avalanche(xxh3_seed ^ secret0 ^ secret1);
 }
 
 static inline uint64_t
@@ -471,7 +464,7 @@ xxh3_64_1to3(const uint8_t *input, const size_t length)
     ((uint32_t)input[length-1]) | ((uint32_t)length << 8) |
     ((uint32_t)input[0] << 16)  | ((uint32_t)input[length>>1] << 24);
   value = ((uint64_t)(secret0 ^ secret1) + xxh3_seed) ^ (uint64_t)combined;
-  return avalanche_xxh64(value);
+  return xxh64_avalanche(value);
 }
 
 static inline uint64_t
@@ -511,7 +504,7 @@ xxh3_64_9to16(const uint8_t *input, const size_t length)
   high= ((secret2 ^ secret3) - xxh3_seed) ^ input_last;
   fold= xxh3_mul128_fold64(low, high);
   value = length + xxh3_bswap64(low) + high + fold;
-  return avalanche(value);
+  return xxh3_avalanche(value);
 }
 
 /* Medium input */
@@ -553,7 +546,7 @@ xxh3_64_17to128(const uint8_t *input, const size_t length)
     xxh3_64_medium_mix2(1);
     xxh3_64_medium_mix2(0);
   }
-  return avalanche(acc);
+  return xxh3_avalanche(acc);
 }
 #undef xxh3_64_medium_mix2
 
@@ -567,13 +560,13 @@ xxh3_64_129to240(const uint8_t *input, const size_t length)
   for (i=0; i<8; i++) {
     acc += xxh3_64_medium_mix(input+i*16, xxh3_secret+i*16);
   }
-  acc = avalanche(acc);
+  acc = xxh3_avalanche(acc);
   for (i=8; i<num_chunks; i++) {
     /* Unrolling this into a switch makes xxh3 slower (!) */
     acc += xxh3_64_medium_mix(input+i*16, xxh3_secret+(i-8)*16+3);
   }
   acc += xxh3_64_medium_mix(input+length-16, xxh3_secret+119);
-  return avalanche(acc);
+  return xxh3_avalanche(acc);
 }
 
 /* Large input */
@@ -644,7 +637,7 @@ xxh3_64_large(const uint8_t *input, const size_t length)
     uint64_t b = acc[i*2+1] ^ xxh3_read64(xxh3_secret+11+i*16+8);
     value += xxh3_mul128_fold64(a, b);
   }
-  return avalanche(value);
+  return xxh3_avalanche(value);
 }
 
 static inline uint64_t
@@ -848,7 +841,7 @@ xxh3_digest_slow(xxh3_state *state)
     uint64_t b = acc[i*2+1] ^ xxh3_read64(xxh3_secret+11+i*16+8);
     value += xxh3_mul128_fold64(a, b);
   }
-  return avalanche(value);
+  return xxh3_avalanche(value);
 }
 
 /* While slow path is separated, this is still potentially big because xxh3_64
