@@ -364,6 +364,19 @@ xxh3_read64(const uint8_t *src)
 }
 
 static inline void
+xxh3_write32(uint8_t *dst, uint32_t x)
+{
+#ifndef WORDS_BIGENDIAN
+  memcpy(dst, &x, 4);
+#else
+  dst[0] = (uint8_t)(x);
+  dst[1] = (uint8_t)(x >> 8);
+  dst[2] = (uint8_t)(x >> 16);
+  dst[3] = (uint8_t)(x >> 24);
+#endif
+}
+
+static inline void
 xxh3_write64(uint8_t *dst, uint64_t x)
 {
 #ifndef WORDS_BIGENDIAN
@@ -749,6 +762,38 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
     return;
   }
   xxh3_update_slow(state, input, length);
+}
+
+/* ECL hashing functions sometimes directly pass words. We maintain the little
+   endian order per XXH3 requirements. Both 32 and 64 variants are available. */
+static inline void
+xxh3_update32(xxh3_state *state, const uint32_t word)
+{
+  size_t bsize = state->buf_size;
+  if (bsize <= 1024-4) {
+    xxh3_write32(state->buf+bsize, word);
+    state->buf_size += 4;
+    state->total_len += 4;
+  } else {
+    uint8_t input[4];
+    xxh3_write32(input, word);
+    xxh3_update(state, input, 4);
+  }
+}
+
+static inline void
+xxh3_update64(xxh3_state *state, const uint64_t word)
+{
+  size_t bsize = state->buf_size;
+  if (bsize <= 1024-8) {
+    xxh3_write64(state->buf+bsize, word);
+    state->buf_size += 8;
+    state->total_len += 8;
+  } else {
+    uint8_t input[8];
+    xxh3_write64(input, word);
+    xxh3_update(state, input, 8);
+  }
 }
 
 /* Keep the slow path separate to keep the fast path small for inlining. */
