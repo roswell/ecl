@@ -20,12 +20,31 @@
    Tradeoffs:
 
    Lane-based XXH32/XXH64 will not produce the same hashes for equal byte arrays
-   in upstream algorithm when the host is big endian.
+   in upstream algorithm when the host is big endian. They are competetive with
+   upstream and we don't need to pay cost of converting to bytes.
 
-   XXH3 is scalar (so it could be improved for the large variant). On the other
-   hand our versions for XXH32/XXH64 are fast and the overall size of the
-   implementation is around 10x smaller. We hardcode a default secret and seed,
-   but the code to derive a custom one is implemented for customization.
+   XXH3 is scalar (so it could be improved for the large variant). Our version
+   is competetive with upstream when we disable SSE and ~2x slower for large
+   inputs (> 240B). Our source code is around 10x smaller.
+
+   We hardcode a default secret and seed, but the code to derive a custom one is
+   implemented for customization.
+
+   I've also cobbled together a small benchmark to see how we fare compared to
+   FNV1A (SBCL currently uses this for strings) - for short strings <4B we are
+   slower, 4B is a crossover and then we quickly pull ahead. The difference for
+   1B is very small (around 2ns), so I wouldn't stress it, but generally short
+   strings are not our forte. Also FNV1A implementation is trivial (but at a
+   cost of worse hash quality and throughput).
+
+   Compared to newhash (our old algorithm) XXH3 one-shot mode is always faster
+   (1.7x at 1B and growing with input size) while the streaming version is
+   slower at 1B, but quickly pulls ahead (crossover is also at 4B).
+
+   Another tradeoff for XXH3 streaming is that our state is ~1.2KB to keep the
+   code of update/digest straightforward, while upstream's state is half of it
+   (while FNV1A and newhash are practically stateless). We allocate the state on
+   the stack and that's not much of a problem (we could move it to cl_env too).
 
     -- jd 2026-06-05 */
 
