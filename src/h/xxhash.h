@@ -577,7 +577,7 @@ xxh3_64_large(const uint8_t *input, const size_t length)
 {
   /* The upsteram algorithm is paramerize, we assume:
      secret_length=192, stripes_per_block=16, block_size=1024 */
-  uint64_t i, n, num, value, len, secret_var;
+  uint64_t i, n, num, value, len;
   const uint8_t *block;
   /* Step 1. Initialize internal acumulators */
   uint64_t acc[8] = {
@@ -669,37 +669,30 @@ xxh3_ensure_acc(xxh3_state *state, uint64_t acc[8])
   }
 }
 
-static inline void
-xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
+/* Keep the slow path separate to keep the fast path small for inlining. */
+static void
+xxh3_update_slow(xxh3_state *state, const uint8_t *input, const size_t length)
 {
+  /* INV length>0; bsize+length>1024 */
   uint8_t *buffer = state->buf;
   const uint8_t *block = input;
   size_t bsize = state->buf_size;
   size_t len = length;
   size_t delta;
   uint64_t acc[8];
-  uint64_t n, i, secret_var;
+  uint64_t idx;
   bool copy_rem = 1;
   bool copy_acc = 0;
-  if (length==0)
-    return;
-  /* fast path for incomplete block. */
-  if (bsize + len <= 1024) {
-    memcpy(buffer+bsize, input, len);
-    state->buf_size = bsize + len;
-    state->total_len += len;
-    return;
-  }
   /* Fill the current block and use it for update. */
-  if (bsize && bsize + len > 1024) {
+  if (bsize) {
     delta = 1024-bsize;
     memcpy(buffer+bsize, input, delta);
     /* Ensure accumulators */
     xxh3_ensure_acc(state, acc);
     copy_acc = 1;
     /* Step 2.1 Process stripes in the block */
-    for (n=0; n<16; n++) {
-      xxh3_64_large_acc(buffer+n*64, xxh3_secret+n*8, acc);
+    for (idx=0; idx<16; idx++) {
+      xxh3_64_large_acc(buffer+idx*64, xxh3_secret+idx*8, acc);
     }
     /* Step 2.2 Scramble accumulators */
     xxh3_64_large_mix(acc);
@@ -719,8 +712,8 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
       copy_acc = 1;
     }
     /* Step 2.1 Process stripes in the block */
-    for (n=0; n<16; n++) {
-      xxh3_64_large_acc(block+n*64, xxh3_secret+n*8, acc);
+    for (idx=0; idx<16; idx++) {
+      xxh3_64_large_acc(block+idx*64, xxh3_secret+idx*8, acc);
     }
     /* Step 2.2 Scramble accumulators */
     xxh3_64_large_mix(acc);
@@ -742,16 +735,32 @@ xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
   state->total_len += length;
 }
 
-static inline uint64_t
-xxh3_digest(xxh3_state *state)
+static inline void
+xxh3_update(xxh3_state *state, const uint8_t *input, const size_t length)
 {
+  size_t bsize = state->buf_size;
+  if (length==0)
+    return;
+  /* fast path for incomplete block. */
+  if (length <= 1024-bsize) {
+    memcpy(state->buf+bsize, input, length);
+    state->buf_size = bsize + length;
+    state->total_len += length;
+    return;
+  }
+  xxh3_update_slow(state, input, length);
+}
+
+/* Keep the slow path separate to keep the fast path small for inlining. */
+static uint64_t
+xxh3_digest_slow(xxh3_state *state)
+{
+  /* INV total > 240 */
   uint64_t total = state->total_len;
   uint64_t len = state->buf_size;
   uint64_t acc[8];
   uint64_t n, i, num, value;
   const uint8_t *block = state->buf;
-  if (total <= 240)
-    return xxh3_64(block, total);
   /* Don't modify the state. */
   xxh3_ensure_acc(state, acc);
   /* Step 3. Process the last block and the last 64 bytes */
@@ -776,6 +785,18 @@ xxh3_digest(xxh3_state *state)
     value += xxh3_mul128_fold64(a, b);
   }
   return avalanche(value);
+}
+
+/* While slow path is separated, this is still potentially big because xxh3_64
+   itself may get inlined here. That's deliberate. */
+static inline uint64_t
+xxh3_digest(xxh3_state *state)
+{
+  uint64_t total = state->total_len;
+  const uint8_t *block = state->buf;
+  if (total <= 240)
+    return xxh3_64(block, total);
+  return xxh3_digest_slow(state);
 }
 
 #endif
