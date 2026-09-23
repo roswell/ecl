@@ -382,10 +382,26 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     return;
   }
 #endif
-  case t_instance:
+  case t_structure:
+    /* FIXME! structures are currently implemented as instances.
+       INV enum values t_structure === t_instance */
+    if (si_structurep(x)) {
+      cl_index idx, len = ECL_STRUCT_LENGTH(x);
+      cl_object *s = ECL_STRUCT_SLOTS(x);
+      hash_word(h, ECL_STRUCT_TYPE(x));
+      if (--depth > 0) {
+        for (idx=0; idx<len; idx++)
+          _hash_equalp(h, s[idx], depth);
+      }
+      return;
+    }
+    hash_word(h, x);
+    return;
   case t_hashtable:
-    /* FIXME! We should be more precise here! */
-    hash_word(h, 42);
+    /* We excercise only test here, because the number of entries may change in
+       weak hash tables. We also don't want to add individual items, because
+       that may get costly fast for EQUALP keys. -- jd 2026-09-23 */
+    hash_word(h, x->hash.test);
     return;
   default:
     _hash_equal(h, x, depth);
