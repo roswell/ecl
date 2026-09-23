@@ -25,32 +25,69 @@ typedef ecl_xxh3_state cl_hashstate;
 #define hash_data(s,x,l) ecl_xxh3_update((s),(uint8_t *)(x),(l))
 #if ECL_FIXNUM_BITS <= 32
 # define hash_word(s,x) ecl_xxh3_update32((s),(uint32_t)(x))
-# define hash_once(x) ecl_xxh32_avalanche((uint32_t)(x));
+# define hash_once(x) ecl_xxh32_avalanche((uint32_t)(x))
 #else
 # define hash_word(s,x) ecl_xxh3_update64((s),(uint64_t)(x))
-# define hash_once(x) ecl_xxh64_avalanche((uint64_t)(x));
+# define hash_once(x) ecl_xxh64_avalanche((uint64_t)(x))
 #endif
-
 
 #ifdef ECL_UNICODE
 static inline void
 hash_base_string(cl_hashstate *h, cl_object x)
 {
-  cl_index i, n;
-  const ecl_base_char *s = x->base_string.self;
-  for(i=0, n=x->base_string.fillp; i<n; i++)
-    ecl_xxh3_update32(h, s[i]);
+  const cl_index length = x->base_string.fillp;
+  const ecl_base_char *self = x->base_string.self;
+  ecl_character buffer[256];
+  cl_index index = 0, jdx;
+  while (index < length) {
+    cl_index take = length-index;
+    if (take > 256) take=256;
+    for (jdx=0; jdx<take; jdx++) {
+      buffer[jdx] = self[index+jdx];
+    }
+    hash_data(h, buffer, take*sizeof(ecl_character));
+    index += take;
+  }
 }
 
 static inline void
 hash_full_string(cl_hashstate *h, cl_object x)
 {
-  cl_index i, n;
-  const ecl_character *s = x->string.self;
-  for(i=0, n=x->string.fillp; i<n; i++)
-    ecl_xxh3_update32(h, s[i]);
+  const cl_index length = x->string.fillp;
+  const ecl_character *self = x->string.self;
+  hash_data(h, self, length*sizeof(ecl_character));
 }
 #endif
+
+static inline void
+hash_single_float(cl_hashstate *h, float value) {
+  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM)
+    ? hash_word(h, (cl_fixnum)value)
+    : hash_data(h, &value, sizeof(value));
+}
+
+static inline void
+hash_double_float(cl_hashstate *h, double value) {
+  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM)
+    ? hash_word(h, (cl_fixnum)value)
+    : hash_data(h, &value, sizeof(value));
+}
+
+static inline void
+hash_long_float(cl_hashstate *h, long double value) {
+  if (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM) {
+    hash_word(h, (cl_fixnum)value);
+  } else {
+    /* We coerce to double because long double has extra bits
+     * that give rise to different hash key and are not
+     * meaningful */
+    struct { double mantissa; int exponent; int sign; } aux;
+    aux.mantissa = frexpl(value, &aux.exponent);
+    aux.sign = (value < 0)? -1: 1;
+    if (aux.mantissa == 0.0) aux.mantissa = 0.0;
+    hash_data(h, &aux, sizeof(aux));
+  }
+}
 
 
 /* Hashing */
@@ -135,7 +172,7 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
       _hash_equal(h, ECL_NIL_SYMBOL->symbol.name, depth);
       return;
     }
-    if (--depth == 0) {
+    if (--depth <= 0) {
       return;
     } else {
       _hash_equal(h, ECL_CONS_CAR(x), depth);
@@ -182,7 +219,10 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
     return;
   case t_random: {
     cl_object array = x->random.value;
-    hash_data(h, array->vector.self.b8, 4*624);
+    size_t elt_size = (array->array.elttype == ecl_aet_b32
+                       ? sizeof(uint32_t)
+                       : sizeof(uint64_t));
+    hash_data(h, array->vector.self.b8, array->vector.dim * elt_size);
     return;
   }
 #ifdef ECL_SIGNED_ZERO
@@ -272,7 +312,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
       _hash_equalp(h, ECL_NIL_SYMBOL->symbol.name, depth);
       return;
     }
-    if (--depth == 0) {
+    if (--depth <= 0) {
       return;
     } else {
       _hash_equalp(h, ECL_CONS_CAR(x), depth);
@@ -290,7 +330,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
   case t_array:
     len = x->vector.dim;
   SCAN:
-    if (--depth) {
+    if (--depth > 0) {
       for (i = 0; i < len; i++) {
         _hash_equalp(h, ecl_aref_unsafe(x, i), depth);
       }
@@ -298,14 +338,6 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     return;
   case t_fixnum:
     hash_word(h, ecl_fixnum(x));
-    return;
-  case t_singlefloat:
-    /* FIXME! We should be more precise here! */
-    hash_word(h, ecl_single_float(x));
-    return;
-  case t_doublefloat:
-    /* FIXME! We should be more precise here! */
-    hash_word(h, ecl_double_float(x));
     return;
   case t_bignum:
     /* FIXME! We should be more precise here! */
@@ -317,21 +349,38 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     _hash_equalp(h, ecl_ratio_num(x), 0);
     _hash_equalp(h, ecl_ratio_den(x), 0);
     return;
+  case t_singlefloat:
+    hash_single_float(h, ecl_single_float(x));
+    return;
+  case t_doublefloat:
+    hash_double_float(h, ecl_double_float(x));
+    return;
+  case t_longfloat:
+    hash_long_float(h, ecl_long_float(x));
+    return;
   case t_complex:
     _hash_equalp(h, ecl_complex_real(x), 0);
     _hash_equalp(h, ecl_complex_imag(x), 0);
     return;
 #ifdef ECL_COMPLEX_FLOAT
-    /* FIXME! We should be more precise here! */
-  case t_csfloat:
-    hash_word(h, ecl_csfloat(x));
+  case t_csfloat: {
+    _Complex float v = ecl_csfloat(x);
+    hash_single_float(h, crealf(v));
+    hash_single_float(h, cimagf(v));
     return;
-  case t_cdfloat:
-    hash_word(h, ecl_cdfloat(x));
+  }
+  case t_cdfloat: {
+    _Complex double v = ecl_cdfloat(x);
+    hash_double_float(h, creal(v));
+    hash_double_float(h, cimag(v));
     return;
-  case t_clfloat:
-    hash_word(h, ecl_clfloat(x));
+  }
+  case t_clfloat: {
+    _Complex long double v = ecl_clfloat(x);
+    hash_long_float(h, creall(v));
+    hash_long_float(h, cimagl(v));
     return;
+  }
 #endif
   case t_instance:
   case t_hashtable:
