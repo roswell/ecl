@@ -13,7 +13,7 @@
 #include <ecl/ecl.h>
 #include <ecl/cache.h>
 #include <ecl/internal.h>
-#include "newhash.h"
+#include <ecl/xxhash.h>
 
 #define RECORD_KEY(e) ((e)[0])
 #define RECORD_VALUE(e) ((e)[1])
@@ -106,22 +106,12 @@ ecl_cache_remove_one(ecl_cache_ptr cache, cl_object first_key)
 static cl_index
 vector_hash_key(cl_object keys)
 {
-  cl_index c, n, a = GOLDEN_RATIO, b = GOLDEN_RATIO;
-  for (c = 0, n = keys->vector.fillp; n >= 3; ) {
-    c += keys->vector.self.index[--n];
-    b += keys->vector.self.index[--n];
-    a += keys->vector.self.index[--n];
-    mix(a, b, c);
-  }
-  switch (n) {
-  case 2: b += keys->vector.self.index[--n];
-  case 1: a += keys->vector.self.index[--n];
-    c += keys->vector.dim;
-    mix(a,b,c);
-  }
-  return c;
+#if ECL_FIXNUM_BITS > 32
+  return ecl_xxh64_lanes((uint64_t *)keys->vector.self.index, keys->vector.fillp, 0);
+#else
+  return ecl_xxh32_lanes((uint32_t *)keys->vector.self.index, keys->vector.fillp, 0);
+#endif
 }
-
 
 /*
  * variation of ecl_gethash from hash.d, which takes an array of objects as key
