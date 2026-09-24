@@ -23,6 +23,7 @@ typedef ecl_xxh3_state cl_hashstate;
 #define hash_digest(s) ecl_xxh3_digest(s)
 
 #define hash_data(s,x,l) ecl_xxh3_update((s),(uint8_t *)(x),(l))
+#define hash_only(x,l)   ecl_xxh3_64((uint8_t *)(x),(l))
 #if ECL_FIXNUM_BITS <= 32
 # define hash_word(s,x) ecl_xxh3_update32((s),(uint32_t)(x))
 # define hash_once(x) ecl_xxh32_avalanche((uint32_t)(x))
@@ -150,7 +151,7 @@ _hash_eql(cl_hashstate *state, cl_object x)
   }
 #endif
   case t_character:
-    hash_word(state, ECL_CHAR_CODE(x));
+    hash_word(state, x);
     return;
 #ifdef ECL_SSE2
   case t_sse_pack:
@@ -305,7 +306,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
   cl_index i, len;
   switch (ecl_t_of(x)) {
   case t_character:
-    hash_word(h, ecl_char_upcase(ECL_CHAR_CODE(x)));
+    hash_word(h, ECL_CODE_CHAR(ecl_char_upcase(ECL_CHAR_CODE(x))));
     return;
   case t_list:
     if (Null(x)) {
@@ -337,6 +338,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     }
     return;
   case t_fixnum:
+    /* We hash by value because (EQUALP 1 1.0) is true. */
     hash_word(h, ecl_fixnum(x));
     return;
   case t_bignum:
@@ -428,18 +430,47 @@ _ecl_hash_eq(cl_object key) {
 
 static inline uint64_t
 _ecl_hash_eql(cl_object key) {
-  cl_hashstate state;
-  hash_reset(&state);
-  _hash_eql(&state, key);
-  return hash_digest(&state);
+  /* Some types that may be hashed in one-shot are optimized here. */
+  switch(ecl_t_of(key)) {
+  case t_fixnum:
+  case t_character:
+    return hash_once(key);
+  default: {
+    cl_hashstate state;
+    hash_reset(&state);
+    _hash_eql(&state, key);
+    return hash_digest(&state);
+  }
+  }
 }
 
 static inline uint64_t
 _ecl_hash_equal(cl_object key) {
-  cl_hashstate state;
-  hash_reset(&state);
-  _hash_equal(&state, key, 3);
-  return hash_digest(&state);
+  /* Some types that may be hashed in one-shot are optimized here. */
+ AGAIN:
+  switch(ecl_t_of(key)) {
+  case t_symbol:
+    key = key->symbol.name;
+    goto AGAIN;
+#ifdef ECL_UNICODE
+  case t_string:
+    return hash_only(key->string.self,
+                     key->string.fillp * sizeof(ecl_character));
+#else
+  case t_base_string:
+    return hash_only(key->base_string.self,
+                     key->base_string.fillp * sizeof(ecl_base_char));
+#endif
+  case t_fixnum:
+  case t_character:
+    return hash_once(key);
+  default: {
+    cl_hashstate state;
+    hash_reset(&state);
+    _hash_equal(&state, key, 3);
+    return hash_digest(&state);
+  }
+  }
 }
 
 static inline uint64_t
@@ -453,41 +484,61 @@ _ecl_hash_equalp(cl_object key) {
 @(defun si::hash-eql (&rest args)
 @
   uint64_t h;
-  cl_hashstate state;
-  hash_reset(&state);
-  for (; narg; narg--) {
-    cl_object o = ecl_va_arg(args);
-    _hash_eql(&state, o);
+  if (narg == 1) {
+    h = _ecl_hash_eql(ecl_va_arg(args));
+  } else {
+    cl_hashstate state;
+    hash_reset(&state);
+    for (; narg; narg--) {
+      cl_object o = ecl_va_arg(args);
+      _hash_eql(&state, o);
+    }
+    h = hash_digest(&state);
   }
-  h = hash_digest(&state);
   @(return ecl_make_integer(h));
 @)
 
 @(defun si::hash-equal (&rest args)
 @
   uint64_t h;
-  cl_hashstate state;
-  hash_reset(&state);
-  for (; narg; narg--) {
-    cl_object o = ecl_va_arg(args);
-    _hash_equal(&state, o, 3);
+  if (narg == 1) {
+    h = _ecl_hash_equal(ecl_va_arg(args));
+  } else {
+    cl_hashstate state;
+    hash_reset(&state);
+    for (; narg; narg--) {
+      cl_object o = ecl_va_arg(args);
+      _hash_equal(&state, o, 3);
+    }
+    h = hash_digest(&state);
   }
-  h = hash_digest(&state);
   @(return ecl_make_integer(h));
 @)
 
 @(defun si::hash-equalp (&rest args)
 @
   uint64_t h;
-  cl_hashstate state;
-  hash_reset(&state);
-  for (; narg; narg--) {
-    cl_object o = ecl_va_arg(args);
-    _hash_equalp(&state, o, 3);
+  if (narg == 1) {
+    h = _ecl_hash_equalp(ecl_va_arg(args));
+  } else {
+    cl_hashstate state;
+    hash_reset(&state);
+    for (; narg; narg--) {
+      cl_object o = ecl_va_arg(args);
+      _hash_equalp(&state, o, 3);
+    }
+    h = hash_digest(&state);
   }
-  h = hash_digest(&state);
   @(return ecl_make_integer(h));
 @)
+
+cl_object
+cl_sxhash(cl_object key)
+{
+  cl_index output = _ecl_hash_equal(key);
+  const cl_index mask = ((cl_index)1 << (ECL_FIXNUM_BITS - 3)) - 1;
+  @(return ecl_make_fixnum(output & mask));
+}
 
 
 /* Hash tables */
@@ -1623,14 +1674,6 @@ cl_hash_table_rehash_threshold(cl_object ht)
 {
   assert_type_hash_table(@[hash-table-rehash-threshold], 1, ht);
   @(return ht->hash.threshold);
-}
-
-cl_object
-cl_sxhash(cl_object key)
-{
-  cl_index output = _ecl_hash_equal(key);
-  const cl_index mask = ((cl_index)1 << (ECL_FIXNUM_BITS - 3)) - 1;
-  @(return ecl_make_fixnum(output & mask));
 }
 
 cl_object
