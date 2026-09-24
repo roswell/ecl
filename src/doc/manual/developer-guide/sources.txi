@@ -136,9 +136,6 @@
 @item @file{multival.d}
 @tab multiple values
 
-@item @file{newhash.d}
-@tab hashing routines
-
 @item @file{num_arith.d}
 @tab arithmetic operations
 
