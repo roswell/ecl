@@ -78,6 +78,15 @@
   signals an error if a lambda-list is absent or has more than 1 argument.
   :no-error clause is not affected. Fixes the issue #776.
 
+- bugfix: 1.0/42 is now correctly parsed as a symbol
+
+- bugfix: ecl_library_symbol uses now RTLD_DEFAULT instead of 0 (OSX fix)
+
+- performance: new hashing implementation based on hand-rolled xxhash
+
+- enhancements: less hash collisions between fixnum vs character and
+  structure vs hash-table
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
