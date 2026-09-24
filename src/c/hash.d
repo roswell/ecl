@@ -32,6 +32,9 @@ typedef ecl_xxh3_state cl_hashstate;
 # define hash_once(x) ecl_xxh64_avalanche((uint64_t)(x))
 #endif
 
+#define hash_to_fixnum(x) \
+  ecl_make_fixnum((cl_fixnum)((x) & (uint64_t)MOST_POSITIVE_FIXNUM))
+
 #ifdef ECL_UNICODE
 static inline void
 hash_base_string(cl_hashstate *h, cl_object x)
@@ -203,7 +206,7 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
     return;
 #endif
   case t_pathname:
-    _hash_equal(h, x->pathname.directory, 0);
+    _hash_equal(h, x->pathname.directory, 256);
     _hash_equal(h, x->pathname.name, 0);
     _hash_equal(h, x->pathname.type, 0);
     _hash_equal(h, x->pathname.host, 0);
@@ -338,26 +341,32 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     }
     return;
   case t_fixnum:
-    /* We hash by value because (EQUALP 1 1.0) is true. */
+    /* INV we hash by value because (EQUALP 1 1.0) is true. */
     hash_word(h, ecl_fixnum(x));
     return;
   case t_bignum:
-    /* FIXME! We should be more precise here! */
+    /* FIXME! We should be more precise here! Notably large floats and bignums
+       won't agree on the hash, even when they are EQUALP to each other. */
     hash_data(h,
               ECL_BIGNUM_LIMBS(x),
               ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
-    return ;
+    return;
   case t_ratio:
     _hash_equalp(h, ecl_ratio_num(x), 0);
     _hash_equalp(h, ecl_ratio_den(x), 0);
     return;
   case t_singlefloat:
+    /* FIXME! we only cast to integer when the float is within integer range.
+       t_bignums won't agree on large values.
+       t_ratio   won't agree on fract values. */
     hash_single_float(h, ecl_single_float(x));
     return;
   case t_doublefloat:
+    /* FIXME! ditto */
     hash_double_float(h, ecl_double_float(x));
     return;
   case t_longfloat:
+    /* FIXME! ditto */
     hash_long_float(h, ecl_long_float(x));
     return;
   case t_complex:
@@ -366,18 +375,22 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     return;
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {
+    /* FIXME! the problem is similar to float vs ratio, but here we have a
+       problem with (complex float) vs (complex rational). */
     _Complex float v = ecl_csfloat(x);
     hash_single_float(h, crealf(v));
     hash_single_float(h, cimagf(v));
     return;
   }
   case t_cdfloat: {
+    /* FIXME! ditto */
     _Complex double v = ecl_cdfloat(x);
     hash_double_float(h, creal(v));
     hash_double_float(h, cimag(v));
     return;
   }
   case t_clfloat: {
+    /* FIXME! ditto */
     _Complex long double v = ecl_clfloat(x);
     hash_long_float(h, creall(v));
     hash_long_float(h, cimagl(v));
@@ -388,12 +401,12 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     /* FIXME! structures are currently implemented as instances.
        INV enum values t_structure === t_instance */
     if (si_structurep(x)) {
-      cl_index idx, len = ECL_STRUCT_LENGTH(x);
+      len = ECL_STRUCT_LENGTH(x);
       cl_object *s = ECL_STRUCT_SLOTS(x);
       hash_word(h, ECL_STRUCT_TYPE(x));
       if (--depth > 0) {
-        for (idx=0; idx<len; idx++)
-          _hash_equalp(h, s[idx], depth);
+        for (i=0; i<len; i++)
+          _hash_equalp(h, s[i], depth);
       }
       return;
     }
@@ -475,6 +488,8 @@ _ecl_hash_equal(cl_object key) {
 
 static inline uint64_t
 _ecl_hash_equalp(cl_object key) {
+  /* INV don't try to make fixnums faster by calling hash_once on them here
+     (like in _ecl_hash_equal) because (EQUALP 1 1.0) is T. -- jd 2026-09-24 */
   cl_hashstate state;
   hash_reset(&state);
   _hash_equalp(&state, key, 3);
@@ -495,7 +510,8 @@ _ecl_hash_equalp(cl_object key) {
     }
     h = hash_digest(&state);
   }
-  @(return ecl_make_integer(h));
+  /* We truncate the hash to fit in a fixnum. */
+  @(return hash_to_fixnum(h));
 @)
 
 @(defun si::hash-equal (&rest args)
@@ -512,7 +528,8 @@ _ecl_hash_equalp(cl_object key) {
     }
     h = hash_digest(&state);
   }
-  @(return ecl_make_integer(h));
+  /* We truncate the hash to fit in a fixnum. */
+  @(return hash_to_fixnum(h));
 @)
 
 @(defun si::hash-equalp (&rest args)
@@ -529,15 +546,16 @@ _ecl_hash_equalp(cl_object key) {
     }
     h = hash_digest(&state);
   }
-  @(return ecl_make_integer(h));
+  /* We truncate the hash to fit in a fixnum. */
+  @(return hash_to_fixnum(h));
 @)
 
 cl_object
 cl_sxhash(cl_object key)
 {
   cl_index output = _ecl_hash_equal(key);
-  const cl_index mask = ((cl_index)1 << (ECL_FIXNUM_BITS - 3)) - 1;
-  @(return ecl_make_fixnum(output & mask));
+  /* We truncate the hash to fit in a fixnum. */
+  @(return hash_to_fixnum(output));
 }
 
 
