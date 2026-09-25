@@ -7,12 +7,12 @@
    tables and in specialized caches.
 
    The code assumes 64bit hashes (c.f. xxhash.h) -- that solution is portable
-   but may perform worse on 32bit systems. Searching element in a bucket is
-   currently scalar and it can be further improved with SIMD later.
+   but may perform worse on 32bit systems. Lookup is currently scalar and it can
+   be further improved with SIMD later.
 
    Structures of this hash table are designed to be cache friendly. The header
-   fits in a single cache line as well as bucket headers. The array with bucket
-   metadata is deliberately SIMD friendly.
+   fits in a single cache line. The array with entry metadata is deliberately
+   SIMD friendly.
 
    FIXME currently we rely on allocator to correctly align structures, but later
    introduce ECL_ALIGNAS and double-check with the garbage collector.
@@ -41,45 +41,43 @@
    - generic functions with arity>1: entry = [keys, method]
 
    Note that optimized test for generic functions with arity 1 already requires
-   insert/lookup specialization. */
+   insert/lookup specialization.
+
+   A bucket is an implicit logical unit of the dispatch table. Each bucket
+   contains 16 entries.
+
+   [entry][entry][entry][entry]
+   [entry][entry][entry][entry]
+   [entry][entry][entry][entry]
+   [entry][entry][entry][entry]
+
+   Entries are densely packed to improve data locality. The important invariant
+   to preserve is that entries cleanly fit in a cache line. On 64bit the bucket
+   occupies four cache lines, and on 32bit the bucket occupies two cache lines.
+
+*/
 
 typedef struct {
   cl_object key;
   cl_object val;
 } ecl_hentry;
 
-/*
-  The cache bucket is an organizational unit of the dispatch table. Each bucket
-  contains 16 entries.
-
-  [entry][entry][entry][entry]
-  [entry][entry][entry][entry]
-  [entry][entry][entry][entry]
-  [entry][entry][entry][entry]
-
-  Entries are densely packed to improve data locality. The important invariant
-  to preserve is that entries are aligned to cache lines. On 64bit the bucket
-  occupies four cache lines, and on 32bit the bucket occupies two cache lines.
-*/
-
-typedef struct {
-  ecl_hentry record[16];
-} ecl_bucket;
-
 /* The header occupies exactly 64B on 64bit system and 32B on 32bit system:
 
-   [meta] is ECL object header (with padding)
+   4B [head] is ECL object header (with padding)
+   4B [meta] is our object header (size and rehash enums)
+   (padding) padding for headers to take exactly two words
 
    [slot] are general-purpose entries that are at a disposal of the client. For
    hash tables we may store metadata like a generic test/hash functions while
    for generic function dispatch we may store here hot entries for quick lookup.
 
-   [size] is the number of buckets in the table
    [fill] is the number of records in the table
-   [ctrl] is an array containing bucket metadata
-   [data] is an array containing actual buckets
+   [left] is the number of free spots left before growing
+   [ctrl] is an array containing record metadata
+   [data] is an array containing actual records
 
-   [meta][slot][slot][slot] [size][fill][ctrl][data]
+   [head][meta][slot][slot] [fill][left][ctrl][data]
 
    When the hash table is allocated it initially contains only the header.
    Generic functions that are never called or have monomorphic/bimorphic profile
@@ -88,24 +86,40 @@ typedef struct {
    It is a responsibility of the client to resize the table. The size must be
    always a power of two to allow quick index compute as index=hash&(size-1).
 
-   size == 0 -> header
-   size >= 1 -> header + buckets
+   ctrl == NULL -> header
+   ctrl != NULL -> header + control + entries
 */
 
-/* c.f _ECL_HDR */
+/* Compare with _ECL_HDR (that takes 32bit). Here we ensure that both headers
+   always occupy two words. We fit size and rehash values in uint8_t to make
+   room for two slots in the header.
+
+   size_pow   -- the maximal number of records in table is 2^size_pow
+   resize_pow -- the resize factor is represented as 2^resize_pow
+   threshold  -- value (0,255) mapped to (0.0 1.0)
+   flags      -- extra bits for the table (i.e syncp, lock, etc)
+
+   There is also an important invariant about size_pow. To make probing the
+   table with entries easier, when data is allocated then always size_pow>=4.
+   This invariant is important so that we can scan entries in groups of 16.
+   General purpose hash tables will always have size_pow>=4, while gf-caches,
+   when empty, can assign here a lower value. */
 #if ECL_FIXNUM_BITS <= 32
-# define _ECL_HDR32(field1,field2) int8_t t, m, field1, field2, p1, p2, p3, p4
+# define _ECL_HTT_HDR \
+  uint8_t size_pow, resize_pow, threshold, flags
 #else
-# define _ECL_HDR32(field1,field2) int8_t t, m, field1, field2
+# define _ECL_HTT_HDR \
+  uint8_t size_pow, resize_pow, threshold, flags, reserved[8]
 #endif
 
 typedef struct {
-  _ECL_HDR32(test,flags);       /* padded lisp object header */
-  cl_object slot[3];            /* client-dependent slots */
-  cl_index size;                /* number of buckets in the table */
-  cl_index fill;                /* number of records in the table */
+  _ECL_HDR2(test,weak);         /* padded object header */
+  _ECL_HTT_HDR;                 /* padded htable header */
+  cl_object slot[2];            /* client-dependent slots */
+  cl_index fill;                /* #records in the table (no tombstones) */
+  cl_index left;                /* #slots available before resize */
   uint8_t *ctrl;                /* per-entry control bytes */
-  ecl_bucket *buckets;          /* array containing entries */
+  ecl_hentry *data;             /* array containing entries */
 } ecl_htable;
 
 #define ECL_CONTROLBIT 0x80         /* denotes special meaning */
@@ -135,10 +149,17 @@ typedef struct {
    When computing the fingerprint, we want to take highest bits to avoid
    collisions with indexes. We hash everything xxh3 to ensure sufficient mixing.
 */
+
 static inline uint8_t
 ecl_hash_fingerprint(uint64_t hash)
 {
   return (hash >> 57) & ECL_FINGERMASK;
+}
+
+static inline cl_index
+ecl_hash_group_index(uint64_t hash, cl_index size)
+{
+  return (cl_index)((hash & (size-1)) & ~(cl_index)15);
 }
 
 #endif /* ECL_HTABLE_H */

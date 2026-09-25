@@ -16,6 +16,7 @@
 #include <ecl/internal.h>
 #include <ecl/xxhash.h>
 #include <ecl/bithacks.h>
+#include <ecl/htable.h>
 
 typedef uint64_t cl_hashkey;
 typedef ecl_xxh3_state cl_hashstate;
@@ -820,6 +821,191 @@ cl_sxhash(cl_object key)
     key = SYMBOL_NAME(key);
   /* We truncate the hash to fit in a fixnum. */
   @(return hash_to_fixnum(_ecl_hash_equal(key)));
+}
+
+
+/* New swiss-like hash table (prototype) */
+
+union xx_htable { ecl_htable swiss; };
+typedef union xx_htable *cl_htable;
+
+static inline cl_index
+_ecl_htable_size(cl_htable ht)
+{
+  return ((cl_index)1)<<ht->swiss.size_pow;
+}
+
+static inline void
+_ecl_clear_htable(cl_htable ht)
+{
+  uint8_t threshold = ht->swiss.threshold;
+  cl_index size = _ecl_htable_size(ht);
+  float real_threshold = threshold/255.0;
+  if (real_threshold<0.1)
+    real_threshold=0.1;
+  ht->swiss.fill = 0;
+  ht->swiss.left = size - real_threshold * size;
+  memset(ht->swiss.ctrl, ECL_EMPTYSLOT, size);
+  memset(ht->swiss.data, 0, size);
+}
+
+static inline cl_htable
+_ecl_make_htable(uint8_t size_pow, uint8_t resize_pow, uint8_t threshold)
+{
+  /* INV hash tables always have size>0 (unlike gf-cache). */
+  cl_htable ht = ecl_alloc(sizeof(ecl_htable));
+  cl_index size;
+  ht->swiss.test = ecl_htt_eql;
+  ht->swiss.weak = ecl_htt_not_weak; /* stronk! */
+  ht->swiss.size_pow   = size_pow;
+  ht->swiss.resize_pow = resize_pow;
+  ht->swiss.threshold  = threshold;
+  size = _ecl_htable_size(ht);
+  ht->swiss.ctrl = ecl_alloc(size);
+  ht->swiss.data = ecl_alloc(size*sizeof(ecl_hentry));
+  _ecl_clear_htable(ht);
+  return ht;
+}
+
+static inline cl_object
+_ecl_search_htable(cl_htable ht, cl_object key)
+{
+  cl_index size = _ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_eql(key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  cl_index idx, probe;
+  uint8_t *head = ht->swiss.ctrl;
+  ecl_hentry *tail = ht->swiss.data, *record;
+  bool emptyp = false;
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      if (ctrl == ECL_EMPTYSLOT) {
+        emptyp = true;
+        continue;
+      }
+      if (ctrl & ECL_CONTROLBIT) continue;       /* special */
+      if (ctrl != fp) continue;                  /* mismatch */
+      record = &tail[index+idx];
+      if (ecl_likely(ecl_eql(key, record->key))) {
+        return record->val;
+      }
+    }
+    if (ecl_likely(emptyp))
+      return OBJNULL;
+    index = (index+16)&(size-1);
+  }
+  return OBJNULL;
+}
+
+static inline cl_object
+_ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
+{
+#define INSERT(index_value) do {                \
+    cl_index index2 = (index_value);            \
+    record = &tail[index2];                     \
+    record->key=key;                            \
+    record->val=val;                            \
+    head[index2] = fp;                          \
+    ht->fill++;                                 \
+  } while(0)
+  cl_index size = _ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_eql(key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  cl_index idx, probe;
+  uint8_t *head = ht->swiss.ctrl;
+  ecl_hentry *tail = ht->swiss.data, *record;
+  bool freedp = false;
+  bool emptyp = false;
+  cl_index keep_freed = 0;
+  cl_index keep_empty = 0;
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      if (!emptyp && ctrl == ECL_EMPTYSLOT) {
+        emptyp = true;
+        keep_empty = index+idx;
+        /* INV this break is correct only under the assumption that upsert fills
+           the _first_ empty slot in the bucket. If SIMD rewrite changes that,
+           then this break should be changed to continue. -- jd 2026-09-25 */
+        break;
+      }
+      if (!freedp && ctrl == ECL_TOMBSTONE) {
+        freedp = true;
+        keep_freed = index+idx;
+        continue;
+      }
+      if (ctrl & ECL_CONTROLBIT) continue;       /* special */
+      if (ctrl != fp) continue;                  /* mismatch */
+      record = &tail[index+idx];
+      if (ecl_likely(ecl_eql(key, record->key))) {
+        record->val = val;
+        return ECL_T;
+      }
+    }
+    if (ecl_likely(emptyp)) {
+      INSERT(freedp ? keep_freed : keep_empty);
+      if (!freedp) {
+        ht->swiss.left--;
+        if (ecl_unlikely(!ht->swiss.left))
+          ecl_internal_error("not implemented yet");
+          /* _ecl_rehash_htable(ht); */
+      }
+      return ECL_NIL;
+    }
+    index = (index+16)&(size-1);
+  }
+  if (ecl_likely(freedp)) {
+    INSERT(keep_freed);
+    return ECL_NIL;
+  }
+  /* INV impossible (table is full). */
+  return OBJNULL;
+#undef INSERT
+}
+
+static inline cl_object
+_ecl_delete_htable(cl_htable ht, cl_object key)
+{
+  cl_index size = _ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_eql(key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  cl_index idx, probe;
+  uint8_t *head = ht->swiss.ctrl;
+  ecl_hentry *tail = ht->swiss.data, *record;
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    bool emptyp = false;
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      if (ctrl == ECL_EMPTYSLOT) {
+        emptyp = true;
+        /* INV this break is correct only under the assumption that upsert fills
+           the _first_ empty slot in the bucket. If SIMD rewrite changes that,
+           then this break should be changed to continue. -- jd 2026-09-25 */
+        break;
+      }
+      if (ctrl & ECL_CONTROLBIT) continue;       /* special */
+      if (ctrl != fp) continue;                  /* mismatch */
+      record = &tail[index+idx];
+      if (ecl_likely(ecl_eql(key, record->key))) {
+        head[index+idx] = ECL_TOMBSTONE;
+        record->key = OBJNULL;
+        record->val = OBJNULL;
+        ht->swiss.fill--;
+        return ECL_T;
+      }
+    }
+    if (ecl_likely(emptyp))
+      return ECL_NIL;
+    index = (index+16)&(size-1);
+  }
+  return ECL_NIL;
 }
 
 
