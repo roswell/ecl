@@ -64,20 +64,17 @@ typedef struct {
 
 /* The header occupies exactly 64B on 64bit system and 32B on 32bit system:
 
-   4B [head] is ECL object header (with padding)
-   4B [meta] is our object header (size and rehash enums)
-   (padding) padding for headers to take exactly two words
-
-   [slot] are general-purpose entries that are at a disposal of the client. For
-   hash tables we may store metadata like a generic test/hash functions while
-   for generic function dispatch we may store here hot entries for quick lookup.
+   [head] table header packing test, weakness, size and rehash properties
+   [slot] general-purpose entries that are at a disposal of the client. For hash
+          tables we may store metadata like a generic test/hash, while for cache
+          we may store hot entries for quick lookup (gf dispatch).
 
    [fill] is the number of records in the table
    [left] is the number of free spots left before growing
    [ctrl] is an array containing record metadata
    [data] is an array containing actual records
 
-   [head][meta][slot][slot] [fill][left][ctrl][data]
+   [head][slot][slot][slot] [fill][left][ctrl][data]
 
    When the hash table is allocated it initially contains only the header.
    Generic functions that are never called or have monomorphic/bimorphic profile
@@ -88,34 +85,36 @@ typedef struct {
 
    ctrl == NULL -> header
    ctrl != NULL -> header + control + entries
+
+   The table is expected to have a wrapper to automatically swap the pointer
+   when we rehash the table without confusing clients with inconsistent state.
 */
 
-/* Compare with _ECL_HDR (that takes 32bit). Here we ensure that both headers
-   always occupy two words. We fit size and rehash values in uint8_t to make
-   room for two slots in the header.
+/* Compare with _ECL_HDR. Here we ensure that the header is aligned to a single
+   word boundary. We fit size and rehash values in uint8_t to make room slots in
+   the header.
 
-   size_pow   -- the maximal number of records in table is 2^size_pow
-   resize_pow -- the resize factor is represented as 2^resize_pow
-   threshold  -- value (0,255) mapped to (0.0 1.0)
-   flags      -- extra bits for the table (i.e syncp, lock, etc)
+   test, weak -- ecl_httest and ecl_htweak enum values
+   sizepw -- represents the hash table capacity (2^sizepw)
+   rehash -- ecl_htsize_rehash | ecl_htsize_threshold
 
-   There is also an important invariant about size_pow. To make probing the
-   table with entries easier, when data is allocated then always size_pow>=4.
-   This invariant is important so that we can scan entries in groups of 16.
-   General purpose hash tables will always have size_pow>=4, while gf-caches,
-   when empty, can assign here a lower value. */
+   There is also an important invariant about sizepw. To make probing the table
+   with entries easier, when data is allocated then always sizepw>=4. Invariant
+   is important to scan entries in groups of 16. General purpose hash tables
+   will always have sizepw>=4, while gf-caches, when empty, can assign here a
+   lower value. */
+
 #if ECL_FIXNUM_BITS <= 32
 # define _ECL_HTT_HDR \
-  uint8_t size_pow, resize_pow, threshold, flags
+  uint8_t test, weak, sizepw, rehash
 #else
 # define _ECL_HTT_HDR \
-  uint8_t size_pow, resize_pow, threshold, flags, reserved[8]
+  uint8_t test, weak, sizepw, rehash, padding[4]
 #endif
 
 typedef struct {
-  _ECL_HDR2(test,weak);         /* padded object header */
-  _ECL_HTT_HDR;                 /* padded htable header */
-  cl_object slot[2];            /* client-dependent slots */
+  _ECL_HTT_HDR;
+  cl_object slot[3];            /* client-dependent slots */
   cl_index fill;                /* #records in the table (no tombstones) */
   cl_index left;                /* #slots available before resize */
   uint8_t *ctrl;                /* per-entry control bytes */
@@ -133,7 +132,7 @@ typedef struct {
 # define ECL_SENTINEL  0xff          /* not used yet */
 #endif
 
-/* [head] stores hash fingerprints of elements. Each fingerprint is 8 bits,
+/* [ctrl] stores hash fingerprints of elements. Each fingerprint is 8 bits,
    where 1b is reserved to signify a special state.
 
    ------------------------------------------

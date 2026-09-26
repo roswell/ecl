@@ -826,43 +826,45 @@ cl_sxhash(cl_object key)
 
 /* New swiss-like hash table (prototype) */
 
-union xx_htable { ecl_htable swiss; };
-typedef union xx_htable *cl_htable;
+typedef ecl_htable *cl_htable;
 
 static inline cl_index
 _ecl_htable_size(cl_htable ht)
 {
-  return ((cl_index)1)<<ht->swiss.size_pow;
+  return ((cl_index)1)<<ht->sizepw;
+}
+
+static inline cl_index
+_ecl_htable_limit(cl_htable ht)
+{
+  /* FIXME use rehash */
+  return _ecl_htable_size(ht);
 }
 
 static inline void
 _ecl_clear_htable(cl_htable ht)
 {
-  uint8_t threshold = ht->swiss.threshold;
   cl_index size = _ecl_htable_size(ht);
-  float real_threshold = threshold/255.0;
-  if (real_threshold<0.1)
-    real_threshold=0.1;
-  ht->swiss.fill = 0;
-  ht->swiss.left = size - real_threshold * size;
-  memset(ht->swiss.ctrl, ECL_EMPTYSLOT, size);
-  memset(ht->swiss.data, 0, size);
+  cl_index left = _ecl_htable_limit(ht);
+  ht->fill = 0;
+  ht->left = left;
+  memset(ht->ctrl, ECL_EMPTYSLOT, size);
+  memset(ht->data, 0, size*sizeof(ecl_hentry));
 }
 
-static inline cl_htable
-_ecl_make_htable(uint8_t size_pow, uint8_t resize_pow, uint8_t threshold)
+static cl_htable
+_ecl_make_htable(uint8_t sizepw, uint8_t rehash)
 {
   /* INV hash tables always have size>0 (unlike gf-cache). */
   cl_htable ht = ecl_alloc(sizeof(ecl_htable));
   cl_index size;
-  ht->swiss.test = ecl_htt_eql;
-  ht->swiss.weak = ecl_htt_not_weak; /* stronk! */
-  ht->swiss.size_pow   = size_pow;
-  ht->swiss.resize_pow = resize_pow;
-  ht->swiss.threshold  = threshold;
+  ht->test = ecl_htt_eql;
+  ht->weak = ecl_htt_not_weak; /* stronk! */
+  ht->sizepw = sizepw;
+  ht->rehash = rehash;
   size = _ecl_htable_size(ht);
-  ht->swiss.ctrl = ecl_alloc(size);
-  ht->swiss.data = ecl_alloc(size*sizeof(ecl_hentry));
+  ht->ctrl = ecl_alloc_atomic(size);
+  ht->data = ecl_alloc(size*sizeof(ecl_hentry));
   _ecl_clear_htable(ht);
   return ht;
 }
@@ -875,8 +877,8 @@ _ecl_search_htable(cl_htable ht, cl_object key)
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
-  uint8_t *head = ht->swiss.ctrl;
-  ecl_hentry *tail = ht->swiss.data, *record;
+  uint8_t *head = ht->ctrl;
+  ecl_hentry *tail = ht->data, *record;
   bool emptyp = false;
   for(probe=0; probe<size; probe+=16) {
     /* This is the SIMD-optimizable hot path. */
@@ -916,8 +918,8 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
-  uint8_t *head = ht->swiss.ctrl;
-  ecl_hentry *tail = ht->swiss.data, *record;
+  uint8_t *head = ht->ctrl;
+  ecl_hentry *tail = ht->data, *record;
   bool freedp = false;
   bool emptyp = false;
   cl_index keep_freed = 0;
@@ -950,8 +952,8 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
     if (ecl_likely(emptyp)) {
       INSERT(freedp ? keep_freed : keep_empty);
       if (!freedp) {
-        ht->swiss.left--;
-        if (ecl_unlikely(!ht->swiss.left))
+        ht->left--;
+        if (ecl_unlikely(!ht->left))
           ecl_internal_error("not implemented yet");
           /* _ecl_rehash_htable(ht); */
       }
@@ -976,8 +978,8 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
-  uint8_t *head = ht->swiss.ctrl;
-  ecl_hentry *tail = ht->swiss.data, *record;
+  uint8_t *head = ht->ctrl;
+  ecl_hentry *tail = ht->data, *record;
   for(probe=0; probe<size; probe+=16) {
     /* This is the SIMD-optimizable hot path. */
     bool emptyp = false;
@@ -997,7 +999,7 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
         head[index+idx] = ECL_TOMBSTONE;
         record->key = OBJNULL;
         record->val = OBJNULL;
-        ht->swiss.fill--;
+        ht->fill--;
         return ECL_T;
       }
     }
