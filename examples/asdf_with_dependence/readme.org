@@ -221,5 +221,4 @@ build all dependent libraries separately as static libraries.
 
 * Footnotes
 
-[fn:1] You may also link ECL runtime statically. That is not covered
-in this walkthrough.
+[fn:1] You may also link ECL runtime [[../standalone/README.org][statically]].
