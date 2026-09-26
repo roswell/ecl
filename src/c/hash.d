@@ -24,12 +24,11 @@ typedef ecl_xxh3_state cl_hashstate;
 
 #define hash_data(s,x,l) ecl_xxh3_update((s),(uint8_t *)(x),(l))
 #define hash_only(x,l)   ecl_xxh3_64((uint8_t *)(x),(l))
+#define hash_once(x)     ecl_xxh3_64((uint8_t *)&(x),sizeof(x))
 #if ECL_FIXNUM_BITS <= 32
 # define hash_word(s,x) ecl_xxh3_update32((s),(uint32_t)(x))
-# define hash_once(x) ecl_xxh32_avalanche((uint32_t)(x))
 #else
 # define hash_word(s,x) ecl_xxh3_update64((s),(uint64_t)(x))
-# define hash_once(x) ecl_xxh64_avalanche((uint64_t)(x))
 #endif
 
 #define hash_to_fixnum(x) \
@@ -488,8 +487,8 @@ _ecl_hash_equal(cl_object key) {
 
 static inline uint64_t
 _ecl_hash_equalp(cl_object key) {
-  /* INV don't try to make fixnums faster by calling hash_once on them here
-     (like in _ecl_hash_equal) because (EQUALP 1 1.0) is T. -- jd 2026-09-24 */
+  /* INV don't try to make fixnums faster by hashing whole object with the tag,
+     because (EQUALP 1 1.0) is T. -- jd 2026-09-24 */
   cl_hashstate state;
   hash_reset(&state);
   _hash_equalp(&state, key, 3);
