@@ -121,6 +121,10 @@ typedef struct {
   ecl_hentry *data;             /* array containing entries */
 } ecl_htable;
 
+/* Accessors for general-purpose hash tables. */
+#define ecl_htable_generic_hash(ht) (ht)->slot[0]
+#define ecl_htable_generic_test(ht) (ht)->slot[1]
+
 #define ECL_CONTROLBIT 0x80         /* denotes special meaning */
 #define ECL_FINGERMASK 0x7F         /* a mask for the fingerprint  */
 

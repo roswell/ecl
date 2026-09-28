@@ -20,6 +20,7 @@
 
 typedef uint64_t cl_hashkey;
 typedef ecl_xxh3_state cl_hashstate;
+typedef ecl_htable *cl_htable;
 
 #define hash_reset(s) ecl_xxh3_reset(s)
 #define hash_digest(s) ecl_xxh3_digest(s)
@@ -826,7 +827,45 @@ cl_sxhash(cl_object key)
 
 /* New swiss-like hash table (prototype) */
 
-typedef ecl_htable *cl_htable;
+static inline cl_hashkey
+_ecl_hash_key(cl_htable ht, cl_object key) {
+  switch (ht->test) {
+  case ecl_htt_eq:      return _ecl_hash_eq(key);
+  case ecl_htt_eql:     return _ecl_hash_eql(key);
+  case ecl_htt_equal:   return _ecl_hash_equal(key);
+  case ecl_htt_equalp:  return _ecl_hash_equalp(key);
+  /* FIXME investigate ecl_htt_pack, code seems inconsistent. */
+  /* case ecl_htt_pack:    return _ecl_hash_equal(key); */
+  case ecl_htt_generic: {
+    cl_object fun = ecl_htable_generic_hash(ht);
+    cl_object hash = _ecl_funcall2(fun, key);
+    if (!ECL_FIXNUMP(hash) || ecl_fixnum_minusp(hash)) {
+      FEwrong_type_argument(@'fixnum', hash);
+    }
+    return ecl_fixnum(hash);
+  }
+  default:
+    ecl_internal_error("hash-table: unknown hash function.");
+  }
+}
+
+static inline bool
+_ecl_hash_test(cl_htable ht, cl_object key, cl_object hkey) {
+  switch (ht->test) {
+  case ecl_htt_eq:     return (key == hkey);
+  case ecl_htt_eql:    return ecl_eql(key, hkey);
+  case ecl_htt_equal:  return ecl_equal(key, hkey);
+  case ecl_htt_equalp: return ecl_equalp(key, hkey);
+  /* FIXME investigate ecl_htt_pack, code seems inconsistent. */
+  /* case ecl_htt_pack:   return ecl_equal(key, ECL_SYMBOL_NAME(hkey)); */
+  case ecl_htt_generic: {
+    cl_object fun = ecl_htable_generic_test(ht);
+    return _ecl_funcall3(fun, key, hkey) != ECL_NIL;
+  }
+  default:
+    ecl_internal_error("hash-table: unknown test function.");
+  }
+}
 
 static inline cl_index
 _ecl_htable_size(cl_htable ht)
@@ -873,7 +912,7 @@ static inline cl_object
 _ecl_search_htable(cl_htable ht, cl_object key)
 {
   cl_index size = _ecl_htable_size(ht);
-  uint64_t hash = _ecl_hash_eql(key);
+  uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
@@ -891,7 +930,7 @@ _ecl_search_htable(cl_htable ht, cl_object key)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       record = &tail[index+idx];
-      if (ecl_likely(ecl_eql(key, record->key))) {
+      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
         return record->val;
       }
     }
@@ -914,7 +953,7 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
     ht->fill++;                                 \
   } while(0)
   cl_index size = _ecl_htable_size(ht);
-  uint64_t hash = _ecl_hash_eql(key);
+  uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
@@ -944,7 +983,7 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       record = &tail[index+idx];
-      if (ecl_likely(ecl_eql(key, record->key))) {
+      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
         record->val = val;
         return ECL_T;
       }
@@ -974,7 +1013,7 @@ static inline cl_object
 _ecl_delete_htable(cl_htable ht, cl_object key)
 {
   cl_index size = _ecl_htable_size(ht);
-  uint64_t hash = _ecl_hash_eql(key);
+  uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx, probe;
@@ -995,7 +1034,7 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       record = &tail[index+idx];
-      if (ecl_likely(ecl_eql(key, record->key))) {
+      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
         head[index+idx] = ECL_TOMBSTONE;
         record->key = OBJNULL;
         record->val = OBJNULL;
@@ -1330,8 +1369,8 @@ _ecl_remhash_generic(cl_object key, cl_object hashtable)
 #endif
 
 #ifdef ECL_WEAK_HASH
-static cl_hashkey
-_ecl_hash_key(cl_object h, cl_object o) {
+static inline cl_hashkey
+_ecl_hash_key_weak(cl_object h, cl_object o) {
   switch (h->hash.test) {
   case ecl_htt_eq:      return _ecl_hash_eq(o);
   case ecl_htt_eql:     return _ecl_hash_eql(o);
@@ -1344,8 +1383,8 @@ _ecl_hash_key(cl_object h, cl_object o) {
   }
 }
 
-static bool
-_ecl_hash_test(cl_object hashtable, cl_object key, cl_object hkey) {
+static inline bool
+_ecl_hash_test_weak(cl_object hashtable, cl_object key, cl_object hkey) {
   switch (hashtable->hash.test) {
   case ecl_htt_eq:     return (key == hkey);
   case ecl_htt_eql:    return ecl_eql(key, hkey);
@@ -1466,14 +1505,14 @@ static cl_object
 _ecl_gethash_weak(cl_object key, cl_object hashtable, cl_object def)
 {
   cl_index i, hsize = hashtable->hash.size;
-  cl_hashkey h = _ecl_hash_key(hashtable, key);
+  cl_hashkey h = _ecl_hash_key_weak(hashtable, key);
   struct ecl_hashtable_entry *p, e;
   for (i = h % hsize; ;  i = (i + 1) % hsize) {
     p = hashtable->hash.data + i;
     e = copy_entry(p, hashtable);
     if (p->key   == OBJNULL) return def;
     if (p->value == OBJNULL) continue; /* skip the tombstone */
-    if (_ecl_hash_test(hashtable, key, e.key)) return e.value;
+    if (_ecl_hash_test_weak(hashtable, key, e.key)) return e.value;
   }
 }
 
@@ -1481,7 +1520,7 @@ static cl_object
 _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
 {
   cl_index i, hsize = hashtable->hash.size;
-  cl_hashkey h = _ecl_hash_key(hashtable, key);
+  cl_hashkey h = _ecl_hash_key_weak(hashtable, key);
   struct ecl_hashtable_entry e, *p, *f = NULL;
  AGAIN:
   for (i = h % hsize; ;  i = (i + 1) % hsize) {
@@ -1489,7 +1528,7 @@ _ecl_sethash_weak(cl_object key, cl_object hashtable, cl_object value)
     e = copy_entry(p, hashtable);
     if (p->key   == OBJNULL) { break; }
     if (p->value == OBJNULL) { f = p; continue; }
-    if (_ecl_hash_test(hashtable, key, e.key)) {
+    if (_ecl_hash_test_weak(hashtable, key, e.key)) {
       f = p;
       break;
     }
@@ -1512,7 +1551,7 @@ static bool
 _ecl_remhash_weak(cl_object key, cl_object hashtable)
 {
   cl_index i, hsize = hashtable->hash.size;
-  cl_hashkey h = _ecl_hash_key(hashtable, key);
+  cl_hashkey h = _ecl_hash_key_weak(hashtable, key);
   struct ecl_hashtable_entry *p, e;
   for (i = h % hsize; ;  i = (i + 1) % hsize) {
     p = hashtable->hash.data + i;
@@ -1520,7 +1559,7 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
     if (p->key == OBJNULL) return 0;
     /* We could try to shift consecutive tombstones here(!) */
     if (e.key == OBJNULL) continue;
-    if (_ecl_hash_test(hashtable, key, e.key)) {
+    if (_ecl_hash_test_weak(hashtable, key, e.key)) {
       cl_index j = (i+1) % hsize, k;
       struct ecl_hashtable_entry *q, f;
       for (k = 1; k <= hsize; j = (j+1) % hsize, k++) {
@@ -1531,7 +1570,7 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
           p->value = OBJNULL;
           break;
         }
-        cl_hashkey hf = _ecl_hash_key(hashtable, f.key);
+        cl_hashkey hf = _ecl_hash_key_weak(hashtable, f.key);
         cl_index m = hf % hsize;
         cl_index d = (j >= m) ? (j - m) : (j + hsize - m);
         if (k <= d) {
