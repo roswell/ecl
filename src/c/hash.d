@@ -839,10 +839,11 @@ _ecl_hash_key(cl_htable ht, cl_object key) {
   case ecl_htt_generic: {
     cl_object fun = ecl_htable_generic_hash(ht);
     cl_object hash = _ecl_funcall2(fun, key);
-    if (!ECL_FIXNUMP(hash) || ecl_fixnum_minusp(hash)) {
+    if (!ECL_FIXNUMP(hash)) {
       FEwrong_type_argument(@'fixnum', hash);
     }
-    return ecl_fixnum(hash);
+    /* Don't trust the user hashes to be properly mixed. -- jd 2026-09-28 */
+    return hash_once(hash);
   }
   default:
     ecl_internal_error("hash-table: unknown hash function.");
