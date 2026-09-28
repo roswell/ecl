@@ -868,6 +868,15 @@ _ecl_hash_test(cl_htable ht, cl_object key, cl_object hkey) {
   }
 }
 
+static inline void
+_ecl_insert_hentry(cl_htable ht, cl_index index,
+                   uint8_t fp, cl_object key, cl_object val)
+{
+  ht->data[index].key = key;
+  ht->data[index].val = val;
+  ht->ctrl[index] = fp;
+}
+
 static inline cl_index
 _ecl_htable_size(cl_htable ht)
 {
@@ -963,14 +972,6 @@ _ecl_search_htable(cl_htable ht, cl_object key)
 static inline cl_object
 _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
 {
-#define INSERT(index_value) do {                \
-    cl_index index2 = (index_value);            \
-    record = &tail[index2];                     \
-    record->key=key;                            \
-    record->val=val;                            \
-    head[index2] = fp;                          \
-    ht->fill++;                                 \
-  } while(0)
   cl_index size = _ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
@@ -1005,7 +1006,9 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       }
     }
     if (ecl_likely(emptyp)) {
-      INSERT(freedp ? keep_freed : keep_empty);
+      cl_index index2 = (freedp ? keep_freed : keep_empty);
+      _ecl_insert_hentry(ht, index2, fp, key, val);
+      ht->fill++;
       if (!freedp) {
         ht->left--;
         if (ecl_unlikely(!ht->left))
@@ -1017,12 +1020,12 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
     index = (index+16)&(size-1);
   }
   if (ecl_likely(freedp)) {
-    INSERT(keep_freed);
+    _ecl_insert_hentry(ht, keep_freed, fp, key, val);
+    ht->fill++;
     return ECL_NIL;
   }
   /* INV impossible (table is full). */
   ecl_internal_error("hash-table: the hash table is full.");
-#undef INSERT
 }
 
 static inline cl_object
@@ -1075,6 +1078,72 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
     index = (index+16)&(size-1);
   }
   return ECL_NIL;
+}
+
+static void
+_ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
+{
+  cl_index size = _ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_key(ht, key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  cl_index idx, probe;
+  uint8_t *head = ht->ctrl;
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      /* We test only for the emptyslot, because _ecl_insert_htable is called
+         only from the rehash function, so there are no tombstones yet. */
+      if (ctrl == ECL_EMPTYSLOT) {
+        _ecl_insert_hentry(ht, index+idx, fp, key, val);
+        ht->fill++;
+        ht->left--;
+        return;
+      }
+    }
+    index = (index+16)&(size-1);
+  }
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
+}
+
+static cl_htable
+_ecl_rehash_htable(cl_htable ht)
+{
+  cl_index size = _ecl_htable_size(ht);
+  cl_index limit = _ecl_htable_limit(ht);
+  uint8_t sizepw = ht->sizepw;
+  uint8_t rehash_pw = ((ht->rehash)&3) + 1;
+  /* We grow the table when >=75% is filled (converserly <=25% of space may be
+     reclaimed from tombtstones). Otherwise we allocate the table of the same
+     size and fill it only with live entries. */
+  uint8_t new_sizepw = (ht->fill >= limit - (limit>>2))
+    ? (sizepw + rehash_pw)
+    : (sizepw);
+  ecl_hentry *tail = ht->data, *record;
+  cl_htable new_table;
+  cl_index index = 0;
+  cl_index idx, probe;
+  uint8_t *head = ht->ctrl;
+  new_table = _ecl_make_htable(new_sizepw, ht->rehash);
+  new_table->test = ht->test;
+  new_table->weak = ht->weak;
+  new_table->slot[0] = ht->slot[0];
+  new_table->slot[1] = ht->slot[1];
+  new_table->slot[2] = ht->slot[2];
+  /* Insert live elements. */
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      if (ctrl & ECL_CONTROLBIT) continue; /* special */
+      record = &tail[index+idx];
+      _ecl_insert_htable(new_table, record->key, record->val);
+    }
+    index = (index+16)&(size-1);
+  }
+  return new_table;
 }
 
 
