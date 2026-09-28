@@ -943,11 +943,11 @@ _ecl_search_htable(cl_htable ht, cl_object key)
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
-  cl_index idx, probe;
+  cl_index idx;
   uint8_t *head = ht->ctrl;
   ecl_hentry *tail = ht->data, *record;
   bool emptyp = false;
-  for(probe=0; probe<size; probe+=16) {
+  while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
@@ -966,7 +966,8 @@ _ecl_search_htable(cl_htable ht, cl_object key)
       return OBJNULL;
     index = (index+16)&(size-1);
   }
-  return OBJNULL;
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
 }
 
 static inline cl_object
@@ -976,14 +977,14 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
-  cl_index idx, probe;
+  cl_index idx;
   uint8_t *head = ht->ctrl;
   ecl_hentry *tail = ht->data, *record;
   bool freedp = false;
   bool emptyp = false;
   cl_index keep_freed = 0;
   cl_index keep_empty = 0;
-  for(probe=0; probe<size; probe+=16) {
+  while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
@@ -1010,19 +1011,12 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       _ecl_insert_hentry(ht, index2, fp, key, val);
       ht->fill++;
       if (!freedp) {
+        /* INV the caller ensures that we have capacity. */
         ht->left--;
-        if (ecl_unlikely(!ht->left))
-          ecl_internal_error("not implemented yet");
-          /* _ecl_rehash_htable(ht); */
       }
       return ECL_NIL;
     }
     index = (index+16)&(size-1);
-  }
-  if (ecl_likely(freedp)) {
-    _ecl_insert_hentry(ht, keep_freed, fp, key, val);
-    ht->fill++;
-    return ECL_NIL;
   }
   /* INV impossible (table is full). */
   ecl_internal_error("hash-table: the hash table is full.");
@@ -1035,13 +1029,13 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
-  cl_index idx, probe;
+  cl_index idx;
   uint8_t *head = ht->ctrl;
   ecl_hentry *tail = ht->data, *record;
   bool emptyp = false;
   bool foundp = false;
   cl_index keep_found = 0;
-  for(probe=0; probe<size; probe+=16) {
+  while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
@@ -1087,9 +1081,9 @@ _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
-  cl_index idx, probe;
+  cl_index idx;
   uint8_t *head = ht->ctrl;
-  for(probe=0; probe<size; probe+=16) {
+  while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
