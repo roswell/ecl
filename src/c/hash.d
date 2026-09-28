@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
+#include <ecl/stacks.h>
 #include <ecl/xxhash.h>
 #include <ecl/bithacks.h>
 #include <ecl/htable.h>
@@ -1140,6 +1141,31 @@ _ecl_rehash_htable(cl_htable ht)
   return new_table;
 }
 
+static void
+_ecl_map_htable(cl_htable ht, cl_object fun)
+{
+  cl_index size = _ecl_htable_size(ht);
+  ecl_hentry *tail = ht->data, *record;
+  cl_index index = 0;
+  cl_index idx, probe;
+  uint8_t *head = ht->ctrl;
+  cl_object key, val;
+  if (!ht->fill) return;
+  for(probe=0; probe<size; probe+=16) {
+    /* This is the SIMD-optimizable hot path. */
+    for(idx=0; idx<16; idx++) {
+      uint8_t ctrl = head[index+idx];
+      if (ctrl & ECL_CONTROLBIT) continue; /* special */
+      record = &tail[index+idx];
+      key=record->key;
+      val=record->val;
+      if (key!=OBJNULL)
+        cl_funcall(3, fun, key, val);
+    }
+    index = (index+16)&(size-1);
+  }
+}
+
 
 /* Hash tables */
 
@@ -1224,6 +1250,7 @@ assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
     }                                                                   \
   }
 
+
 /*
  * EQ HASHTABLES
  */
@@ -1256,6 +1283,7 @@ _ecl_remhash_eq(cl_object key, cl_object hashtable)
   HASH_TABLE_REMOVE(hkey, hval, _hash_eq(key), key == hkey, _hash_eq(hkey));
 }
 
+
 /*
  * EQL HASHTABLES
  */
@@ -1287,6 +1315,7 @@ _ecl_remhash_eql(cl_object key, cl_object hashtable)
                     _ecl_hash_eql(hkey));
 }
 
+
 /*
  * EQUAL HASHTABLES
  */
@@ -1318,6 +1347,7 @@ _ecl_remhash_equal(cl_object key, cl_object hashtable)
                     ecl_equal(key, hkey), _ecl_hash_equal(hkey));
 }
 
+
 /*
  * EQUALP HASHTABLES
  */
@@ -1349,6 +1379,7 @@ _ecl_remhash_equalp(cl_object key, cl_object hashtable)
                     ecl_equalp(key, hkey), _ecl_hash_equalp(hkey));
 }
 
+
 /*
  * PACKAGE HASHTABLES
  */
@@ -1386,6 +1417,7 @@ _ecl_remhash_pack(cl_object key, cl_object hashtable)
                     _ecl_hash_equal(SYMBOL_NAME(hval)));
 }
 
+
 /*
  * Generic HASHTABLES
  */
@@ -1426,6 +1458,7 @@ _ecl_remhash_generic(cl_object key, cl_object hashtable)
                     _hash_generic(hashtable, hkey));
 }
 
+
 /*
  * WEAK HASH TABLES
  *
@@ -1679,6 +1712,7 @@ _ecl_remhash_weak(cl_object key, cl_object hashtable)
 }
 #endif
 
+
 /* SYNCHRONIZED HASH TABLES */
 #ifdef ECL_THREADS
 static cl_object
@@ -1724,6 +1758,23 @@ _ecl_remhash_sync(cl_object key, cl_object hashtable)
 }
 #endif
 
+
+
+/* TRAP DEPRECATED CALLS (temoprary kludge) */
+
+static cl_object
+_ecl_gethash_trap(cl_object key, cl_object hashtable, cl_object def)
+{ ecl_internal_error("hash-table: trap _ecl_gethash_trap"); }
+
+static cl_object
+_ecl_sethash_trap(cl_object key, cl_object hashtable, cl_object value)
+{ ecl_internal_error("hash-table: trap _ecl_sethash_trap"); }
+
+static bool
+_ecl_remhash_trap(cl_object key, cl_object hashtable)
+{ ecl_internal_error("hash-table: trap _ecl_remhash_trap"); }
+
+
 /*
  * HIGHER LEVEL INTERFACE
  */
@@ -1732,6 +1783,10 @@ cl_object
 ecl_gethash(cl_object key, cl_object hashtable)
 {
   assert_type_hash_table(@[gethash], 2, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    return _ecl_search_htable(ht, key);
+  }
   return hashtable->hash.get(key, hashtable, OBJNULL);
 }
 
@@ -1739,12 +1794,26 @@ cl_object
 ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 {
   assert_type_hash_table(@[gethash], 2, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    cl_object result = _ecl_search_htable(ht, key);
+    return (result==OBJNULL) ? def : result;
+  }
   return hashtable->hash.get(key, hashtable, def);
 }
 
 cl_object
 _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    if (!ht->left) {
+      ht = _ecl_rehash_htable(ht);
+      hashtable->hash.table = ht;
+    }
+    _ecl_upsert_htable(ht, key, value);
+    return hashtable;
+  }
   return hashtable->hash.set(key, hashtable, value);
 }
 
@@ -1752,17 +1821,21 @@ cl_object
 ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
   assert_type_hash_table(@[si::hash-set], 2, hashtable);
-  hashtable = hashtable->hash.set(key, hashtable, value);
-  return hashtable;
+  return _ecl_sethash(key, hashtable, value);
 }
 
 cl_object
 ecl_remhash(cl_object key, cl_object hashtable)
 {
   assert_type_hash_table(@[remhash], 2, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    return _ecl_delete_htable(ht, key);
+  }
   return hashtable->hash.rem(key, hashtable) ? ECL_T : ECL_NIL;
 }
 
+/* Called only by HASH_TABLE_SET and _ecl_hash_weak. */
 cl_object
 ecl_extend_hashtable(cl_object hashtable)
 {
@@ -1829,7 +1902,48 @@ ecl_extend_hashtable(cl_object hashtable)
                          (rehash_size ecl_ct_default_rehash_size)
                          (rehash_threshold ecl_ct_default_rehash_threshold))
 @ {
+    const cl_env_ptr the_env = ecl_process_env();
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
+    if (weakness == ECL_NIL && synchronized == ECL_NIL && test == @'eql') {
+      ecl_htable *table;
+      int sizepw=4, rehash, rehash_pw=0, threshold;
+      float threshold_float = ecl_to_float(rehash_threshold);
+      while ((sizepw<ECL_HTABLE_MAX_SIZEPW) &&
+             (((cl_index)1<<sizepw) < ecl_fixnum(size))) {
+        sizepw++;
+      }
+      /* When rehash_size is a fixnum, we fix it to x2. */
+      if (floatp(rehash_size)) {
+        float rsize = ecl_to_float(rehash_size);
+        while ((rehash_pw<3) && (2<<rehash_pw < rsize)) {
+          rehash_pw++;
+        }
+      }
+      if (threshold_float<0.0) threshold_float=0.0;
+      else if (threshold_float>1.0) threshold_float=1.0;
+      threshold = (uint8_t)(threshold_float*64.0);
+      rehash = rehash_pw | ((threshold?threshold-1:0)<<2);
+      table = _ecl_make_htable(sizepw, rehash);
+      table->test = ecl_htt_eql;
+      table->weak = ecl_htt_not_weak;
+      hash->hash.table = table;
+      hash->hash.new_htable_p = true;
+
+      /* Set up the trap to catch rogue callers. */
+      hash->hash.get = _ecl_gethash_trap;
+      hash->hash.set = _ecl_sethash_trap;
+      hash->hash.rem = _ecl_remhash_trap;
+      /* Always bind unsafe variants. */
+      hash->hash.get_unsafe = hash->hash.get;
+      hash->hash.set_unsafe = hash->hash.set;
+      hash->hash.rem_unsafe = hash->hash.rem;
+
+      /* Let there be light. */
+      ecl_return1(the_env, hash);
+    }
+    hash->hash.table = NULL;
+    hash->hash.new_htable_p = false;
+
     if (hash->hash.test == ecl_htt_generic) {
       /* Normally we would make hash_function an argument to cl__make_hash_table
          and put this test in there and void unnecessary object allocation, but
@@ -1879,8 +1993,7 @@ ecl_extend_hashtable(cl_object hashtable)
       hash->hash.sync_lock = ECL_T;
 #endif
     }
-
-    @(return hash);
+    ecl_return1(the_env, hash);
 } @)
 
 static void
@@ -2103,15 +2216,12 @@ si_hash_table_synchronized_p(cl_object ht)
 @(defun gethash (key ht &optional (no_value ECL_NIL))
   @
   {
-    assert_type_hash_table(@[gethash], 2, ht);
-    {
-      cl_object v = ht->hash.get(key, ht, OBJNULL);
-      if (v != OBJNULL) {
-        @(return v ECL_T);
-      } else {
-        @(return no_value ECL_NIL);
-      }
-    }
+    const cl_env_ptr the_env = ecl_process_env();
+    cl_object result = ecl_gethash(key, ht);
+    if (result == OBJNULL)
+      ecl_return2(the_env, no_value, ECL_NIL);
+    else
+      ecl_return2(the_env, result, ECL_T);
   }
   @)
 
@@ -2119,8 +2229,9 @@ cl_object
 si_hash_set(cl_object key, cl_object ht, cl_object val)
 {
   /* INV: ecl_sethash() checks the type of hashtable */
+  const cl_env_ptr the_env = ecl_process_env();
   ecl_sethash(key, ht, val);
-  @(return val);
+  ecl_return1(the_env, val);
 }
 
 
@@ -2133,54 +2244,85 @@ cl_remhash(cl_object key, cl_object ht)
 }
 
 cl_object
-cl_clrhash(cl_object ht)
+cl_clrhash(cl_object hashtable)
 {
-  assert_type_hash_table(@[clrhash], 1, ht);
-  if (ht->hash.entries) {
-    do_clrhash(ht);
+  const cl_env_ptr the_env = ecl_process_env();
+  assert_type_hash_table(@[clrhash], 1, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    _ecl_clear_htable(ht);
+    ecl_return1(the_env, hashtable);
   }
-  @(return ht);
+  if (hashtable->hash.entries) {
+    do_clrhash(hashtable);
+  }
+  ecl_return1(the_env, hashtable);
 }
 
 cl_object
-cl_hash_table_test(cl_object ht)
+cl_hash_table_test(cl_object hashtable)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object output;
-  assert_type_hash_table(@[hash-table-test], 1, ht);
-  switch(ht->hash.test) {
-  case ecl_htt_eq:      output = @'eq';     break;
-  case ecl_htt_eql:     output = @'eql';    break;
-  case ecl_htt_equal:   output = @'equal';  break;
-  case ecl_htt_equalp:  output = @'equalp'; break;
-  case ecl_htt_pack:    output = @'equal';  break;
-  case ecl_htt_generic: output = ht->hash.generic_test; break;
-  default: FEerror("hash-table-test: unknown test.", 0);
+  assert_type_hash_table(@[hash-table-test], 1, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    switch(ht->test) {
+    case ecl_htt_eq:      output = @'eq';     break;
+    case ecl_htt_eql:     output = @'eql';    break;
+    case ecl_htt_equal:   output = @'equal';  break;
+    case ecl_htt_equalp:  output = @'equalp'; break;
+    case ecl_htt_pack:    output = @'equal';  break;
+    case ecl_htt_generic: output = ecl_htable_generic_test(ht); break;
+    default: FEerror("hash-table-test: unknown test.", 0);
+    }
+  } else {
+    switch(hashtable->hash.test) {
+    case ecl_htt_eq:      output = @'eq';     break;
+    case ecl_htt_eql:     output = @'eql';    break;
+    case ecl_htt_equal:   output = @'equal';  break;
+    case ecl_htt_equalp:  output = @'equalp'; break;
+    case ecl_htt_pack:    output = @'equal';  break;
+    case ecl_htt_generic: output = hashtable->hash.generic_test; break;
+    default: FEerror("hash-table-test: unknown test.", 0);
+    }
   }
-  @(return output);
+  ecl_return1(the_env, output);
 }
 
 cl_object
-cl_hash_table_size(cl_object ht)
+cl_hash_table_size(cl_object hashtable)
 {
-  assert_type_hash_table(@[hash-table-size], 1, ht);
-  @(return ecl_make_fixnum(ht->hash.size));
+  const cl_env_ptr the_env = ecl_process_env();
+  assert_type_hash_table(@[hash-table-size], 1, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    cl_index size = _ecl_htable_size(ht);
+    ecl_return1(the_env, ecl_make_integer(size));
+  }
+  ecl_return1(the_env, ecl_make_fixnum(hashtable->hash.size));
 }
 
 cl_index
-ecl_hash_table_count(cl_object ht)
+ecl_hash_table_count(cl_object hashtable)
 {
-  if (ht->hash.weak == ecl_htt_not_weak) {
-    return ht->hash.entries;
-  } else if (ht->hash.size) {
+  if (hashtable->hash.new_htable_p) {
+    /* INV implies ecl_htt_not_weak */
+    cl_htable ht = hashtable->hash.table;
+    return ht->fill;
+  }
+  if (hashtable->hash.weak == ecl_htt_not_weak) {
+    return hashtable->hash.entries;
+  } else if (hashtable->hash.size) {
     cl_index i, j;
-    for (i = j = 0; i < ht->hash.size; i++) {
-      struct ecl_hashtable_entry output = copy_entry(ht->hash.data + i, ht);
+    for (i = j = 0; i < hashtable->hash.size; i++) {
+      struct ecl_hashtable_entry output = copy_entry(hashtable->hash.data + i, hashtable);
       if (output.key != OBJNULL) {
-        if (++j == ht->hash.size)
+        if (++j == hashtable->hash.size)
           break;
       }
     }
-    return ht->hash.entries = j;
+    return hashtable->hash.entries = j;
   } else {
     return 0;
   }
@@ -2188,10 +2330,10 @@ ecl_hash_table_count(cl_object ht)
 
 
 cl_object
-cl_hash_table_count(cl_object ht)
+cl_hash_table_count(cl_object hashtable)
 {
-  assert_type_hash_table(@[hash-table-count], 1, ht);
-  @(return (ecl_make_fixnum(ecl_hash_table_count(ht))));
+  assert_type_hash_table(@[hash-table-count], 1, hashtable);
+  @(return (ecl_make_integer(ecl_hash_table_count(hashtable))));
 }
 
 
@@ -2247,100 +2389,137 @@ si_hash_table_iterate(cl_narg narg, ...)
 }
 
 cl_object
-si_hash_table_iterator(cl_object ht)
+si_hash_table_iterator(cl_object hashtable)
 {
   cl_fixnum i;
-  assert_type_hash_table(@[si::hash-table-iterator], 1, ht);
+  assert_type_hash_table(@[si::hash-table-iterator], 1, hashtable);
+  /* FIXME */
+  if (hashtable->hash.new_htable_p) {
+    ecl_internal_error("si_hash_table_iterator: not implemented yet.");
+  }
   /* Make sure we don't start in the middle of a group of consecutive
    * filled buckets. */
-  for (i = ht->hash.size-1; ht->hash.data[i].key != OBJNULL; i--);
+  for (i = hashtable->hash.size-1; hashtable->hash.data[i].key != OBJNULL; i--);
   @(return ecl_make_cclosure_va(si_hash_table_iterate,
                                 cl_list(3, ecl_make_fixnum(i),
                                         ecl_make_fixnum(i),
-                                        ht),
+                                        hashtable),
                                 @'si::hash-table-iterator',
                                 0));
 }
 
 cl_object
-cl_hash_table_rehash_size(cl_object ht)
+cl_hash_table_rehash_size(cl_object hashtable)
 {
-  assert_type_hash_table(@[hash-table-rehash-size], 1, ht);
-  @(return ht->hash.rehash_size);
-}
-
-cl_object
-cl_hash_table_rehash_threshold(cl_object ht)
-{
-  assert_type_hash_table(@[hash-table-rehash-threshold], 1, ht);
-  @(return ht->hash.threshold);
-}
-
-cl_object
-cl_maphash(cl_object fun, cl_object ht)
-{
-  cl_index i, j, hsize;
-
-  assert_type_hash_table(@[maphash], 2, ht);
-  if (ht->hash.entries == 0) {
-    @(return ECL_NIL);
+  const cl_env_ptr the_env = ecl_process_env();
+  assert_type_hash_table(@[hash-table-rehash-size], 1, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    int rehash_size = ecl_htable_rehash_size(ht);
+    ecl_return1(the_env, ecl_make_single_float(rehash_size));
   }
-  hsize = ht->hash.size;
+  ecl_return1(the_env, hashtable->hash.rehash_size);
+}
+
+cl_object
+cl_hash_table_rehash_threshold(cl_object hashtable)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  assert_type_hash_table(@[hash-table-rehash-threshold], 1, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    float threshold = ecl_htable_rehash_threshold(ht);
+    ecl_return1(the_env, ecl_make_single_float(threshold));
+  }
+  ecl_return1(the_env, hashtable->hash.threshold);
+}
+
+cl_object
+cl_maphash(cl_object fun, cl_object hashtable)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_index i, j, hsize;
+  assert_type_hash_table(@[maphash], 2, hashtable);
+
+  if (hashtable->hash.new_htable_p) {
+    cl_htable ht = hashtable->hash.table;
+    _ecl_map_htable(ht, fun);
+    ecl_return1(the_env, ECL_NIL);
+  }
+
+  if (hashtable->hash.entries == 0) {
+    ecl_return1(the_env, ECL_NIL);
+  }
+  hsize = hashtable->hash.size;
   /* Make sure we don't start in the middle of a group of consecutive
    * filled buckets. */
-  for (i = hsize-1; ht->hash.data[i].key != OBJNULL; i--);
+  for (i = hsize-1; hashtable->hash.data[i].key != OBJNULL; i--);
   j = i;
   do {
     j = (j == 0) ? hsize-1 : j - 1;
-    struct ecl_hashtable_entry e = copy_entry(ht->hash.data + j, ht);
+    struct ecl_hashtable_entry e = copy_entry(hashtable->hash.data + j, hashtable);
     if (e.key != OBJNULL) {
       cl_object key = e.key;
       cl_object val = e.value;
-      funcall(3, fun, key, val);
+      cl_funcall(3, fun, key, val);
     }
   } while (j != i);
-  @(return ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
 }
 
 cl_object
-si_hash_table_content(cl_object ht)
+si_hash_table_content(cl_object hashtable)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_index i;
   cl_object output = ECL_NIL;
-  assert_type_hash_table(@[ext::hash-table-content], 2, ht);
-  for (i = 0;  i < ht->hash.size;  i++) {
-    struct ecl_hashtable_entry e = copy_entry(ht->hash.data + i, ht);
+  assert_type_hash_table(@[ext::hash-table-content], 2, hashtable);
+
+  if (hashtable->hash.new_htable_p) {
+    ecl_internal_error("si_hash_table_content: not implemented yet.");
+  }
+
+  for (i = 0;  i < hashtable->hash.size;  i++) {
+    struct ecl_hashtable_entry e = copy_entry(hashtable->hash.data + i, hashtable);
     if (e.key != OBJNULL)
       output = ecl_cons(ecl_cons(e.key, e.value), output);
   }
-  @(return output);
+  ecl_return1(the_env, output);
 }
 
 cl_object
-si_hash_table_fill(cl_object ht, cl_object values)
+si_hash_table_fill(cl_object hashtable, cl_object values)
 {
-  assert_type_hash_table(@[ext::hash-table-fill], 2, ht);
+  const cl_env_ptr the_env = ecl_process_env();
+  assert_type_hash_table(@[ext::hash-table-fill], 2, hashtable);
+  if (hashtable->hash.new_htable_p) {
+    ecl_internal_error("si_hash_table_fill: not implemented yet.");
+  }
   while (!Null(values)) {
     cl_object pair = ecl_car(values);
     cl_object key = ecl_car(pair);
     cl_object value = ECL_CONS_CDR(pair);
     values = ECL_CONS_CDR(values);
-    ecl_sethash(key, ht, value);
+    ecl_sethash(key, hashtable, value);
   }
-  @(return ht);
+  ecl_return1(the_env, hashtable);
 }
 
 cl_object
-si_copy_hash_table(cl_object orig)
+si_copy_hash_table(cl_object hashtable)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_object hash;
-  hash = cl__make_hash_table(cl_hash_table_test(orig),
-                             cl_hash_table_size(orig),
-                             cl_hash_table_rehash_size(orig),
-                             cl_hash_table_rehash_threshold(orig));
-  hash->hash.generic_hash = orig->hash.generic_hash,
-  memcpy(hash->hash.data, orig->hash.data,
-         orig->hash.size * sizeof(*orig->hash.data));
-  hash->hash.entries = orig->hash.entries;
-  @(return hash);
+  if (hashtable->hash.new_htable_p) {
+    ecl_internal_error("si_copy_hash_table: not implemented yet.");
+  }
+  hash = cl__make_hash_table(cl_hash_table_test(hashtable),
+                             cl_hash_table_size(hashtable),
+                             cl_hash_table_rehash_size(hashtable),
+                             cl_hash_table_rehash_threshold(hashtable));
+  hash->hash.generic_hash = hashtable->hash.generic_hash,
+  memcpy(hash->hash.data, hashtable->hash.data,
+         hashtable->hash.size * sizeof(*hashtable->hash.data));
+  hash->hash.entries = hashtable->hash.entries;
+  ecl_return1(the_env, hash);
 }

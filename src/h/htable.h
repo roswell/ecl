@@ -32,7 +32,6 @@
 #define ECL_HTABLE_H
 
 #include <stdint.h>
-#include <ecl/ecl.h>
 
 /* Currently the entry contains a key and a value. GF dispatch considerations:
 

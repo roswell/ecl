@@ -437,8 +437,14 @@ struct ecl_hashtable_entry {    /*  hash table entry  */
         cl_object value;        /*  value  */
 };
 
+#include "htable.h"
+
 struct ecl_hashtable {          /*  hash table header  */
         _ECL_HDR2(test,weak);
+        /*  new implementation */
+        bool new_htable_p;
+        ecl_htable *table;
+        /*  old implementation */
         struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
         cl_object sync_lock;              /*  synchronization lock  */
         cl_object generic_test;           /*  generic test function */
