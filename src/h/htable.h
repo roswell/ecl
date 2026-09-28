@@ -77,14 +77,14 @@ typedef struct {
    [head][slot][slot][slot] [fill][left][ctrl][data]
 
    When the hash table is allocated it initially contains only the header.
-   Generic functions that are never called or have monomorphic/bimorphic profile
-   won't extend their cache beyond the header.
+   Generic functions that are never called or have monomorphic profile won't
+   extend their cache beyond the header.
 
    It is a responsibility of the client to resize the table. The size must be
    always a power of two to allow quick index compute as index=hash&(size-1).
 
    ctrl == NULL -> header
-   ctrl != NULL -> header + control + entries
+   ctrl != NULL -> header -> *ctrl, *data
 
    The table is expected to have a wrapper to automatically swap the pointer
    when we rehash the table without confusing clients with inconsistent state.
@@ -122,15 +122,19 @@ typedef struct {
 } ecl_htable;
 
 /* Accessors for general-purpose hash tables. */
-#define ecl_htable_generic_hash(ht) (ht)->slot[0]
-#define ecl_htable_generic_test(ht) (ht)->slot[1]
+#define ecl_htable_generic_hash(ht) ((ht)->slot[0])
+#define ecl_htable_generic_test(ht) ((ht)->slot[1])
 
 /* rehash represents rehash-size and rehash-threshold tightly packed in uint8_t:
 
  - two lowest bits represent the rehash-size (x2, x4, x8, x16)
- - six higher bits represent the threshold (0-63 scaled to [0,1)) */
+ - six higher bits represent the threshold (1-64 scaled to (0,1]) */
 #define ecl_htable_rehash_size(ht)      (2 << (((ht)->rehash) & 3))
-#define ecl_htable_rehash_threshold(ht) ((((ht)->rehash)>>2)/64.0)
+#define ecl_htable_rehash_threshold(ht) ((((ht)->rehash>>2)+1)/64.0)
+
+/* In practice we will exhaust the memory much earlier. This maximum is defined
+   to avoid UB when we shift bits. */
+#define ECL_HTABLE_MAX_SIZEPW (ECL_FIXNUM_BITS-6)
 
 #define ECL_CONTROLBIT 0x80         /* denotes special meaning */
 #define ECL_FINGERMASK 0x7F         /* a mask for the fingerprint  */

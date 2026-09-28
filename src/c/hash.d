@@ -877,9 +877,16 @@ _ecl_htable_size(cl_htable ht)
 static inline cl_index
 _ecl_htable_limit(cl_htable ht)
 {
-  float threshold = ecl_htable_rehash_threshold(ht);
-  if (threshold < 0.1) threshold = 0.1;
-  return (cl_index)(threshold * _ecl_htable_size(ht));
+  uint8_t sizepw = ht->sizepw;
+  uint8_t threshold = (ht->rehash>>2)+1;
+  /* examples:
+     size=2^5= 32, threshold=48, limit=48>>1 = 24
+     size=2^6= 64, threshold=48, limit=48<<0 = 48
+     size=2^7=128, threshold=48, limit=48<<1 = 96 */
+  cl_index limit = (sizepw < 6)
+    ? ((cl_index)threshold >> (6-sizepw))
+    : ((cl_index)threshold << (sizepw-6));
+  return limit;
 }
 
 static inline void
@@ -899,7 +906,16 @@ _ecl_make_htable(uint8_t sizepw, uint8_t rehash)
   /* INV hash tables always have size>0 (unlike gf-cache). */
   cl_htable ht = ecl_alloc(sizeof(ecl_htable));
   cl_index size;
+  uint8_t threshold = (rehash>>2)+1;
   if(sizepw<4) sizepw=4;
+  else if(sizepw>ECL_HTABLE_MAX_SIZEPW)
+    FEerror("make-hash-table: size 2^~a is too big.",
+            1, ecl_make_fixnum(sizepw));
+  /* Ensure that 2 <= limit <= size. That also implies invariant
+     2*size*threshold/64 > size*threshold/64 holds (limit grows). */
+  if (threshold<8)      threshold = 8;
+  else if(threshold>60) threshold = 60;
+  rehash = (uint8_t)((rehash & 3) | ((threshold - 1) << 2));
   ht->test = ecl_htt_eql;
   ht->weak = ecl_htt_not_weak; /* stronk! */
   ht->sizepw = sizepw;
@@ -1005,7 +1021,7 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
     return ECL_NIL;
   }
   /* INV impossible (table is full). */
-  return OBJNULL;
+  ecl_internal_error("hash-table: the hash table is full.");
 #undef INSERT
 }
 
