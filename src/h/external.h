@@ -844,7 +844,7 @@ extern ECL_API cl_object si_hash_table_synchronized_p(cl_object ht);
 extern ECL_API cl_object ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 extern ECL_API cl_object ecl_gethash(cl_object key, cl_object hash);
 extern ECL_API cl_object ecl_gethash_safe(cl_object key, cl_object hash, cl_object def);
-extern ECL_API bool ecl_remhash(cl_object key, cl_object hash);
+extern ECL_API cl_object ecl_remhash(cl_object key, cl_object hash);
 extern ECL_API cl_object _ecl_sethash(cl_object key, cl_object hashtable, cl_object value);
 extern ECL_API cl_index ecl_hash_table_count(cl_object hash);
 

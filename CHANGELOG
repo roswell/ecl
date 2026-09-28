@@ -94,6 +94,8 @@
   was cast to (complex single-float) instead of (complex /y-float-type/)
   leading to inconsistent results
 
+- incompatible change: ecl_remhash returns ECL_T or ECL_NIL instead of bool
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of

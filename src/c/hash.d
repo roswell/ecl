@@ -1439,6 +1439,13 @@ ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 }
 
 cl_object
+ecl_remhash(cl_object key, cl_object hashtable)
+{
+  assert_type_hash_table(@[remhash], 2, hashtable);
+  return hashtable->hash.rem(key, hashtable) ? ECL_T : ECL_NIL;
+}
+
+cl_object
 ecl_extend_hashtable(cl_object hashtable)
 {
   cl_object old, new;
@@ -1798,18 +1805,13 @@ si_hash_set(cl_object key, cl_object ht, cl_object val)
   @(return val);
 }
 
-bool
-ecl_remhash(cl_object key, cl_object hashtable)
-{
-  assert_type_hash_table(@[remhash], 2, hashtable);
-  return hashtable->hash.rem(key, hashtable);
-}
 
 cl_object
 cl_remhash(cl_object key, cl_object ht)
 {
-  /* INV: _ecl_remhash() checks the type of hashtable */
-  @(return (ecl_remhash(key, ht)? ECL_T : ECL_NIL));
+  /* INV: ecl_remhash() checks the type of hashtable */
+  const cl_env_ptr the_env = ecl_process_env();
+  ecl_return1(the_env, ecl_remhash(key, ht));
 }
 
 cl_object
