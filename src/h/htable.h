@@ -125,6 +125,13 @@ typedef struct {
 #define ecl_htable_generic_hash(ht) (ht)->slot[0]
 #define ecl_htable_generic_test(ht) (ht)->slot[1]
 
+/* rehash represents rehash-size and rehash-threshold tightly packed in uint8_t:
+
+ - two lowest bits represent the rehash-size (x2, x4, x8, x16)
+ - six higher bits represent the threshold (0-63 scaled to [0,1)) */
+#define ecl_htable_rehash_size(ht)      (2 << (((ht)->rehash) & 3))
+#define ecl_htable_rehash_threshold(ht) ((((ht)->rehash)>>2)/64.0)
+
 #define ECL_CONTROLBIT 0x80         /* denotes special meaning */
 #define ECL_FINGERMASK 0x7F         /* a mask for the fingerprint  */
 

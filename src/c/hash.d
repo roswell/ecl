@@ -876,8 +876,9 @@ _ecl_htable_size(cl_htable ht)
 static inline cl_index
 _ecl_htable_limit(cl_htable ht)
 {
-  /* FIXME use rehash */
-  return _ecl_htable_size(ht);
+  float threshold = ecl_htable_rehash_threshold(ht);
+  if (threshold < 0.1) threshold = 0.1;
+  return (cl_index)(threshold * _ecl_htable_size(ht));
 }
 
 static inline void
