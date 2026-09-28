@@ -898,6 +898,7 @@ _ecl_make_htable(uint8_t sizepw, uint8_t rehash)
   /* INV hash tables always have size>0 (unlike gf-cache). */
   cl_htable ht = ecl_alloc(sizeof(ecl_htable));
   cl_index size;
+  if(sizepw<4) sizepw=4;
   ht->test = ecl_htt_eql;
   ht->weak = ecl_htt_not_weak; /* stronk! */
   ht->sizepw = sizepw;
@@ -971,10 +972,7 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       if (!emptyp && ctrl == ECL_EMPTYSLOT) {
         emptyp = true;
         keep_empty = index+idx;
-        /* INV this break is correct only under the assumption that upsert fills
-           the _first_ empty slot in the bucket. If SIMD rewrite changes that,
-           then this break should be changed to continue. -- jd 2026-09-25 */
-        break;
+        continue;
       }
       if (!freedp && ctrl == ECL_TOMBSTONE) {
         freedp = true;
@@ -1020,28 +1018,40 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
   cl_index idx, probe;
   uint8_t *head = ht->ctrl;
   ecl_hentry *tail = ht->data, *record;
+  bool emptyp = false;
+  bool foundp = false;
+  cl_index keep_found = 0;
   for(probe=0; probe<size; probe+=16) {
     /* This is the SIMD-optimizable hot path. */
-    bool emptyp = false;
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
       if (ctrl == ECL_EMPTYSLOT) {
         emptyp = true;
-        /* INV this break is correct only under the assumption that upsert fills
-           the _first_ empty slot in the bucket. If SIMD rewrite changes that,
-           then this break should be changed to continue. -- jd 2026-09-25 */
-        break;
+        continue;
       }
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
-      record = &tail[index+idx];
-      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
-        head[index+idx] = ECL_TOMBSTONE;
-        record->key = OBJNULL;
-        record->val = OBJNULL;
-        ht->fill--;
-        return ECL_T;
+      if (!foundp) {
+        record = &tail[index+idx];
+        if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
+          foundp = true;
+          keep_found = index+idx;
+        }
       }
+    }
+    if (ecl_likely(foundp)) {
+      if (ecl_likely(emptyp)) {
+        head[keep_found] = ECL_EMPTYSLOT;
+        ht->fill--;
+        ht->left++;
+      } else {
+        head[keep_found] = ECL_TOMBSTONE;
+        ht->fill--;
+      }
+      record = &tail[keep_found];
+      record->key = OBJNULL;
+      record->val = OBJNULL;
+      return ECL_T;
     }
     if (ecl_likely(emptyp))
       return ECL_NIL;
