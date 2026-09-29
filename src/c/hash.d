@@ -2007,6 +2007,12 @@ _ecl_normalize_weak(cl_object weak)
                        weak);
 }
 
+#ifdef ECL_THREADS
+# define _ecl_normalize_sync(sync) (Null(sync) ? ECL_NIL : ecl_make_rwlock(ECL_NIL))
+#else
+# define _ecl_normalize_sync(sync) (Null(sync) ? ECL_NIL : ECL_T)
+#endif
+
 
 /*
  * HIGHER LEVEL INTERFACE
@@ -2018,7 +2024,20 @@ ecl_gethash(cl_object key, cl_object hashtable)
   assert_type_hash_table(@[gethash], 2, hashtable);
   if (hashtable->hash.new_htable_p) {
     cl_htable ht = hashtable->hash.table;
-    return _ecl_search_htable(ht, key);
+    cl_object output;
+#ifdef ECL_THREADS
+    if (hashtable->hash.sync_lock != ECL_NIL) {
+      cl_object sync_lock = hashtable->hash.sync_lock;
+      mp_get_rwlock_read_wait(sync_lock);
+      ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        output = _ecl_search_htable(ht, key);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+        mp_giveup_rwlock_read(sync_lock);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
+    } else
+#endif
+      output = _ecl_search_htable(ht, key);
+    return output;
   }
   return hashtable->hash.get(key, hashtable, OBJNULL);
 }
@@ -2045,7 +2064,20 @@ cl_object
 _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
   if (hashtable->hash.new_htable_p) {
-    return _ecl_puthash(hashtable, key, value);
+    cl_object output;
+#ifdef ECL_THREADS
+    if (hashtable->hash.sync_lock != ECL_NIL) {
+      cl_object sync_lock = hashtable->hash.sync_lock;
+      mp_get_rwlock_write_wait(sync_lock);
+      ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        output = _ecl_puthash(hashtable, key, value);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+        mp_giveup_rwlock_write(sync_lock);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
+    } else
+#endif
+      output = _ecl_puthash(hashtable, key, value);
+    return output;
   }
   return hashtable->hash.set(key, hashtable, value);
 }
@@ -2063,7 +2095,20 @@ ecl_remhash(cl_object key, cl_object hashtable)
   assert_type_hash_table(@[remhash], 2, hashtable);
   if (hashtable->hash.new_htable_p) {
     cl_htable ht = hashtable->hash.table;
-    return _ecl_delete_htable(ht, key);
+    cl_object output;
+#ifdef ECL_THREADS
+    if (hashtable->hash.sync_lock != ECL_NIL) {
+      cl_object sync_lock = hashtable->hash.sync_lock;
+      mp_get_rwlock_write_wait(sync_lock);
+      ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        output = _ecl_delete_htable(ht, key);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
+        mp_giveup_rwlock_write(sync_lock);
+      } ECL_UNWIND_PROTECT_THREAD_SAFE_END;
+    } else
+#endif
+      output = _ecl_delete_htable(ht, key);
+    return output;
   }
   return hashtable->hash.rem(key, hashtable) ? ECL_T : ECL_NIL;
 }
@@ -2166,7 +2211,8 @@ _ecl_inner_ht(cl_object size, cl_object rehash_size, cl_object rehash_threshold,
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
     enum ecl_httest httest = _ecl_normalize_test(test);
     enum ecl_htweak htweak = _ecl_normalize_weak(weakness);
-    if (synchronized == ECL_NIL) {
+    hash->hash.sync_lock   = _ecl_normalize_sync(synchronized);
+    if (1 /* synchronized == ECL_NIL */) {
       ecl_htable *table = _ecl_inner_ht(size, rehash_size, rehash_threshold,
                                         httest, htweak);
       if (httest == ecl_htt_generic) {
@@ -2230,13 +2276,9 @@ _ecl_inner_ht(cl_object size, cl_object rehash_size, cl_object rehash_threshold,
     hash->hash.rem_unsafe = hash->hash.rem;
     if (!Null(synchronized)) {
 #ifdef ECL_THREADS
-      hash->hash.sync_lock = ecl_make_rwlock(ECL_NIL);
       hash->hash.get = _ecl_gethash_sync;
       hash->hash.set = _ecl_sethash_sync;
       hash->hash.rem = _ecl_remhash_sync;
-#else
-      /* for hash-table-synchronized-p predicate */
-      hash->hash.sync_lock = ECL_T;
 #endif
     }
     ecl_return1(the_env, hash);
@@ -2352,6 +2394,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
   h->hash.weak = ecl_htt_not_weak;
   h->hash.generic_test = hash_test;
   h->hash.generic_hash = hash_func;
+  h->hash.sync_lock = ECL_NIL;
   h->hash.get = h->hash.get_unsafe = get;
   h->hash.set = h->hash.set_unsafe = set;
   h->hash.rem = h->hash.rem_unsafe = rem;
