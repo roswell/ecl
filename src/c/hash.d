@@ -829,6 +829,110 @@ cl_sxhash(cl_object key)
 
 /* New swiss-like hash table (prototype) */
 
+/* Weak hash tables (enum ecl_htweak) description:
+
+   - Entries may disappear without explicit REMHASH
+   - Control bytes should be updated by GETHASH etc
+   - Updates should reclaim tombstones similar to how REMHASH does
+   - Queries for keys and values must be normalized
+
+   Note that new implementation behaves differently regarding how entries are
+   reclaimed after garbage collection. */
+#ifdef ECL_WEAK_HASH
+static inline cl_object
+_ecl_hentry_store_key (cl_htable ht, cl_object key) {
+  switch (ht->weak) {
+  case ecl_htt_weak_key:
+  case ecl_htt_weak_key_and_value:
+  case ecl_htt_weak_key_or_value:
+    return si_make_weak_pointer(key);
+  default:
+    return key;
+  }
+}
+
+
+static inline cl_object
+_ecl_hentry_store_val (cl_htable ht, cl_object val) {
+  switch (ht->weak) {
+  case ecl_htt_weak_value:
+  case ecl_htt_weak_key_and_value:
+  case ecl_htt_weak_key_or_value:
+    return si_make_weak_pointer(val);
+  default:
+    return val;
+  }
+}
+
+static void *
+normalize_weak_key(cl_hentry e) {
+  return (void*)(e->key = e->key->weak.value);
+}
+
+static void *
+normalize_weak_val(cl_hentry e) {
+  return (void*)(e->value = e->value->weak.value);
+}
+
+static void *
+normalize_weak_kav(cl_hentry e) {
+  if ((e->key = e->key->weak.value) && (e->value = e->value->weak.value))
+    return (void*)e;
+  else
+    return 0;
+}
+
+static void *
+normalize_weak_kov(cl_hentry e) {
+  e->key = e->key->weak.value;
+  e->value = e->value->weak.value;
+  if (e->key || e->value)
+    return (void*)e;
+  else
+    return 0;
+}
+
+/* This function normalizes entries. That means that si_weak_pointer_value
+   shouldn't be called on resulting entry key and value. -- jd 2019-05-28 */
+static inline cl_hentry
+_ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
+{
+  cl_hentry entry = &ht->data[index];
+  *output = *entry;
+  switch (ht->weak) {
+  case ecl_htt_weak_key:
+    if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_key, output))
+      return output;
+    break;
+  case ecl_htt_weak_value:
+    if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_val, output))
+      return output;
+    break;
+  case ecl_htt_weak_key_and_value:
+    if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_kav, output))
+      return output;
+    break;
+  case ecl_htt_weak_key_or_value:
+    if (GC_call_with_alloc_lock((GC_fn_type)normalize_weak_kov, output))
+      return output;
+    break;
+  case ecl_htt_not_weak:
+  default:
+    return output;
+  }
+  /* The entry was garbage collected. */
+  entry->key = OBJNULL;
+  entry->value = OBJNULL;
+  ht->ctrl[index] = ECL_TOMBSTONE;
+  ht->fill--;
+  return NULL;
+}
+#else
+# define _ecl_hentry_store_key(ht,key) (key)
+# define _ecl_hentry_store_val(ht,val) (val)
+# define _ecl_normalize_hentry(ht,index,output) (&ht->data[index])
+#endif
+
 /* Package Hashtables (ecl_htt_pack) description:
 
    - Keys supplied to _ecl_*_pack are strings
@@ -854,10 +958,11 @@ _ecl_insert_hentry(cl_htable ht, cl_index index, uint64_t hash,
                    cl_object key, cl_object val)
 {
   uint8_t fp = ecl_hash_fingerprint(hash);
-  ht->data[index].key = (ht->test == ecl_htt_pack)
-    ? hash_to_fixnum(hash)
-    : key;
-  ht->data[index].value = val;
+  if (ht->test == ecl_htt_pack) {
+    key = hash_to_fixnum(hash);
+  }
+  ht->data[index].key   = _ecl_hentry_store_key(ht, key);
+  ht->data[index].value = _ecl_hentry_store_val(ht, val);
   ht->ctrl[index] = fp;
 }
 
@@ -974,8 +1079,10 @@ _ecl_search_htable(cl_htable ht, cl_object key)
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
   uint8_t *head = ht->ctrl;
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry record_aux, *record;
   bool emptyp = false;
+  /* ignorable */
+  (void)record_aux;
   while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
@@ -986,8 +1093,8 @@ _ecl_search_htable(cl_htable ht, cl_object key)
       }
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
-      record = &tail[index+idx];
-      if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
+      record = _ecl_normalize_hentry(ht, index+idx, &record_aux);
+      if (record && ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
         return record->value;
       }
     }
@@ -1008,11 +1115,13 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
   uint8_t *head = ht->ctrl;
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry record_aux, *record;
   bool freedp = false;
   bool emptyp = false;
   cl_index keep_freed = 0;
   cl_index keep_empty = 0;
+  /* ignorable */
+  (void)record_aux;
   while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
@@ -1029,9 +1138,9 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       }
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
-      record = &tail[index+idx];
-      if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
-        record->value = val;
+      record = _ecl_normalize_hentry(ht, index+idx, &record_aux);
+      if (ecl_likely(record && _ecl_hash_test(ht, hash, key, record))) {
+        _ecl_insert_hentry(ht, index+idx, hash, key, val);
         return ECL_T;
       }
     }
@@ -1060,10 +1169,12 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
   uint8_t *head = ht->ctrl;
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry *tail = ht->data, record_aux, *record;
   bool emptyp = false;
   bool foundp = false;
   cl_index keep_found = 0;
+  /* ignorable */
+  (void)record_aux;
   while(1) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
@@ -1075,8 +1186,8 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       if (!foundp) {
-        record = &tail[index+idx];
-        if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
+        record = _ecl_normalize_hentry(ht, index+idx, &record_aux);
+        if (ecl_likely(record && _ecl_hash_test(ht, hash, key, record))) {
           foundp = true;
           keep_found = index+idx;
         }
@@ -1143,11 +1254,12 @@ _ecl_rehash_htable(cl_htable ht)
   uint8_t new_sizepw = (ht->fill >= limit - (limit>>2))
     ? (sizepw + rehash_pw)
     : (sizepw);
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry record_aux, *record;
   cl_htable new_table;
   cl_index index = 0;
   cl_index idx, probe;
   uint8_t *head = ht->ctrl;
+  (void)record_aux;
   new_table = _ecl_make_htable(new_sizepw, ht->rehash);
   new_table->test = ht->test;
   new_table->weak = ht->weak;
@@ -1159,11 +1271,12 @@ _ecl_rehash_htable(cl_htable ht)
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
-      cl_object key;
       if (ctrl & ECL_CONTROLBIT) continue; /* special */
-      record = &tail[index+idx];
-      key = _ecl_hentry_key(ht, record);
-      _ecl_insert_htable(new_table, key, record->value);
+      record = _ecl_normalize_hentry(ht, index+idx, &record_aux);
+      if (record!=NULL) {
+        cl_object key = _ecl_hentry_key(ht, record);
+        _ecl_insert_htable(new_table, key, record->value);
+      }
     }
     index = (index+16)&(size-1);
   }
@@ -1174,23 +1287,21 @@ static void
 _ecl_mapc_htable(cl_htable ht, cl_object fun)
 {
   cl_index size = _ecl_htable_size(ht);
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry record_aux, *record;
   cl_index index = 0;
   cl_index idx, probe;
   uint8_t *head = ht->ctrl;
-  cl_object key, val;
+  (void)record_aux;
   if (!ht->fill) return;
   for(probe=0; probe<size; probe+=16) {
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
       if (ctrl & ECL_CONTROLBIT) continue; /* special */
-      record = &tail[index+idx];
-      key=record->key;
-      val=record->value;
-      if (key!=OBJNULL) {
-        key = _ecl_hentry_key(ht, record);
-        cl_funcall(3, fun, key, val);
+      record = _ecl_normalize_hentry(ht, index+idx, &record_aux);
+      if (record!=NULL) {
+        cl_object key = _ecl_hentry_key(ht, record);
+        cl_funcall(3, fun, key, record->value);
       }
     }
     index = (index+16)&(size-1);
@@ -1205,24 +1316,24 @@ _ecl_iter_htable(cl_narg narg, ...)
   cl_object env = the_env->function->cclosure.env;
   cl_object idx  = ECL_CONS_CAR(env);
   ecl_htable *ht;
-  ecl_hentry *record = NULL, *tail;
+  ecl_hentry *record, record_aux;
   cl_index index, size;
   uint8_t *head;
+  (void)record_aux;
   if (idx == ECL_NIL) {
     ecl_return1(the_env, ECL_NIL);
   }
   ht = ECL_CONS_CDR(env)->hash.table;
   head = ht->ctrl;
-  tail = ht->data;
   index = ecl_fixnum(idx);
   size = _ecl_htable_size(ht);
   /* We can speed up by searching in 16 braches with SIMD. */
-  for (; index<size && !record; index++) {
+  for (record=NULL; index<size && !record; index++) {
     uint8_t ctrl = head[index];
     if (ctrl & ECL_CONTROLBIT) continue;       /* special */
-    record = &tail[index];
+    record = _ecl_normalize_hentry(ht, index, &record_aux);
   }
-  if (record && record->key != OBJNULL) {
+  if (record!=NULL) {
     idx = ecl_make_fixnum(index);
     ECL_RPLACA(env, idx);
     ecl_return3(the_env, idx, record->key, record->value);
@@ -1235,22 +1346,24 @@ _ecl_iter_htable(cl_narg narg, ...)
 static cl_object
 _ecl_cons_htable(cl_htable ht)
 {
-  cl_object output = ECL_NIL;;
+  cl_object output = ECL_NIL;
   cl_index size = _ecl_htable_size(ht);
-  ecl_hentry *tail = ht->data, *record;
+  ecl_hentry record_aux, *record;
   cl_index index;
   uint8_t *head = ht->ctrl;
-  cl_object key, val;
+  /* ignorable */
+  (void)record_aux;
   if (!ht->fill) return ECL_NIL;
   /* We can speed up by searching in 16 braches with SIMD. */
   for(index=0; index<size; index++) {
     uint8_t ctrl = head[index];
     if (ctrl & ECL_CONTROLBIT) continue; /* special */
-    record = &tail[index];
-    key=record->key;
-    val=record->value;
-    if (key!=OBJNULL)
+    record = _ecl_normalize_hentry(ht, index, &record_aux);
+    if (record!=NULL) {
+      cl_object key=record->key;
+      cl_object val=record->value;
       output = ecl_cons(ecl_cons(key, val), output);
+    }
   }
   return output;
 }
@@ -1876,6 +1989,24 @@ _ecl_normalize_test(cl_object test)
   return ecl_htt_generic;
 }
 
+static inline enum ecl_htweak
+_ecl_normalize_weak(cl_object weak)
+{
+  if (weak == ECL_NIL)           return ecl_htt_not_weak;
+#ifdef ECL_WEAK_HASH
+  if (weak == @':key')           return ecl_htt_weak_key;
+  if (weak == @':value')         return ecl_htt_weak_value;
+  if (weak == @':key-and-value') return ecl_htt_weak_key_and_value;
+  if (weak == @':key-or-value')  return ecl_htt_weak_key_or_value;
+#endif
+  FEwrong_type_key_arg(@[make-hash-table],
+                       @[:weakness],
+                       cl_list(5, @'member',
+                               ECL_NIL, @':key', @':value',
+                               @':key-and-value', @':key-or-value'),
+                       weak);
+}
+
 
 /*
  * HIGHER LEVEL INTERFACE
@@ -2034,9 +2165,10 @@ _ecl_inner_ht(cl_object size, cl_object rehash_size, cl_object rehash_threshold,
     const cl_env_ptr the_env = ecl_process_env();
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
     enum ecl_httest httest = _ecl_normalize_test(test);
-    if (weakness == ECL_NIL && synchronized == ECL_NIL) {
+    enum ecl_htweak htweak = _ecl_normalize_weak(weakness);
+    if (synchronized == ECL_NIL) {
       ecl_htable *table = _ecl_inner_ht(size, rehash_size, rehash_threshold,
-                                        httest, ecl_htt_not_weak);
+                                        httest, htweak);
       if (httest == ecl_htt_generic) {
         ecl_htable_generic_hash(table) = si_coerce_to_function(hash_function);
         ecl_htable_generic_test(table) = si_coerce_to_function(test);
