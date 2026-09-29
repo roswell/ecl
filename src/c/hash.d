@@ -22,6 +22,7 @@
 typedef uint64_t cl_hashkey;
 typedef ecl_xxh3_state cl_hashstate;
 typedef ecl_htable *cl_htable;
+typedef ecl_hentry *cl_hentry;
 
 #define hash_reset(s) ecl_xxh3_reset(s)
 #define hash_digest(s) ecl_xxh3_digest(s)
@@ -828,6 +829,38 @@ cl_sxhash(cl_object key)
 
 /* New swiss-like hash table (prototype) */
 
+/* Package Hashtables (ecl_htt_pack) description:
+
+   - Keys supplied to _ecl_*_pack are strings
+   - Keys stored in the package are shortened hashes (fixnums)
+   - Values stored in the package are symbols
+   - Probe test is (and (= shortened-key hkey)
+                        (string= key (symbol-name hval)))
+
+   Shortened hashes are used as prefilters and they are fixnums to ensure that
+   there is no additional pointer dereference. I hate clever. -- jd 2026-09-29
+ */
+
+static inline cl_object
+_ecl_hentry_key(cl_htable ht, cl_hentry record)
+{
+  return (ht->test == ecl_htt_pack)
+    ? SYMBOL_NAME(record->val)
+    : record->key;
+}
+
+static inline void
+_ecl_insert_hentry(cl_htable ht, cl_index index, uint64_t hash,
+                   cl_object key, cl_object val)
+{
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  ht->data[index].key = (ht->test == ecl_htt_pack)
+    ? hash_to_fixnum(hash)
+    : key;
+  ht->data[index].val = val;
+  ht->ctrl[index] = fp;
+}
+
 static inline cl_hashkey
 _ecl_hash_key(cl_htable ht, cl_object key) {
   switch (ht->test) {
@@ -835,8 +868,7 @@ _ecl_hash_key(cl_htable ht, cl_object key) {
   case ecl_htt_eql:     return _ecl_hash_eql(key);
   case ecl_htt_equal:   return _ecl_hash_equal(key);
   case ecl_htt_equalp:  return _ecl_hash_equalp(key);
-  /* FIXME investigate ecl_htt_pack, code seems inconsistent. */
-  /* case ecl_htt_pack:    return _ecl_hash_equal(key); */
+  case ecl_htt_pack:    return _ecl_hash_equal(key);
   case ecl_htt_generic: {
     cl_object fun = ecl_htable_generic_hash(ht);
     cl_object hash = _ecl_funcall2(fun, key);
@@ -852,14 +884,19 @@ _ecl_hash_key(cl_htable ht, cl_object key) {
 }
 
 static inline bool
-_ecl_hash_test(cl_htable ht, cl_object key, cl_object hkey) {
+_ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
+{
+  cl_object hkey = record->key;
+  cl_object hval = record->val;
   switch (ht->test) {
   case ecl_htt_eq:     return (key == hkey);
   case ecl_htt_eql:    return ecl_eql(key, hkey);
   case ecl_htt_equal:  return ecl_equal(key, hkey);
   case ecl_htt_equalp: return ecl_equalp(key, hkey);
-  /* FIXME investigate ecl_htt_pack, code seems inconsistent. */
-  /* case ecl_htt_pack:   return ecl_equal(key, ECL_SYMBOL_NAME(hkey)); */
+  case ecl_htt_pack: {
+    cl_object sh = hash_to_fixnum(hash);
+    return (sh == hkey && ecl_string_eq(key, SYMBOL_NAME(hval)));
+  }
   case ecl_htt_generic: {
     cl_object fun = ecl_htable_generic_test(ht);
     return _ecl_funcall3(fun, key, hkey) != ECL_NIL;
@@ -867,15 +904,6 @@ _ecl_hash_test(cl_htable ht, cl_object key, cl_object hkey) {
   default:
     ecl_internal_error("hash-table: unknown test function.");
   }
-}
-
-static inline void
-_ecl_insert_hentry(cl_htable ht, cl_index index,
-                   uint8_t fp, cl_object key, cl_object val)
-{
-  ht->data[index].key = key;
-  ht->data[index].val = val;
-  ht->ctrl[index] = fp;
 }
 
 static inline cl_index
@@ -959,7 +987,7 @@ _ecl_search_htable(cl_htable ht, cl_object key)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       record = &tail[index+idx];
-      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
+      if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
         return record->val;
       }
     }
@@ -1002,14 +1030,14 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
       if (ctrl & ECL_CONTROLBIT) continue;       /* special */
       if (ctrl != fp) continue;                  /* mismatch */
       record = &tail[index+idx];
-      if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
+      if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
         record->val = val;
         return ECL_T;
       }
     }
     if (ecl_likely(emptyp)) {
       cl_index index2 = (freedp ? keep_freed : keep_empty);
-      _ecl_insert_hentry(ht, index2, fp, key, val);
+      _ecl_insert_hentry(ht, index2, hash, key, val);
       ht->fill++;
       if (!freedp) {
         /* INV the caller ensures that we have capacity. */
@@ -1048,7 +1076,7 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
       if (ctrl != fp) continue;                  /* mismatch */
       if (!foundp) {
         record = &tail[index+idx];
-        if (ecl_likely(_ecl_hash_test(ht, key, record->key))) {
+        if (ecl_likely(_ecl_hash_test(ht, hash, key, record))) {
           foundp = true;
           keep_found = index+idx;
         }
@@ -1080,7 +1108,6 @@ _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
 {
   cl_index size = _ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
-  uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
   uint8_t *head = ht->ctrl;
@@ -1091,7 +1118,7 @@ _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
       /* We test only for the emptyslot, because _ecl_insert_htable is called
          only from the rehash function, so there are no tombstones yet. */
       if (ctrl == ECL_EMPTYSLOT) {
-        _ecl_insert_hentry(ht, index+idx, fp, key, val);
+        _ecl_insert_hentry(ht, index+idx, hash, key, val);
         ht->fill++;
         ht->left--;
         return;
@@ -1132,9 +1159,11 @@ _ecl_rehash_htable(cl_htable ht)
     /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
+      cl_object key;
       if (ctrl & ECL_CONTROLBIT) continue; /* special */
       record = &tail[index+idx];
-      _ecl_insert_htable(new_table, record->key, record->val);
+      key = _ecl_hentry_key(ht, record);
+      _ecl_insert_htable(new_table, key, record->val);
     }
     index = (index+16)&(size-1);
   }
@@ -1159,8 +1188,10 @@ _ecl_map_htable(cl_htable ht, cl_object fun)
       record = &tail[index+idx];
       key=record->key;
       val=record->val;
-      if (key!=OBJNULL)
+      if (key!=OBJNULL) {
+        key = _ecl_hentry_key(ht, record);
         cl_funcall(3, fun, key, val);
+      }
     }
     index = (index+16)&(size-1);
   }
@@ -1387,7 +1418,7 @@ _ecl_remhash_equalp(cl_object key, cl_object hashtable)
 static struct ecl_hashtable_entry *
 _ecl_hash_loop_pack(cl_hashkey h, cl_object key, cl_object hashtable)
 {
-  cl_object ho = ecl_make_fixnum(h & 0xFFFFFFF);
+  cl_object ho = hash_to_fixnum(h);
   HASH_TABLE_LOOP(hkey, hval, h,
                   (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(hval)));
 }
@@ -1404,14 +1435,14 @@ static cl_object
 _ecl_sethash_pack(cl_object key, cl_object hashtable, cl_object value)
 {
   HASH_TABLE_SET(h, _ecl_hash_loop_pack, _ecl_hash_equal(key),
-                 ecl_make_fixnum(h & 0xFFFFFFF), value);
+                 hash_to_fixnum(h), value);
 }
 
 static bool
 _ecl_remhash_pack(cl_object key, cl_object hashtable)
 {
   cl_hashkey h = _ecl_hash_equal(key);
-  cl_object ho = ecl_make_fixnum(h & 0xFFFFFFF);
+  cl_object ho = hash_to_fixnum(h);
   HASH_TABLE_REMOVE(hkey, hval, h,
                     (ho==hkey) && ecl_string_eq(key,SYMBOL_NAME(hval)),
                     _ecl_hash_equal(SYMBOL_NAME(hval)));
@@ -1946,11 +1977,13 @@ _ecl_inner_ht(cl_object size, cl_object rehash_size, cl_object rehash_threshold,
     const cl_env_ptr the_env = ecl_process_env();
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
     enum ecl_httest httest = _ecl_normalize_test(test);
-    if (weakness == ECL_NIL && synchronized == ECL_NIL &&
-        (httest == ecl_htt_eq    || httest == ecl_htt_eql ||
-         httest == ecl_htt_equal || httest == ecl_htt_equalp)) {
+    if (weakness == ECL_NIL && synchronized == ECL_NIL) {
       ecl_htable *table = _ecl_inner_ht(size, rehash_size, rehash_threshold,
                                         httest, ecl_htt_not_weak);
+      if (httest == ecl_htt_generic) {
+        ecl_htable_generic_hash(table) = si_coerce_to_function(hash_function);
+        ecl_htable_generic_test(table) = si_coerce_to_function(test);
+      }
       /* Insert the inner table */
       hash->hash.table = table;
       hash->hash.new_htable_p = true;
