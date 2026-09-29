@@ -2026,26 +2026,26 @@ ecl_gethash(cl_object key, cl_object hashtable)
 cl_object
 ecl_gethash_safe(cl_object key, cl_object hashtable, cl_object def)
 {
-  assert_type_hash_table(@[gethash], 2, hashtable);
-  if (hashtable->hash.new_htable_p) {
-    cl_htable ht = hashtable->hash.table;
-    cl_object result = _ecl_search_htable(ht, key);
-    return (result==OBJNULL) ? def : result;
+  cl_object result = ecl_gethash(key, hashtable);;
+  return (result==OBJNULL) ? def : result;
+}
+
+static inline cl_object
+_ecl_puthash(cl_object hashtable, cl_object key, cl_object value) {
+  cl_htable ht = hashtable->hash.table;
+  if (!ht->left) {
+    ht = _ecl_rehash_htable(ht);
+    hashtable->hash.table = ht;
   }
-  return hashtable->hash.get(key, hashtable, def);
+  _ecl_upsert_htable(ht, key, value);
+  return hashtable;
 }
 
 cl_object
 _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
   if (hashtable->hash.new_htable_p) {
-    cl_htable ht = hashtable->hash.table;
-    if (!ht->left) {
-      ht = _ecl_rehash_htable(ht);
-      hashtable->hash.table = ht;
-    }
-    _ecl_upsert_htable(ht, key, value);
-    return hashtable;
+    return _ecl_puthash(hashtable, key, value);
   }
   return hashtable->hash.set(key, hashtable, value);
 }
