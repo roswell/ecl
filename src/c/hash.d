@@ -1503,7 +1503,7 @@ _ecl_hash_key_weak(cl_object h, cl_object o) {
   case ecl_htt_pack:    return _ecl_hash_equal(o);
   case ecl_htt_generic: return _hash_generic(h, o);
   default:
-    ecl_internal_error("Unknown hash test.");
+    ecl_internal_error("Unknown hash hkey.");
   }
 }
 
@@ -1774,6 +1774,19 @@ static bool
 _ecl_remhash_trap(cl_object key, cl_object hashtable)
 { ecl_internal_error("hash-table: trap _ecl_remhash_trap"); }
 
+static inline enum ecl_httest
+_ecl_normalize_test(cl_object test)
+{
+  if (test == @'eq'     || test == ECL_SYM_FUN(@'eq'))     return ecl_htt_eq;
+  if (test == @'eql'    || test == ECL_SYM_FUN(@'eql'))    return ecl_htt_eql;
+  if (test == @'equal'  || test == ECL_SYM_FUN(@'equal'))  return ecl_htt_equal;
+  if (test == @'equalp' || test == ECL_SYM_FUN(@'equalp')) return ecl_htt_equalp;
+  /* Extensions and internal interfaces: */
+  if (test == @'package')
+    return ecl_htt_pack;
+  return ecl_htt_generic;
+}
+
 
 /*
  * HIGHER LEVEL INTERFACE
@@ -1894,6 +1907,34 @@ ecl_extend_hashtable(cl_object hashtable)
   return new;
 }
 
+static inline cl_htable
+_ecl_inner_ht(cl_object size, cl_object rehash_size, cl_object rehash_threshold,
+              enum ecl_httest httest, enum ecl_htweak htweak)
+{
+  ecl_htable *table;
+  int sizepw=4, rehash, rehash_pw=0, threshold;
+  float threshold_float = ecl_to_float(rehash_threshold);
+  while ((sizepw<ECL_HTABLE_MAX_SIZEPW) &&
+         (((cl_index)1<<sizepw) < ecl_fixnum(size))) {
+    sizepw++;
+  }
+  /* When rehash_size is a fixnum, we fix it to x2. */
+  if (floatp(rehash_size)) {
+    float rsize = ecl_to_float(rehash_size);
+    while ((rehash_pw<3) && (2<<rehash_pw < rsize)) {
+      rehash_pw++;
+    }
+  }
+  if (threshold_float<0.0) threshold_float=0.0;
+  else if (threshold_float>1.0) threshold_float=1.0;
+  threshold = (uint8_t)(threshold_float*64.0);
+  rehash = rehash_pw | ((threshold?threshold-1:0)<<2);
+  table = _ecl_make_htable(sizepw, rehash);
+  table->test = httest;
+  table->weak = htweak;
+  return table;
+}
+
 @(defun make_hash_table (&key (test @'eql')
                          (hash_function ECL_NIL)
                          (weakness ECL_NIL)
@@ -1904,31 +1945,15 @@ ecl_extend_hashtable(cl_object hashtable)
 @ {
     const cl_env_ptr the_env = ecl_process_env();
     cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
-    if (weakness == ECL_NIL && synchronized == ECL_NIL && test == @'eql') {
-      ecl_htable *table;
-      int sizepw=4, rehash, rehash_pw=0, threshold;
-      float threshold_float = ecl_to_float(rehash_threshold);
-      while ((sizepw<ECL_HTABLE_MAX_SIZEPW) &&
-             (((cl_index)1<<sizepw) < ecl_fixnum(size))) {
-        sizepw++;
-      }
-      /* When rehash_size is a fixnum, we fix it to x2. */
-      if (floatp(rehash_size)) {
-        float rsize = ecl_to_float(rehash_size);
-        while ((rehash_pw<3) && (2<<rehash_pw < rsize)) {
-          rehash_pw++;
-        }
-      }
-      if (threshold_float<0.0) threshold_float=0.0;
-      else if (threshold_float>1.0) threshold_float=1.0;
-      threshold = (uint8_t)(threshold_float*64.0);
-      rehash = rehash_pw | ((threshold?threshold-1:0)<<2);
-      table = _ecl_make_htable(sizepw, rehash);
-      table->test = ecl_htt_eql;
-      table->weak = ecl_htt_not_weak;
+    enum ecl_httest httest = _ecl_normalize_test(test);
+    if (weakness == ECL_NIL && synchronized == ECL_NIL &&
+        (httest == ecl_htt_eq    || httest == ecl_htt_eql ||
+         httest == ecl_htt_equal || httest == ecl_htt_equalp)) {
+      ecl_htable *table = _ecl_inner_ht(size, rehash_size, rehash_threshold,
+                                        httest, ecl_htt_not_weak);
+      /* Insert the inner table */
       hash->hash.table = table;
       hash->hash.new_htable_p = true;
-
       /* Set up the trap to catch rogue callers. */
       hash->hash.get = _ecl_gethash_trap;
       hash->hash.set = _ecl_sethash_trap;
@@ -1937,7 +1962,6 @@ ecl_extend_hashtable(cl_object hashtable)
       hash->hash.get_unsafe = hash->hash.get;
       hash->hash.set_unsafe = hash->hash.set;
       hash->hash.rem_unsafe = hash->hash.rem;
-
       /* Let there be light. */
       ecl_return1(the_env, hash);
     }
@@ -2388,24 +2412,61 @@ si_hash_table_iterate(cl_narg narg, ...)
   @(return ECL_NIL);
 }
 
+/* Implementation for the new table */
+static cl_object
+_hash_table_iterate(cl_narg narg, ...)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object env = the_env->function->cclosure.env;
+  cl_object idx  = ECL_CONS_CAR(env);
+  ecl_htable *ht;
+  ecl_hentry *record = NULL, *tail;
+  cl_index index, size;
+  uint8_t *head;
+  if (idx == ECL_NIL) {
+    ecl_return1(the_env, ECL_NIL);
+  }
+  ht = ECL_CONS_CDR(env)->hash.table;
+  head = ht->ctrl;
+  tail = ht->data;
+  index = ecl_fixnum(idx);
+  size = _ecl_htable_size(ht);
+  /* We can speed up by searching in 16 braches with SIMD. */
+  for (; index<size && !record; index++) {
+    uint8_t ctrl = head[index];
+    if (ctrl & ECL_CONTROLBIT) continue;       /* special */
+    record = &tail[index];
+  }
+  if (record && record->key != OBJNULL) {
+    idx = ecl_make_fixnum(index);
+    ECL_RPLACA(env, idx);
+    ecl_return3(the_env, idx, record->key, record->val);
+  }
+  ECL_RPLACA(env, ECL_NIL);
+  ECL_RPLACD(env, ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
+}
+
 cl_object
 si_hash_table_iterator(cl_object hashtable)
 {
+  const cl_env_ptr the_env = ecl_process_env();
   cl_fixnum i;
+  cl_object closure, closure_vars;
   assert_type_hash_table(@[si::hash-table-iterator], 1, hashtable);
-  /* FIXME */
   if (hashtable->hash.new_htable_p) {
-    ecl_internal_error("si_hash_table_iterator: not implemented yet.");
+    closure_vars = ecl_cons(ecl_make_fixnum(0), hashtable);
+    closure = ecl_make_cclosure_va(_hash_table_iterate, closure_vars,
+                                   @'si::hash-table-iterator', 0);
+    ecl_return1(the_env, closure);
   }
-  /* Make sure we don't start in the middle of a group of consecutive
-   * filled buckets. */
+  /* Make sure we don't start in the middle of a group of consecutive filled
+   * buckets. */
   for (i = hashtable->hash.size-1; hashtable->hash.data[i].key != OBJNULL; i--);
-  @(return ecl_make_cclosure_va(si_hash_table_iterate,
-                                cl_list(3, ecl_make_fixnum(i),
-                                        ecl_make_fixnum(i),
-                                        hashtable),
-                                @'si::hash-table-iterator',
-                                0));
+  closure_vars = cl_list(3, ecl_make_fixnum(i), ecl_make_fixnum(i), hashtable);
+  closure = ecl_make_cclosure_va(si_hash_table_iterate, closure_vars,
+                                 @'si::hash-table-iterator', 0);
+  ecl_return1(the_env, closure);
 }
 
 cl_object
@@ -2473,12 +2534,28 @@ si_hash_table_content(cl_object hashtable)
   const cl_env_ptr the_env = ecl_process_env();
   cl_index i;
   cl_object output = ECL_NIL;
-  assert_type_hash_table(@[ext::hash-table-content], 2, hashtable);
+  assert_type_hash_table(@[ext::hash-table-content], 1, hashtable);
 
   if (hashtable->hash.new_htable_p) {
-    ecl_internal_error("si_hash_table_content: not implemented yet.");
+    ecl_htable *ht = hashtable->hash.table;
+    cl_index size = _ecl_htable_size(ht);
+    ecl_hentry *tail = ht->data, *record;
+    cl_index index;
+    uint8_t *head = ht->ctrl;
+    cl_object key, val;
+    if (!ht->fill) ecl_return1(the_env, ECL_NIL);
+    /* We can speed up by searching in 16 braches with SIMD. */
+    for(index=0; index<size; index++) {
+      uint8_t ctrl = head[index];
+      if (ctrl & ECL_CONTROLBIT) continue; /* special */
+      record = &tail[index];
+      key=record->key;
+      val=record->val;
+      if (key!=OBJNULL)
+        output = ecl_cons(ecl_cons(key, val), output);
+    }
+    ecl_return1(the_env, output);
   }
-
   for (i = 0;  i < hashtable->hash.size;  i++) {
     struct ecl_hashtable_entry e = copy_entry(hashtable->hash.data + i, hashtable);
     if (e.key != OBJNULL)
@@ -2491,16 +2568,13 @@ cl_object
 si_hash_table_fill(cl_object hashtable, cl_object values)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  assert_type_hash_table(@[ext::hash-table-fill], 2, hashtable);
-  if (hashtable->hash.new_htable_p) {
-    ecl_internal_error("si_hash_table_fill: not implemented yet.");
-  }
+  assert_type_hash_table(@[ext::hash-table-fill], 1, hashtable);
   while (!Null(values)) {
     cl_object pair = ecl_car(values);
     cl_object key = ecl_car(pair);
     cl_object value = ECL_CONS_CDR(pair);
     values = ECL_CONS_CDR(values);
-    ecl_sethash(key, hashtable, value);
+    _ecl_sethash(key, hashtable, value);
   }
   ecl_return1(the_env, hashtable);
 }
@@ -2509,15 +2583,36 @@ cl_object
 si_copy_hash_table(cl_object hashtable)
 {
   const cl_env_ptr the_env = ecl_process_env();
-  cl_object hash;
+  cl_object test = cl_hash_table_test(hashtable);
+  cl_object size = cl_hash_table_size(hashtable);
+  cl_object rehash_size = cl_hash_table_rehash_size(hashtable);
+  cl_object rehash_threshold = cl_hash_table_rehash_threshold(hashtable);
+  cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
   if (hashtable->hash.new_htable_p) {
-    ecl_internal_error("si_copy_hash_table: not implemented yet.");
+    ecl_htable *old_table = hashtable->hash.table;
+    ecl_htable *new_table = _ecl_make_htable(old_table->sizepw, old_table->rehash);
+    cl_index size2 = _ecl_htable_size(new_table);
+    new_table->test = old_table->test;
+    new_table->weak = old_table->weak;
+    new_table->fill = old_table->fill;
+    new_table->left = old_table->left;
+    memcpy(new_table->slot, old_table->slot, 3*sizeof(cl_object));
+    memcpy(new_table->ctrl, old_table->ctrl, size2);
+    memcpy(new_table->data, old_table->data, size2*sizeof(ecl_hentry));
+    /* Insert the inner table */
+    hash->hash.table = new_table;
+    hash->hash.new_htable_p = true;
+    /* Set up the trap to catch rogue callers. */
+    hash->hash.get = _ecl_gethash_trap;
+    hash->hash.set = _ecl_sethash_trap;
+    hash->hash.rem = _ecl_remhash_trap;
+    /* Always bind unsafe variants. */
+    hash->hash.get_unsafe = hash->hash.get;
+    hash->hash.set_unsafe = hash->hash.set;
+    hash->hash.rem_unsafe = hash->hash.rem;
+    ecl_return1(the_env, hash);
   }
-  hash = cl__make_hash_table(cl_hash_table_test(hashtable),
-                             cl_hash_table_size(hashtable),
-                             cl_hash_table_rehash_size(hashtable),
-                             cl_hash_table_rehash_threshold(hashtable));
-  hash->hash.generic_hash = hashtable->hash.generic_hash,
+  hash->hash.generic_hash = hashtable->hash.generic_hash;
   memcpy(hash->hash.data, hashtable->hash.data,
          hashtable->hash.size * sizeof(*hashtable->hash.data));
   hash->hash.entries = hashtable->hash.entries;
