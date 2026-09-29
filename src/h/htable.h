@@ -56,9 +56,9 @@
 
 */
 
-typedef struct {
+typedef struct ecl_hashtable_entry {
   cl_object key;
-  cl_object val;
+  cl_object value;
 } ecl_hentry;
 
 /* The header occupies exactly 64B on 64bit system and 32B on 32bit system:

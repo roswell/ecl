@@ -432,11 +432,6 @@ enum ecl_htweak {
         ecl_htt_weak_key_or_value
 };
 
-struct ecl_hashtable_entry {    /*  hash table entry  */
-        cl_object key;          /*  key  */
-        cl_object value;        /*  value  */
-};
-
 #include "htable.h"
 
 struct ecl_hashtable {          /*  hash table header  */
