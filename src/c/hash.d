@@ -1171,7 +1171,7 @@ _ecl_rehash_htable(cl_htable ht)
 }
 
 static void
-_ecl_map_htable(cl_htable ht, cl_object fun)
+_ecl_mapc_htable(cl_htable ht, cl_object fun)
 {
   cl_index size = _ecl_htable_size(ht);
   ecl_hentry *tail = ht->data, *record;
@@ -1195,6 +1195,64 @@ _ecl_map_htable(cl_htable ht, cl_object fun)
     }
     index = (index+16)&(size-1);
   }
+}
+
+/* Closure iterator over the hash table. */
+static cl_object
+_ecl_iter_htable(cl_narg narg, ...)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object env = the_env->function->cclosure.env;
+  cl_object idx  = ECL_CONS_CAR(env);
+  ecl_htable *ht;
+  ecl_hentry *record = NULL, *tail;
+  cl_index index, size;
+  uint8_t *head;
+  if (idx == ECL_NIL) {
+    ecl_return1(the_env, ECL_NIL);
+  }
+  ht = ECL_CONS_CDR(env)->hash.table;
+  head = ht->ctrl;
+  tail = ht->data;
+  index = ecl_fixnum(idx);
+  size = _ecl_htable_size(ht);
+  /* We can speed up by searching in 16 braches with SIMD. */
+  for (; index<size && !record; index++) {
+    uint8_t ctrl = head[index];
+    if (ctrl & ECL_CONTROLBIT) continue;       /* special */
+    record = &tail[index];
+  }
+  if (record && record->key != OBJNULL) {
+    idx = ecl_make_fixnum(index);
+    ECL_RPLACA(env, idx);
+    ecl_return3(the_env, idx, record->key, record->value);
+  }
+  ECL_RPLACA(env, ECL_NIL);
+  ECL_RPLACD(env, ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+static cl_object
+_ecl_cons_htable(cl_htable ht)
+{
+  cl_object output = ECL_NIL;;
+  cl_index size = _ecl_htable_size(ht);
+  ecl_hentry *tail = ht->data, *record;
+  cl_index index;
+  uint8_t *head = ht->ctrl;
+  cl_object key, val;
+  if (!ht->fill) return ECL_NIL;
+  /* We can speed up by searching in 16 braches with SIMD. */
+  for(index=0; index<size; index++) {
+    uint8_t ctrl = head[index];
+    if (ctrl & ECL_CONTROLBIT) continue; /* special */
+    record = &tail[index];
+    key=record->key;
+    val=record->value;
+    if (key!=OBJNULL)
+      output = ecl_cons(ecl_cons(key, val), output);
+  }
+  return output;
 }
 
 
@@ -2443,41 +2501,6 @@ si_hash_table_iterate(cl_narg narg, ...)
   @(return ECL_NIL);
 }
 
-/* Implementation for the new table */
-static cl_object
-_hash_table_iterate(cl_narg narg, ...)
-{
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object env = the_env->function->cclosure.env;
-  cl_object idx  = ECL_CONS_CAR(env);
-  ecl_htable *ht;
-  ecl_hentry *record = NULL, *tail;
-  cl_index index, size;
-  uint8_t *head;
-  if (idx == ECL_NIL) {
-    ecl_return1(the_env, ECL_NIL);
-  }
-  ht = ECL_CONS_CDR(env)->hash.table;
-  head = ht->ctrl;
-  tail = ht->data;
-  index = ecl_fixnum(idx);
-  size = _ecl_htable_size(ht);
-  /* We can speed up by searching in 16 braches with SIMD. */
-  for (; index<size && !record; index++) {
-    uint8_t ctrl = head[index];
-    if (ctrl & ECL_CONTROLBIT) continue;       /* special */
-    record = &tail[index];
-  }
-  if (record && record->key != OBJNULL) {
-    idx = ecl_make_fixnum(index);
-    ECL_RPLACA(env, idx);
-    ecl_return3(the_env, idx, record->key, record->value);
-  }
-  ECL_RPLACA(env, ECL_NIL);
-  ECL_RPLACD(env, ECL_NIL);
-  ecl_return1(the_env, ECL_NIL);
-}
-
 cl_object
 si_hash_table_iterator(cl_object hashtable)
 {
@@ -2487,7 +2510,7 @@ si_hash_table_iterator(cl_object hashtable)
   assert_type_hash_table(@[si::hash-table-iterator], 1, hashtable);
   if (hashtable->hash.new_htable_p) {
     closure_vars = ecl_cons(ecl_make_fixnum(0), hashtable);
-    closure = ecl_make_cclosure_va(_hash_table_iterate, closure_vars,
+    closure = ecl_make_cclosure_va(_ecl_iter_htable, closure_vars,
                                    @'si::hash-table-iterator', 0);
     ecl_return1(the_env, closure);
   }
@@ -2535,7 +2558,7 @@ cl_maphash(cl_object fun, cl_object hashtable)
 
   if (hashtable->hash.new_htable_p) {
     cl_htable ht = hashtable->hash.table;
-    _ecl_map_htable(ht, fun);
+    _ecl_mapc_htable(ht, fun);
     ecl_return1(the_env, ECL_NIL);
   }
 
@@ -2566,26 +2589,9 @@ si_hash_table_content(cl_object hashtable)
   cl_index i;
   cl_object output = ECL_NIL;
   assert_type_hash_table(@[ext::hash-table-content], 1, hashtable);
-
   if (hashtable->hash.new_htable_p) {
     ecl_htable *ht = hashtable->hash.table;
-    cl_index size = _ecl_htable_size(ht);
-    ecl_hentry *tail = ht->data, *record;
-    cl_index index;
-    uint8_t *head = ht->ctrl;
-    cl_object key, val;
-    if (!ht->fill) ecl_return1(the_env, ECL_NIL);
-    /* We can speed up by searching in 16 braches with SIMD. */
-    for(index=0; index<size; index++) {
-      uint8_t ctrl = head[index];
-      if (ctrl & ECL_CONTROLBIT) continue; /* special */
-      record = &tail[index];
-      key=record->key;
-      val=record->value;
-      if (key!=OBJNULL)
-        output = ecl_cons(ecl_cons(key, val), output);
-    }
-    ecl_return1(the_env, output);
+    ecl_return1(the_env, _ecl_cons_htable(ht));
   }
   for (i = 0;  i < hashtable->hash.size;  i++) {
     ecl_hentry e = copy_entry(hashtable->hash.data + i, hashtable);
