@@ -919,14 +919,14 @@ _ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
 }
 
 cl_hentry
-ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
+ecl_normalize_hentry2(cl_htable ht, cl_index index, cl_hentry output)
 {
   return _ecl_normalize_hentry(ht, index, output);
 }
 #else
 # define _ecl_hentry_store_key(ht,key) (key)
 # define _ecl_hentry_store_val(ht,val) (val)
-# define _ecl_normalize_hentry(ht,index,output) (&ht->data[index])
+# define _ecl_normalize_hentry(ht,index,output) (&(ht)->data[index])
 #endif
 
 /* Package Hashtables (ecl_htt_pack) description:

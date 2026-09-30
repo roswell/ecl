@@ -179,9 +179,13 @@ ecl_hash_group_index(uint64_t hash, cl_index size)
 /* Hash tables with weakness need to normalize entries. We have hash table loop
    iterator in ecl-inl, so we define a normalization function for it. */
 #ifdef ECL_WEAK_HASH
-ecl_hentry *ecl_normalize_hentry(ecl_htable *ht, cl_index idx, ecl_hentry *r);
+ecl_hentry *ecl_normalize_hentry2(ecl_htable *ht, cl_index idx, ecl_hentry *r);
+# define ecl_normalize_hentry(ht,idx,r)         \
+  (((ht)->weak==ecl_htt_not_weak)               \
+   ? (&(ht)->data[idx])                         \
+   : ecl_normalize_hentry2((ht),(idx),(r)))
 #else
-# define ecl_normalize_hentry(ht,index,output) (&ht->data[index])
+# define ecl_normalize_hentry(ht,index,output) (&(ht)->data[index])
 #endif
 
 #endif /* ECL_HTABLE_H */
