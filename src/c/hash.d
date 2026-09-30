@@ -1812,21 +1812,29 @@ si_copy_hash_table(cl_object hashtable)
 {
   const cl_env_ptr the_env = ecl_process_env();
   cl_object test = cl_hash_table_test(hashtable);
+  cl_object hash = ecl_ht_generic_hash(hashtable);
   cl_object size = cl_hash_table_size(hashtable);
   cl_object rehash_size = cl_hash_table_rehash_size(hashtable);
   cl_object rehash_threshold = cl_hash_table_rehash_threshold(hashtable);
-  cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
+  cl_object weak = si_hash_table_weakness(hashtable);
+  cl_object sync = si_hash_table_synchronized_p(hashtable);
+  cl_object new_hashtable = ecl_make_hash_table
+    (test, hash, size, rehash_size, rehash_threshold, weak, sync);
   ecl_htable *old_table = hashtable->hash.table;
-  ecl_htable *new_table = _ecl_make_htable(old_table->sizepw, old_table->rehash);
+  ecl_htable *new_table = new_hashtable->hash.table;
   cl_index size2 = ecl_htable_size(new_table);
   new_table->test = old_table->test;
   new_table->weak = old_table->weak;
+  if (new_table->sizepw != old_table->sizepw
+      || new_table->rehash != old_table->rehash) {
+    ecl_internal_error("si_copy_hash_table: size invariant broken.");
+  }
   new_table->fill = old_table->fill;
   new_table->left = old_table->left;
+  /* When the table has weakness we copy weak entries wholesale. There is no any
+     particular reason (nor harm) to do that, we could normalize entries too. */
   memcpy(new_table->slot, old_table->slot, 3*sizeof(cl_object));
   memcpy(new_table->ctrl, old_table->ctrl, size2);
   memcpy(new_table->data, old_table->data, size2*sizeof(ecl_hentry));
-  /* Insert the inner table */
-  hash->hash.table = new_table;
-  ecl_return1(the_env, hash);
+  ecl_return1(the_env, new_hashtable);
 }
