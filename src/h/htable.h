@@ -121,8 +121,8 @@ typedef struct {
 } ecl_htable;
 
 /* Accessors for general-purpose hash tables. */
-#define ecl_htable_generic_hash(ht) ((ht)->slot[0])
-#define ecl_htable_generic_test(ht) ((ht)->slot[1])
+#define ecl_htable_generic_test(ht) ((ht)->slot[0])
+#define ecl_htable_generic_hash(ht) ((ht)->slot[1])
 
 /* rehash represents rehash-size and rehash-threshold tightly packed in uint8_t:
 

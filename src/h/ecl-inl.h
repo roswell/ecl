@@ -123,15 +123,23 @@
 /*
  * Loops over a hash table
  */
-#define loop_across_htable(kvar, vvar, hashtable) do {      \
-  cl_object __ecl_ht = hashtable;                           \
-  cl_index __ecl_idx = 0;                                   \
-  for (; __ecl_idx < __ecl_ht->hash.size; __ecl_idx++) {    \
-    cl_object kvar = __ecl_ht->hash.data[__ecl_idx].key;    \
-    cl_object vvar = __ecl_ht->hash.data[__ecl_idx].value;  \
-    if (kvar != OBJNULL) {                                  \
+#define loop_across_htable(key, val, hashtable) do {                    \
+  ecl_htable *__ecl_ht = hashtable->hash.table;                         \
+  uint8_t *__ecl_head = __ecl_ht->ctrl;                                 \
+  cl_index __ecl_idx, __ecl_size = ecl_htable_size(__ecl_ht);           \
+  ecl_hentry *__ecl_rec;                                                \
+  cl_object key, val;                                                   \
+  (void)key; (void)val;                                                 \
+  if (!__ecl_ht->fill) break;                                           \
+  for(__ecl_idx=0; __ecl_idx<__ecl_size; __ecl_idx++) {                 \
+    uint8_t __ecl_ctrl = __ecl_head[__ecl_idx];                         \
+    if (__ecl_ctrl & ECL_CONTROLBIT) continue;                          \
+    /* FIXME works only for tables with no weakness. */                 \
+    __ecl_rec = &__ecl_ht->data[__ecl_idx];                             \
+    key = __ecl_rec->key;                                               \
+    val = __ecl_rec->value;
 
-#define end_loop_across_htable() }}} while(0)
+#define end_loop_across_htable() }} while(0)
 
 /*
  * Static constant definition.

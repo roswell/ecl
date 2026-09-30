@@ -440,7 +440,6 @@ struct ecl_hashtable {          /*  hash table header  */
         bool new_htable_p;
         ecl_htable *table;
         /*  old implementation */
-        struct ecl_hashtable_entry *data; /*  pointer to the hash table  */
         cl_object sync_lock;              /*  synchronization lock  */
         cl_object generic_test;           /*  generic test function */
         cl_object generic_hash;           /*  generic hashing function */
@@ -450,25 +449,17 @@ struct ecl_hashtable {          /*  hash table header  */
         cl_object rehash_size;  /*  rehash size  */
         cl_object threshold;    /*  rehash threshold  */
         double factor;          /*  cached value of threshold  */
-        cl_object (*get)(cl_object, cl_object, cl_object);
-        cl_object (*set)(cl_object, cl_object, cl_object);
-        bool (*rem)(cl_object, cl_object);
-        /* Unsafe variants are used to store the real accessors when
-           the synchronized variant is bound to get/set/rem. */
-        cl_object (*get_unsafe)(cl_object, cl_object, cl_object);
-        cl_object (*set_unsafe)(cl_object, cl_object, cl_object);
-        bool (*rem_unsafe)(cl_object, cl_object);
 };
 
-#define ecl_ht_test(ht) ((ht)->hash.test)
-#define ecl_ht_fill(ht) ((ht)->hash.entries)
-#define ecl_ht_size(ht) ((ht)->hash.size)
-#define ecl_ht_data(ht) ((ht)->hash.data)
+#define ecl_ht_test(ht) ((ht)->hash.table->test)
+#define ecl_ht_fill(ht) ((ht)->hash.table->fill)
+#define ecl_ht_size(ht) ecl_htable_size((ht)->hash.table)
+#define ecl_ht_data(ht) ((ht)->hash.table->data)
 
-#define ecl_ht_generic_test(ht) ((ht)->hash.generic_test)
-#define ecl_ht_generic_hash(ht) ((ht)->hash.generic_hash)
-#define ecl_ht_rehash_size(ht) ((ht)->hash.rehash_size)
-#define ecl_ht_rehash_threshold(ht) ((ht)->hash.rehash_threshold)
+#define ecl_ht_generic_test(ht) ecl_htable_generic_test((ht)->hash.table)
+#define ecl_ht_generic_hash(ht) ecl_htable_generic_hash((ht)->hash.table)
+#define ecl_ht_rehash_size(ht)  ecl_make_single_float(ecl_htable_rehash_size((ht)->hash.table))
+#define ecl_ht_rehash_threshold(ht) ecl_make_single_float(ecl_htable_rehash_threshold((ht)->hash.table))
 #define ecl_ht_sync_lock(ht) ((ht)->hash.sync_lock)
 
 typedef enum {                  /*  array element type  */
