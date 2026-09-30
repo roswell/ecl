@@ -435,23 +435,13 @@ enum ecl_htweak {
 #include "htable.h"
 
 struct ecl_hashtable {          /*  hash table header  */
-        _ECL_HDR2(test,weak);
-        /*  new implementation */
-        bool new_htable_p;
+        _ECL_HDR1(sync);
         ecl_htable *table;
-        /*  old implementation */
-        cl_object sync_lock;              /*  synchronization lock  */
-        cl_object generic_test;           /*  generic test function */
-        cl_object generic_hash;           /*  generic hashing function */
-        cl_index entries;       /*  number of entries  */
-        cl_index size;          /*  hash table size  */
-        cl_index limit;         /*  hash table threshold (integer value)  */
-        cl_object rehash_size;  /*  rehash size  */
-        cl_object threshold;    /*  rehash threshold  */
-        double factor;          /*  cached value of threshold  */
+        cl_object sync_lock;    /*  synchronization lock  */
 };
 
 #define ecl_ht_test(ht) ((ht)->hash.table->test)
+#define ecl_ht_weak(ht) ((ht)->hash.table->weak)
 #define ecl_ht_fill(ht) ((ht)->hash.table->fill)
 #define ecl_ht_size(ht) ecl_htable_size((ht)->hash.table)
 #define ecl_ht_data(ht) ((ht)->hash.table->data)

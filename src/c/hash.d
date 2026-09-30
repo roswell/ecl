@@ -681,7 +681,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     /* We excercise only test here, because the number of entries may change in
        weak hash tables. We also don't want to add individual items, because
        that may get costly fast for EQUALP keys. -- jd 2026-09-23 */
-    hash_word(h, x->hash.test);
+    hash_word(h, ecl_ht_test(x));
     return;
   default:
     _hash_equal(h, x, depth);
@@ -1408,12 +1408,12 @@ cl_object
 ecl_gethash(cl_object key, cl_object hashtable)
 {
   assert_type_hash_table(@[gethash], 2, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
     cl_htable ht = hashtable->hash.table;
     cl_object output;
 #ifdef ECL_THREADS
-    if (hashtable->hash.sync_lock != ECL_NIL) {
-      cl_object sync_lock = hashtable->hash.sync_lock;
+    if (hashtable->hash.sync) {
+      cl_object sync_lock = ecl_ht_sync_lock(hashtable);
       mp_get_rwlock_read_wait(sync_lock);
       ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
         output = _ecl_search_htable(ht, key);
@@ -1425,7 +1425,6 @@ ecl_gethash(cl_object key, cl_object hashtable)
       output = _ecl_search_htable(ht, key);
     return output;
   }
-  ecl_internal_error("hash-table [get]: unexpected path.");
 }
 
 cl_object
@@ -1449,11 +1448,11 @@ _ecl_puthash(cl_object hashtable, cl_object key, cl_object value) {
 cl_object
 _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
 {
-  if (hashtable->hash.new_htable_p) {
+  {
     cl_object output;
 #ifdef ECL_THREADS
-    if (hashtable->hash.sync_lock != ECL_NIL) {
-      cl_object sync_lock = hashtable->hash.sync_lock;
+    if (hashtable->hash.sync) {
+      cl_object sync_lock = ecl_ht_sync_lock(hashtable);
       mp_get_rwlock_write_wait(sync_lock);
       ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
         output = _ecl_puthash(hashtable, key, value);
@@ -1465,7 +1464,6 @@ _ecl_sethash(cl_object key, cl_object hashtable, cl_object value)
       output = _ecl_puthash(hashtable, key, value);
     return output;
   }
-  ecl_internal_error("hash-table [set]: unexpected path.");
 }
 
 cl_object
@@ -1479,12 +1477,12 @@ cl_object
 ecl_remhash(cl_object key, cl_object hashtable)
 {
   assert_type_hash_table(@[remhash], 2, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
     cl_htable ht = hashtable->hash.table;
     cl_object output;
 #ifdef ECL_THREADS
-    if (hashtable->hash.sync_lock != ECL_NIL) {
-      cl_object sync_lock = hashtable->hash.sync_lock;
+    if (hashtable->hash.sync) {
+      cl_object sync_lock = ecl_ht_sync_lock(hashtable);
       mp_get_rwlock_write_wait(sync_lock);
       ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
         output = _ecl_delete_htable(ht, key);
@@ -1496,7 +1494,6 @@ ecl_remhash(cl_object key, cl_object hashtable)
       output = _ecl_delete_htable(ht, key);
     return output;
   }
-  ecl_internal_error("hash-table [rem]: unexpected path.");
 }
 
 static inline cl_htable
@@ -1581,26 +1578,11 @@ ecl_make_hash_table(cl_object test, cl_object hash, cl_object size,
   ht = _ecl_inner_ht(size, rehash_size, rehash_threshold, httest, htweak);
   ecl_htable_generic_test(ht) = generic_testfn;
   ecl_htable_generic_hash(ht) = generic_hashfn;
-  /* Read the effective values. */
-  size = ecl_make_integer(ecl_htable_size(ht));
-  rehash_size = ecl_make_single_float(ecl_htable_rehash_size(ht));
-  rehash_threshold = ecl_make_single_float(ecl_htable_rehash_threshold(ht));
   /* Build the hash table */
   hashtable = ecl_alloc_object(t_hashtable);
-  hashtable->hash.test = httest;
-  hashtable->hash.weak = htweak;
-  hashtable->hash.generic_test = generic_testfn;
-  hashtable->hash.generic_hash = generic_hashfn;
-  hashtable->hash.sync_lock = htsync;
-  hashtable->hash.size = ecl_htable_size(ht);
-  hashtable->hash.rehash_size = rehash_size;
-  hashtable->hash.threshold = rehash_threshold;
-  hashtable->hash.factor = ecl_htable_rehash_threshold(ht);
-  hashtable->hash.limit = ecl_htable_size(ht)-1;
-  hashtable->hash.entries = 0;
-  /* Connect tables */
+  hashtable->hash.sync = !Null(htsync);
   hashtable->hash.table = ht;
-  hashtable->hash.new_htable_p = true;
+  hashtable->hash.sync_lock = htsync;
   /* Let there be light. */
   return hashtable;
 }
@@ -1645,7 +1627,7 @@ si_hash_table_weakness(cl_object ht)
 {
   cl_object output = ECL_NIL;
 #ifdef ECL_WEAK_HASH
-  switch (ht->hash.weak) {
+  switch (ecl_ht_weak(ht)) {
   case ecl_htt_weak_key: output = @':key'; break;
   case ecl_htt_weak_value: output = @':value'; break;
   case ecl_htt_weak_key_and_value: output = @':key-and-value'; break;
@@ -1659,11 +1641,7 @@ si_hash_table_weakness(cl_object ht)
 cl_object
 si_hash_table_synchronized_p(cl_object ht)
 {
-
-  if (!Null(ht->hash.sync_lock)) {
-    return ECL_T;
-  }
-  return ECL_NIL;
+  return (ht->hash.sync ? ECL_T : ECL_NIL);
 }
 
 @(defun gethash (key ht &optional (no_value ECL_NIL))
@@ -1699,24 +1677,23 @@ cl_remhash(cl_object key, cl_object ht)
 cl_object
 cl_clrhash(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[clrhash], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    const cl_env_ptr the_env = ecl_process_env();
     cl_htable ht = hashtable->hash.table;
     _ecl_clear_htable(ht);
     ecl_return1(the_env, hashtable);
   }
-  ecl_internal_error("hash-table [zero]: unexpected path.");
 }
 
 cl_object
 cl_hash_table_test(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object output;
   assert_type_hash_table(@[hash-table-test], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    const cl_env_ptr the_env = ecl_process_env();
     cl_htable ht = hashtable->hash.table;
+    cl_object output;
     switch(ht->test) {
     case ecl_htt_eq:      output = @'eq';     break;
     case ecl_htt_eql:     output = @'eql';    break;
@@ -1726,34 +1703,28 @@ cl_hash_table_test(cl_object hashtable)
     case ecl_htt_generic: output = ecl_htable_generic_test(ht); break;
     default: FEerror("hash-table-test: unknown test.", 0);
     }
-  } else {
-    ecl_internal_error("hash-table [test]: unexpected path.");
+    ecl_return1(the_env, output);
   }
-  ecl_return1(the_env, output);
 }
 
 cl_object
 cl_hash_table_size(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-size], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    const cl_env_ptr the_env = ecl_process_env();
     cl_htable ht = hashtable->hash.table;
     cl_index size = ecl_htable_size(ht);
     ecl_return1(the_env, ecl_make_integer(size));
   }
-  ecl_internal_error("hash-table [size]: unexpected path.");
 }
 
 cl_index
 ecl_hash_table_count(cl_object hashtable)
 {
-  if (hashtable->hash.new_htable_p) {
-    /* INV implies ecl_htt_not_weak */
-    cl_htable ht = hashtable->hash.table;
-    return ht->fill;
-  }
-  ecl_internal_error("hash-table [fill]: unexpected path.");
+  /* Weak hash tables may have a stalled value. That's acceptable. */
+  cl_htable ht = hashtable->hash.table;
+  return ht->fill;
 }
 
 cl_object
@@ -1766,67 +1737,59 @@ cl_hash_table_count(cl_object hashtable)
 cl_object
 si_hash_table_iterator(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
-  cl_object closure, closure_vars;
   assert_type_hash_table(@[si::hash-table-iterator], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    cl_object closure, closure_vars;
+    const cl_env_ptr the_env = ecl_process_env();
     closure_vars = ecl_cons(ecl_make_fixnum(0), hashtable);
     closure = ecl_make_cclosure_va(_ecl_iter_htable, closure_vars,
                                    @'si::hash-table-iterator', 0);
     ecl_return1(the_env, closure);
   }
-  ecl_internal_error("hash-table [iter]: unexpected path.");
 }
 
 cl_object
 cl_hash_table_rehash_size(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-rehash-size], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
-    cl_htable ht = hashtable->hash.table;
-    int rehash_size = ecl_htable_rehash_size(ht);
-    ecl_return1(the_env, ecl_make_single_float(rehash_size));
+  {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_return1(the_env, ecl_ht_rehash_size(hashtable));
   }
-  ecl_return1(the_env, hashtable->hash.rehash_size);
 }
 
 cl_object
 cl_hash_table_rehash_threshold(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[hash-table-rehash-threshold], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
-    cl_htable ht = hashtable->hash.table;
-    float threshold = ecl_htable_rehash_threshold(ht);
-    ecl_return1(the_env, ecl_make_single_float(threshold));
+  {
+    const cl_env_ptr the_env = ecl_process_env();
+    ecl_return1(the_env, ecl_ht_rehash_threshold(hashtable));
   }
-  ecl_return1(the_env, hashtable->hash.threshold);
 }
 
 cl_object
 cl_maphash(cl_object fun, cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
+
   assert_type_hash_table(@[maphash], 2, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    const cl_env_ptr the_env = ecl_process_env();
     cl_htable ht = hashtable->hash.table;
     _ecl_mapc_htable(ht, fun);
     ecl_return1(the_env, ECL_NIL);
   }
-  ecl_internal_error("hash-table [mapc]: unexpected path.");
 }
 
 cl_object
 si_hash_table_content(cl_object hashtable)
 {
-  const cl_env_ptr the_env = ecl_process_env();
   assert_type_hash_table(@[ext::hash-table-content], 1, hashtable);
-  if (hashtable->hash.new_htable_p) {
+  {
+    const cl_env_ptr the_env = ecl_process_env();
     ecl_htable *ht = hashtable->hash.table;
     ecl_return1(the_env, _ecl_cons_htable(ht));
   }
-  ecl_internal_error("hash-table [cons]: unexpected path.");
 }
 
 cl_object
@@ -1853,21 +1816,17 @@ si_copy_hash_table(cl_object hashtable)
   cl_object rehash_size = cl_hash_table_rehash_size(hashtable);
   cl_object rehash_threshold = cl_hash_table_rehash_threshold(hashtable);
   cl_object hash = cl__make_hash_table(test, size, rehash_size, rehash_threshold);
-  if (hashtable->hash.new_htable_p) {
-    ecl_htable *old_table = hashtable->hash.table;
-    ecl_htable *new_table = _ecl_make_htable(old_table->sizepw, old_table->rehash);
-    cl_index size2 = ecl_htable_size(new_table);
-    new_table->test = old_table->test;
-    new_table->weak = old_table->weak;
-    new_table->fill = old_table->fill;
-    new_table->left = old_table->left;
-    memcpy(new_table->slot, old_table->slot, 3*sizeof(cl_object));
-    memcpy(new_table->ctrl, old_table->ctrl, size2);
-    memcpy(new_table->data, old_table->data, size2*sizeof(ecl_hentry));
-    /* Insert the inner table */
-    hash->hash.table = new_table;
-    hash->hash.new_htable_p = true;
-    ecl_return1(the_env, hash);
-  }
-  ecl_internal_error("hash-table [copy]: unexpected path.");
+  ecl_htable *old_table = hashtable->hash.table;
+  ecl_htable *new_table = _ecl_make_htable(old_table->sizepw, old_table->rehash);
+  cl_index size2 = ecl_htable_size(new_table);
+  new_table->test = old_table->test;
+  new_table->weak = old_table->weak;
+  new_table->fill = old_table->fill;
+  new_table->left = old_table->left;
+  memcpy(new_table->slot, old_table->slot, 3*sizeof(cl_object));
+  memcpy(new_table->ctrl, old_table->ctrl, size2);
+  memcpy(new_table->data, old_table->data, size2*sizeof(ecl_hentry));
+  /* Insert the inner table */
+  hash->hash.table = new_table;
+  ecl_return1(the_env, hash);
 }
