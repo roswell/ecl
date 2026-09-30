@@ -128,6 +128,7 @@ typedef struct {
 
  - two lowest bits represent the rehash-size (x2, x4, x8, x16)
  - six higher bits represent the threshold (1-64 scaled to (0,1]) */
+#define ecl_htable_size(ht)             (((cl_index)1)<<(ht)->sizepw)
 #define ecl_htable_rehash_size(ht)      (2 << (((ht)->rehash) & 3))
 #define ecl_htable_rehash_threshold(ht) ((((ht)->rehash>>2)+1)/64.0)
 

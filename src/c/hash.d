@@ -1012,12 +1012,6 @@ _ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
 }
 
 static inline cl_index
-_ecl_htable_size(cl_htable ht)
-{
-  return ((cl_index)1)<<ht->sizepw;
-}
-
-static inline cl_index
 _ecl_htable_limit(cl_htable ht)
 {
   uint8_t sizepw = ht->sizepw;
@@ -1035,7 +1029,7 @@ _ecl_htable_limit(cl_htable ht)
 static inline void
 _ecl_clear_htable(cl_htable ht)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   cl_index left = _ecl_htable_limit(ht);
   ht->fill = 0;
   ht->left = left;
@@ -1063,7 +1057,7 @@ _ecl_make_htable(uint8_t sizepw, uint8_t rehash)
   ht->weak = ecl_htt_not_weak; /* stronk! */
   ht->sizepw = sizepw;
   ht->rehash = rehash;
-  size = _ecl_htable_size(ht);
+  size = ecl_htable_size(ht);
   ht->ctrl = ecl_alloc_atomic(size);
   ht->data = ecl_alloc(size*sizeof(ecl_hentry));
   _ecl_clear_htable(ht);
@@ -1073,7 +1067,7 @@ _ecl_make_htable(uint8_t sizepw, uint8_t rehash)
 static inline cl_object
 _ecl_search_htable(cl_htable ht, cl_object key)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
@@ -1109,7 +1103,7 @@ _ecl_search_htable(cl_htable ht, cl_object key)
 static inline cl_object
 _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
@@ -1163,7 +1157,7 @@ _ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
 static inline cl_object
 _ecl_delete_htable(cl_htable ht, cl_object key)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
   uint8_t fp = ecl_hash_fingerprint(hash);
   cl_index index = ecl_hash_group_index(hash, size);
@@ -1217,7 +1211,7 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
 static void
 _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   uint64_t hash = _ecl_hash_key(ht, key);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
@@ -1244,7 +1238,7 @@ _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
 static cl_htable
 _ecl_rehash_htable(cl_htable ht)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   cl_index limit = _ecl_htable_limit(ht);
   uint8_t sizepw = ht->sizepw;
   uint8_t rehash_pw = ((ht->rehash)&3) + 1;
@@ -1286,7 +1280,7 @@ _ecl_rehash_htable(cl_htable ht)
 static void
 _ecl_mapc_htable(cl_htable ht, cl_object fun)
 {
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   ecl_hentry record_aux, *record;
   cl_index index = 0;
   cl_index idx, probe;
@@ -1326,7 +1320,7 @@ _ecl_iter_htable(cl_narg narg, ...)
   ht = ECL_CONS_CDR(env)->hash.table;
   head = ht->ctrl;
   index = ecl_fixnum(idx);
-  size = _ecl_htable_size(ht);
+  size = ecl_htable_size(ht);
   /* We can speed up by searching in 16 braches with SIMD. */
   for (record=NULL; index<size && !record; index++) {
     uint8_t ctrl = head[index];
@@ -1347,7 +1341,7 @@ static cl_object
 _ecl_cons_htable(cl_htable ht)
 {
   cl_object output = ECL_NIL;
-  cl_index size = _ecl_htable_size(ht);
+  cl_index size = ecl_htable_size(ht);
   ecl_hentry record_aux, *record;
   cl_index index;
   uint8_t *head = ht->ctrl;
@@ -2585,7 +2579,7 @@ cl_hash_table_size(cl_object hashtable)
   assert_type_hash_table(@[hash-table-size], 1, hashtable);
   if (hashtable->hash.new_htable_p) {
     cl_htable ht = hashtable->hash.table;
-    cl_index size = _ecl_htable_size(ht);
+    cl_index size = ecl_htable_size(ht);
     ecl_return1(the_env, ecl_make_integer(size));
   }
   ecl_return1(the_env, ecl_make_fixnum(hashtable->hash.size));
@@ -2803,7 +2797,7 @@ si_copy_hash_table(cl_object hashtable)
   if (hashtable->hash.new_htable_p) {
     ecl_htable *old_table = hashtable->hash.table;
     ecl_htable *new_table = _ecl_make_htable(old_table->sizepw, old_table->rehash);
-    cl_index size2 = _ecl_htable_size(new_table);
+    cl_index size2 = ecl_htable_size(new_table);
     new_table->test = old_table->test;
     new_table->weak = old_table->weak;
     new_table->fill = old_table->fill;
