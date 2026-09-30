@@ -674,12 +674,12 @@ cl_delete_package(cl_object p)
   }
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    loop_across_htable(key, s, p->pack.internal) {
-      symbol_remove_package(s, p);
+    loop_across_htable(record, p->pack.internal) {
+      symbol_remove_package(record->value, p);
     } end_loop_across_htable();
     cl_clrhash(p->pack.internal);
-    loop_across_htable(key, s, p->pack.external) {
-      symbol_remove_package(s, p);
+    loop_across_htable(record, p->pack.external) {
+      symbol_remove_package(record->value, p);
     } end_loop_across_htable();
     cl_clrhash(p->pack.external);
     p->pack.shadowings = ECL_NIL;
@@ -859,7 +859,8 @@ ecl_use_package(cl_object x, cl_object p)
                     p, 2, x, p);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    loop_across_htable(key, here, x->pack.external) {
+    loop_across_htable(record, x->pack.external) {
+      here = record->value;
       name = ecl_symbol_name(here);
       there = find_symbol_inner(name, p, &intern_flag);
       if (intern_flag && here != there

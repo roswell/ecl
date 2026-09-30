@@ -917,6 +917,12 @@ _ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
   ht->fill--;
   return NULL;
 }
+
+cl_hentry
+ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
+{
+  return _ecl_normalize_hentry(ht, index, output);
+}
 #else
 # define _ecl_hentry_store_key(ht,key) (key)
 # define _ecl_hentry_store_val(ht,val) (val)
@@ -935,14 +941,18 @@ _ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
    there is no additional pointer dereference. I hate clever. -- jd 2026-09-29
  */
 
+#define _ecl_htt_pack_key(x)                                    \
+  (Null(x)? ECL_NIL_SYMBOL->symbol.name : (x)->symbol.name)
+
 static inline cl_object
 _ecl_hentry_key(cl_htable ht, cl_hentry record)
 {
   return (ht->test == ecl_htt_pack)
-    ? SYMBOL_NAME(record->value)
+    ? _ecl_htt_pack_key(record->value)
     : record->key;
 }
 
+/* Hash table operations. */
 static inline void
 _ecl_insert_hentry(cl_htable ht, cl_index index, uint64_t hash,
                    cl_object key, cl_object val)
@@ -990,7 +1000,7 @@ _ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
   case ecl_htt_equalp: return ecl_equalp(key, hkey);
   case ecl_htt_pack: {
     cl_object sh = hash_to_fixnum(hash);
-    return (sh == hkey && ecl_string_eq(key, SYMBOL_NAME(hval)));
+    return (sh == hkey && ecl_string_eq(key, _ecl_htt_pack_key(hval)));
   }
   case ecl_htt_generic: {
     cl_object fun = ecl_htable_generic_test(ht);
