@@ -562,8 +562,8 @@ ecl_equalp(cl_object x, cl_object y)
     return (tx == ty) && ecl_equal(x, y);
   case t_hashtable: {
     if (tx != ty ||
-        x->hash.entries != y->hash.entries ||
-        x->hash.test != y->hash.test)
+        ecl_ht_fill(x) != ecl_ht_fill(y) ||
+        ecl_ht_test(x) != ecl_ht_test(y))
       return(FALSE);
     {
       cl_env_ptr env = ecl_process_env();

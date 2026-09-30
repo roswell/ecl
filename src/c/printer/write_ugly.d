@@ -180,7 +180,7 @@ write_hashtable(cl_object x, cl_object stream)
               @':size', cl_hash_table_size(x),
               @':synchronized', si_hash_table_synchronized_p(x),
               @':weakness', si_hash_table_weakness(x),
-              @':hash-function', x->hash.generic_hash,
+              @':hash-function', ecl_ht_generic_hash(x),
               @':rehash-size', cl_hash_table_rehash_size(x),
               @':rehash-threshold', cl_hash_table_rehash_threshold(x),
               @':test', cl_list(2, @'quote', cl_hash_table_test(x)));

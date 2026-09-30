@@ -460,6 +460,17 @@ struct ecl_hashtable {          /*  hash table header  */
         bool (*rem_unsafe)(cl_object, cl_object);
 };
 
+#define ecl_ht_test(ht) ((ht)->hash.test)
+#define ecl_ht_fill(ht) ((ht)->hash.entries)
+#define ecl_ht_size(ht) ((ht)->hash.size)
+#define ecl_ht_data(ht) ((ht)->hash.data)
+
+#define ecl_ht_generic_test(ht) ((ht)->hash.generic_test)
+#define ecl_ht_generic_hash(ht) ((ht)->hash.generic_hash)
+#define ecl_ht_rehash_size(ht) ((ht)->hash.rehash_size)
+#define ecl_ht_rehash_threshold(ht) ((ht)->hash.rehash_threshold)
+#define ecl_ht_sync_lock(ht) ((ht)->hash.sync_lock)
+
 typedef enum {                  /*  array element type  */
         ecl_aet_object,         /*  t                */
         ecl_aet_sf,             /*  single-float     */

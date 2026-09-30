@@ -125,7 +125,7 @@ enqueue(pool_t pool, cl_object what)
   index = ecl_gethash_safe(what, pool->hash, OBJNULL);
   if (index == OBJNULL) {
     cl_object cons;
-    index = ecl_make_fixnum(pool->hash->hash.entries);
+    index = ecl_make_fixnum(ecl_ht_fill(pool));
     ecl_sethash(what, pool->hash, index);
     cons = ecl_cons(what, ECL_NIL);
     ECL_RPLACD(pool->last, cons);
@@ -216,12 +216,12 @@ serialize_bignum(pool_t pool, cl_object buffer)
 static void
 serialize_hashtable(pool_t pool, cl_object h)
 {
-  /* FIXME: Serializing all of h->hash.data is a big waste if the
-     hashtable has only a small number of entries. */
-  cl_index size = h->hash.size;
-  cl_index index = serialize_bits(pool, h->hash.data, size*sizeof(struct ecl_hashtable_entry));
-  for (; size; size--, index += sizeof(struct ecl_hashtable_entry)) {
-    struct ecl_hashtable_entry *p = (struct ecl_hashtable_entry *)(pool->data->vector.self.b8 + index);
+  /* FIXME: Serializing all hashtable slots is a big waste if the hashtable has
+     only a small number of entries. */
+  cl_index size = ecl_ht_size(h);
+  cl_index index = serialize_bits(pool, ecl_ht_data(h), size*sizeof(ecl_hentry));
+  for (; size; size--, index += sizeof(ecl_hentry)) {
+    ecl_hentry *p = (ecl_hentry *)(pool->data->vector.self.b8 + index);
     p->key = enqueue(pool, p->key);
     p->value = enqueue(pool, p->value);
   }
@@ -269,9 +269,9 @@ serialize_one(pool_t pool, cl_object what)
     break;
   }
   case t_hashtable:
-    buffer->hash.sync_lock = enqueue(pool, buffer->hash.sync_lock);
-    buffer->hash.rehash_size = enqueue(pool, buffer->hash.rehash_size);
-    buffer->hash.threshold = enqueue(pool, buffer->hash.threshold);
+    ecl_ht_sync_lock(buffer) = enqueue(pool, ecl_ht_sync_lock(buffer));
+    ecl_ht_rehash_size(buffer) = enqueue(pool, ecl_ht_rehash_size(buffer));
+    ecl_ht_rehash_threshold(buffer) = enqueue(pool, ecl_ht_rehash_threshold(buffer));
     serialize_hashtable(pool, buffer);
     break;
 #ifdef ECL_UNICODE
@@ -361,7 +361,7 @@ static cl_object
 close_pool(pool_t pool)
 {
   pool->data->vector.self.index[0] = pool->data->vector.fillp;
-  pool->data->vector.self.index[1] = pool->hash->hash.entries;
+  pool->data->vector.self.index[1] = ecl_ht_fill(pool->hash);
   return pool->data;
 }
 
@@ -444,9 +444,9 @@ reconstruct_bignum(cl_object output, uint8_t *data)
 static uint8_t *
 reconstruct_hashtable(cl_object h, uint8_t *data)
 {
-  cl_index bytes = ROUND_TO_WORD(h->hash.size * sizeof(struct ecl_hashtable_entry));
-  h->hash.data = ecl_alloc(bytes);
-  memcpy(h->hash.data, data, bytes);
+  cl_index bytes = ROUND_TO_WORD(ecl_ht_size(h) * sizeof(ecl_hentry));
+  ecl_ht_data(h) = ecl_alloc(bytes);
+  memcpy(ecl_ht_data(h), data, bytes);
   return data + bytes;
 }
 
@@ -554,12 +554,12 @@ static void
 fixup_hashtable(cl_object h, cl_object *o_list)
 {
   cl_index i;
-  for (i = 0; i < h->hash.size; i++) {
-    h->hash.data[i].key = get_object(h->hash.data[i].key, o_list);
-    h->hash.data[i].value = get_object(h->hash.data[i].value, o_list);
+  for (i = 0; i < ecl_ht_size(h); i++) {
+    ecl_ht_data(h)[i].key = get_object(ecl_ht_data(h)[i].key, o_list);
+    ecl_ht_data(h)[i].value = get_object(ecl_ht_data(h)[i].value, o_list);
   }
-  h->hash.rehash_size = get_object(h->hash.rehash_size, o_list);
-  h->hash.threshold = get_object(h->hash.threshold, o_list);
+  ecl_ht_rehash_size(h) = get_object(ecl_ht_rehash_size(h), o_list);
+  ecl_ht_rehash_threshold(h) = get_object(ecl_ht_rehash_threshold(h), o_list);
   ecl_reconstruct_serialized_hashtable(h);
 }
 
