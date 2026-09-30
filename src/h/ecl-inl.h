@@ -1,5 +1,5 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 2; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 
 #ifndef ECL_ECL_INL_H
@@ -119,6 +119,19 @@
     cl_object var = *__ecl_top;
 
 #define end_loop_across_frame() }}
+
+/*
+ * Loops over a hash table
+ */
+#define loop_across_htable(kvar, vvar, hashtable) do {      \
+  cl_object __ecl_ht = hashtable;                           \
+  cl_index __ecl_idx = 0;                                   \
+  for (; __ecl_idx < __ecl_ht->hash.size; __ecl_idx++) {    \
+    cl_object kvar = __ecl_ht->hash.data[__ecl_idx].key;    \
+    cl_object vvar = __ecl_ht->hash.data[__ecl_idx].value;  \
+    if (kvar != OBJNULL) {                                  \
+
+#define end_loop_across_htable() }}} while(0)
 
 /*
  * Static constant definition.

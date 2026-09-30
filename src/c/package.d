@@ -625,8 +625,7 @@ cl_export2(cl_object s, cl_object p)
 cl_object
 cl_delete_package(cl_object p)
 {
-  cl_object hash, l;
-  cl_index i;
+  cl_object l;
 
   /* 1) Try to remove the package from the global list */
   p = ecl_find_package_nolock(p);
@@ -675,17 +674,13 @@ cl_delete_package(cl_object p)
   }
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    for (hash = p->pack.internal, i = 0; i < hash->hash.size; i++)
-      if (hash->hash.data[i].key != OBJNULL) {
-        cl_object s = hash->hash.data[i].value;
-        symbol_remove_package(s, p);
-      }
+    loop_across_htable(key, s, p->pack.internal) {
+      symbol_remove_package(s, p);
+    } end_loop_across_htable();
     cl_clrhash(p->pack.internal);
-    for (hash = p->pack.external, i = 0; i < hash->hash.size; i++)
-      if (hash->hash.data[i].key != OBJNULL) {
-        cl_object s = hash->hash.data[i].value;
-        symbol_remove_package(s, p);
-      }
+    loop_across_htable(key, s, p->pack.external) {
+      symbol_remove_package(s, p);
+    } end_loop_across_htable();
     cl_clrhash(p->pack.external);
     p->pack.shadowings = ECL_NIL;
     p->pack.name = ECL_NIL;
@@ -841,9 +836,7 @@ ecl_shadow(cl_object s, cl_object p)
 void
 ecl_use_package(cl_object x, cl_object p)
 {
-  struct ecl_hashtable_entry *hash_entries;
-  cl_index i, hash_length;
-  cl_object here, there, name;
+  cl_object here = OBJNULL, there, name;
   int intern_flag, error = 0;
 
   x = si_coerce_to_package(x);
@@ -866,20 +859,15 @@ ecl_use_package(cl_object x, cl_object p)
                     p, 2, x, p);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    hash_entries = x->pack.external->hash.data;
-    hash_length = x->pack.external->hash.size;
-    for (i = 0, error = 0;  i < hash_length;  i++) {
-      if (hash_entries[i].key != OBJNULL) {
-        here = hash_entries[i].value;
-        name = ecl_symbol_name(here);
-        there = find_symbol_inner(name, p, &intern_flag);
-        if (intern_flag && here != there
-            && ! ecl_member_eq(there, p->pack.shadowings)) {
-          error = 1;
-          break;
-        }
+    loop_across_htable(key, here, x->pack.external) {
+      name = ecl_symbol_name(here);
+      there = find_symbol_inner(name, p, &intern_flag);
+      if (intern_flag && here != there
+          && ! ecl_member_eq(there, p->pack.shadowings)) {
+        error = 1;
+        break;
       }
-    }
+    } end_loop_across_htable();
     if (!error) {
       p->pack.uses = CONS(x, p->pack.uses);
       x->pack.usedby = CONS(p, x->pack.usedby);
