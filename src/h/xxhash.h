@@ -41,6 +41,11 @@
    (while newhash is practically stateless). We allocate the state on the stack
    and that's not much of a problem (we could move it to cl_env too).
 
+   Initially I have implemented AVX2 and AVX512F variants, but enabling
+   intrinsics globally in ECL via -mavx2 and -mavx512f degraded the system
+   performance, so they were scrapped. Look up this file history to see the code
+   if you want to revise this decision (but don't forget to benchmark results).
+
    -- jd 2026-06-05 */
 
 #ifndef ECL_XXHASH_H
@@ -543,26 +548,23 @@ ecl_xxh3_64_129to240(const uint8_t *input, const size_t length)
 /* FIXME Preprocessor macros are predefined here. We need to use ECL_SSE2 flag
    and add support for others as well in autotools. Alternatively (optimally?)
    we should have our own portable instructions to avoid duplication. For now
-   let's roll with raw SIMD intrinsics.
+   let's roll with raw SIMD intrinsics. */
 
-   AVX512 implies AVX2 implies SSE2, so preprocessor test order matters.
-   GCC flags to enable extensions:
-
-   - SSE2:    (baseline) - enabled by default when host supports it
-   - AVX2:    -mavx2
-   - AVX512F: -mavx512f */
-
-#define ECL_XXH3_SSE2 1    /* __SSE2__            128-bit    <emmintrin.h>    */
-#define ECL_XXH3_AVX2 0    /* __AVX2__            256-bit    <immintrin.h>    */
-#define ECL_XXH3_AVXF 0    /* __AVX512F__         512-bit    <immintrin.h>    */
-#define ECL_XXH3_WASM 0    /* __wasm_simd128__    128-bit    <wasm_simd128.h> */
-#define ECL_XXH3_NEON 0    /* __ARM_NEON          128-bit    <arm_neon.h>     */
-#define ECL_XXH3_SCALAR 0
+#ifdef ECL_SSE2
+# define ECL_XXH3_SCALAR 0
+# define ECL_XXH3_SSE2   1 /* __SSE2__            128-bit    <emmintrin.h>    */
+# define ECL_XXH3_WASM   0 /* __wasm_simd128__    128-bit    <wasm_simd128.h> */
+# define ECL_XXH3_NEON   0 /* __ARM_NEON          128-bit    <arm_neon.h>     */
+#else
+# define ECL_XXH3_SCALAR 1
+# define ECL_XXH3_SSE2   0
+# define ECL_XXH3_WASM   0
+# define ECL_XXH3_NEON   0
+#endif
 
 /* Profiler shows that ecl_xxh3_64_large_acc is dominating the hash computation.
    ecl_xxh3_64_large_mix is transformed to hoist xacc. -- jd 2026-10-01 */
 #if ECL_XXH3_SCALAR
-
 typedef uint64_t ecl_xacc[8];
 
 static inline void
@@ -587,7 +589,7 @@ save_xacc(uint64_t acc[8], const ecl_xacc xacc)
 }
 
 static inline void
-ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
+ecl_xxh3_64_large_acc(const uint8_t * block, const uint8_t * secret, ecl_xacc acc)
 {
   uint64_t stripe, key, value;
   int i;
@@ -695,154 +697,7 @@ ecl_xxh3_64_large_mix(ecl_xacc acc)
     acc[i] = _mm_add_epi64( lo, _mm_slli_epi64(hi, 32));
   }
 }
-#elif ECL_XXH3_AVX2
-#include <immintrin.h>
-
-/* _MM_SHUFFLE argument order is deranged, XX_SHUFFLE: dst[k] = src[ik]. */
-#define XX_SHUFFLE(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
-
-/* _mm_set_epi64x has the same issue as with _MM_SHUFFLE -_-.  */
-#define xx256_set_epi64x(a, b, c, d) _mm256_set_epi64x(d, c, b, a)
-
-typedef __m256i ecl_xacc[2];
-
-static inline void
-init_xacc(ecl_xacc acc)
-{
-  acc[0] = xx256_set_epi64x(ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1,
-                            ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3);
-  acc[1] = xx256_set_epi64x(ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2,
-                            ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1);
-}
-
-static inline void
-load_xacc(ecl_xacc xacc, const uint64_t acc[8])
-{
-  xacc[0] = _mm256_loadu_si256((__m256i const *)(acc+0));
-  xacc[1] = _mm256_loadu_si256((__m256i const *)(acc+4));
-}
-
-static inline void
-save_xacc(uint64_t acc[8], const ecl_xacc xacc)
-{
-  _mm256_storeu_si256((__m256i *)(acc+0), xacc[0]);
-  _mm256_storeu_si256((__m256i *)(acc+4), xacc[1]);
-}
-
-static inline void
-ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
-{
-  __m256i stripe, key, value, extra;
-  int i;
-  for (i=0; i<2; i++) {
-    /* INV x86 (implied by AVX2) is little endian so no need for byte swaps. */
-    stripe = _mm256_loadu_si256 ((__m256i const *)(block+i*32));
-    key    = _mm256_loadu_si256 ((__m256i const *)(secret+i*32));
-    value = _mm256_xor_si256(stripe, key);
-    /* acc[i^1] += stripe; every two iterations translates to:
-       xacc_q1 += stripe_q2,
-       xacc_q2 += stripe_q1;
-       xacc_q3 += stripe_q4,
-       xacc_q4 += stripe_q3; */
-    stripe = _mm256_shuffle_epi32(stripe, XX_SHUFFLE(2, 3, 0, 1));
-    acc[i] = _mm256_add_epi64(acc[i], stripe);
-    /* acc[i] += value_lower * value_upper */
-    extra = _mm256_shuffle_epi32(value, XX_SHUFFLE(1, 0, 3, 0));
-    value = _mm256_mul_epu32(value, extra);
-    acc[i] = _mm256_add_epi64(acc[i], value);
-  }
-}
-
-static inline void
-ecl_xxh3_64_large_mix(ecl_xacc acc)
-{
-  __m256i key, tmp, prime, lo, hi;
-  int i;
-  prime = _mm256_set_epi64x(ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
-                            ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1);
-  for (i=0; i<2; i++) {
-    key = _mm256_loadu_si256 ((__m256i const *)(ecl_xxh3_secret+192-64+i*32));
-    tmp = acc[i];
-    tmp = _mm256_xor_si256(tmp, _mm256_srli_epi64(tmp, 47));
-    tmp = _mm256_xor_si256(tmp, key);
-
-    lo = _mm256_mul_epu32(tmp, prime);
-    hi = _mm256_mul_epu32(_mm256_srli_epi64(tmp, 32), prime);
-    acc[i] = _mm256_add_epi64( lo, _mm256_slli_epi64(hi, 32));
-  }
-}
-
-#elif ECL_XXH3_AVXF
-#include <immintrin.h>
-
-/* _MM_SHUFFLE argument order is deranged, XX_SHUFFLE: dst[k] = src[ik]. */
-#define XX_SHUFFLE(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
-
-/* _mm_set_epi64x has the same issue as with _MM_SHUFFLE -_-.  */
-#define xx512_set_epi64(a,b,c,d,e,f,g,h) _mm512_set_epi64(h,g,f,e,d,c,b,a)
-
-typedef __m512i ecl_xacc[1];
-
-static inline void
-init_xacc(ecl_xacc acc)
-{
-  acc[0] = xx512_set_epi64(ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1,
-                           ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3,
-                           ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2,
-                           ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1);
-}
-
-static inline void
-load_xacc(ecl_xacc xacc, const uint64_t acc[8])
-{
-  xacc[0] = _mm512_loadu_si512((__m512i const *)(acc+0));
-}
-
-static inline void
-save_xacc(uint64_t acc[8], const ecl_xacc xacc)
-{
-  _mm512_storeu_si512((__m512i *)(acc+0), xacc[0]);
-}
-
-static inline void
-ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
-{
-  __m512i stripe, key, value, extra;
-  {
-    /* INV x86 (implied by AVX2) is little endian so no need for byte swaps. */
-    stripe = _mm512_loadu_si512 ((__m512i const *)(block));
-    key    = _mm512_loadu_si512 ((__m512i const *)(secret));
-    value = _mm512_xor_si512(stripe, key);
-    /* acc[i^1] += stripe; */
-    stripe = _mm512_shuffle_epi32(stripe, XX_SHUFFLE(2, 3, 0, 1));
-    acc[0] = _mm512_add_epi64(acc[0], stripe);
-    /* acc[i] += value_lower * value_upper */
-    extra = _mm512_shuffle_epi32(value, XX_SHUFFLE(1, 0, 3, 0));
-    value = _mm512_mul_epu32(value, extra);
-    acc[0] = _mm512_add_epi64(acc[0], value);
-  }
-}
-
-static inline void
-ecl_xxh3_64_large_mix(ecl_xacc acc)
-{
-  __m512i key, tmp, prime, lo, hi;
-  prime = _mm512_set_epi64(ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
-                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
-                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
-                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1);
-  {
-    key = _mm512_loadu_si512((__m512i const *)(ecl_xxh3_secret+192-64));
-    tmp = acc[0];
-    tmp = _mm512_xor_si512(tmp, _mm512_srli_epi64(tmp, 47));
-    tmp = _mm512_xor_si512(tmp, key);
-
-    lo = _mm512_mul_epu32(tmp, prime);
-    hi = _mm512_mul_epu32(_mm512_srli_epi64(tmp, 32), prime);
-    acc[0] = _mm512_add_epi64( lo, _mm512_slli_epi64(hi, 32));
-  }
-}
-#endif  /* There's more! SVE2 (128-2048b), RVV (128-2048b) */
+#endif  /* There's more! AVX*(256-512b), SVE2 (128-2048b), RVV (128-2048b) */
 
 /* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
