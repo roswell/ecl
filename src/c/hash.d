@@ -817,7 +817,7 @@ cl_sxhash(cl_object key)
 }
 
 
-/* New swiss-like hash table (prototype) */
+/* Swiss-style hash tables. */
 
 /* Weak hash tables (enum ecl_htweak) description:
 
@@ -977,6 +977,14 @@ _ecl_insert_hentry(cl_htable ht, cl_index index, uint64_t hash,
   ht->ctrl[index] = fp;
 }
 
+static inline void
+_ecl_delete_hentry(cl_htable ht, cl_index index, uint8_t ctrl)
+{
+  ht->data[index].key = OBJNULL;
+  ht->data[index].value = OBJNULL;
+  ht->ctrl[index] = ctrl;
+}
+
 static inline cl_hashkey
 _ecl_hash_key(cl_htable ht, cl_object key) {
   switch (ht->test) {
@@ -1075,6 +1083,330 @@ _ecl_make_htable(uint8_t sizepw, uint8_t rehash)
   return ht;
 }
 
+/* Looping over swiss hash tables can be optimized using SIMD operations and
+   processing the control block a bucket at a time. Here we do exactly that.
+   Currently buckets have size 16 x 8bits, so 128-bit SIMD is all we need.
+
+   For the original description: https://abseil.io/about/design/swisstables
+
+   FIXME currently we rely on SSE2 unconditionally. Incorporate SIMD flags into
+   the buildsystem and write the portability layer in <ecl/simd.h>. Preliminary
+   notes are in the file xxhash.h.
+
+   FIXME write a portability layer for tidbits in <ecl/bits.h> that uses
+   builtins and appropriate instructions on corresponding architectures while
+   preserving the C variant. The file should contain only things that we use,
+   notably it shouldn't be wrapper around __builtin collection in GCC/Clang.
+
+   Here are listed and explained many portable C bithacks (public domain):
+   https://graphics.stanford.edu/%7Eseander/bithacks.html
+
+   Another good resource is a book "Hacker's Delight" by Henry S. Warren.
+
+   -- jd 2026-10-02 */
+
+#ifdef __SSE2__
+#include <emmintrin.h>
+#define ecl_ctz(x) __builtin_ctz(x)
+
+/* Matches entries with the specified match (eq fingerprint) */
+static inline unsigned int
+ecl_match_group(__m128i group, uint8_t mask)
+{
+
+  __m128i match = _mm_set1_epi8(mask);
+  match = _mm_cmpeq_epi8(match, group);
+  return _mm_movemask_epi8(match);
+}
+
+/* Matches entries that are not occupied (control bit set) */
+static inline unsigned int
+ecl_match_ctrls(__m128i group)
+{
+  return _mm_movemask_epi8(group);
+}
+
+#define loop_htable_groups(ht, index) do {                      \
+  cl_index _probe;                                              \
+  for(_probe=0; _probe<size; _probe+=16) {                      \
+  unsigned int _match;                                          \
+  uint8_t *_head = ht->ctrl+index;                              \
+  __m128i _group = _mm_loadu_si128((__m128i const *)_head);
+
+#define loop_htable_groups_no_wrap(ht, index) do {              \
+  cl_index _probe;                                              \
+  for(_probe=index; _probe<size; _probe+=16) {                  \
+  unsigned int _match;                                          \
+  uint8_t *_head = ht->ctrl+index;                              \
+  __m128i _group = _mm_loadu_si128((__m128i const *)_head);
+
+#define htable_matchp(idx,mask)                         \
+  ((_match=ecl_match_group(_group, mask))               \
+   && (((idx)=ecl_ctz(_match)+index) || 1))
+
+#define loop_htable_record(idx,mask)                     \
+  for (_match=ecl_match_group(_group, mask);             \
+       _match && (((idx)=ecl_ctz(_match)+index) || 1);   \
+       _match = _match&(_match-1))
+
+/* 0xffff mask is to reset irrelevant inverted bits in ~_match. */
+#define loop_htable_any_record(idx)                      \
+  for (_match=(~ecl_match_ctrls(_group) & 0xffff);       \
+       _match && (((idx)=ecl_ctz(_match)+index) || 1);   \
+       _match = _match&(_match-1))
+
+#define end_loop_htable_groups() index = (index+16)&(size-1); }} while(0)
+
+static inline cl_object
+_ecl_search_htable(cl_htable ht, cl_object key)
+{
+  cl_index size = ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_key(ht, key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  ecl_hentry record_aux, *record;
+  cl_index idx = 0;
+  /* ignorable */
+  (void)record_aux;
+  loop_htable_groups(ht, index) {
+    loop_htable_record(idx, fp) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record && _ecl_hash_test(ht, hash, key, record))) {
+        return record->value;
+      }
+    }
+    if (htable_matchp(idx, ECL_EMPTYSLOT)) {
+      return OBJNULL;
+    }
+  } end_loop_htable_groups();
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
+}
+
+static inline cl_object
+_ecl_upsert_htable(cl_htable ht, cl_object key, cl_object val)
+{
+  cl_index size = ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_key(ht, key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  ecl_hentry record_aux, *record;
+  bool slot_p = false;
+  cl_index slot_i = 0;
+  cl_index idx = 0;
+  /* ignorable */
+  (void)record_aux;
+  loop_htable_groups(ht, index) {
+    loop_htable_record(idx,fp) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record && _ecl_hash_test(ht, hash, key, record))) {
+        _ecl_insert_hentry(ht, idx, hash, key, val);
+        return ECL_T;
+      }
+    }
+    /* FIXME this can be optimized
+
+       (if (match-free-p idx empty|tombstone)
+         (unless index-found-p
+           (setf index-found-p t
+                 insert-index idx) )
+         (when (match empty)
+           (insert insert-index))) */
+    if (!slot_p && htable_matchp(idx, ECL_TOMBSTONE)) {
+      slot_p=true;
+      slot_i=idx;
+    }
+    if (htable_matchp(idx, ECL_EMPTYSLOT)) {
+      /* INV the caller ensures that we have capacity. */
+      if (!slot_p) { slot_i=idx; ht->left--; }
+      ht->fill++;
+      _ecl_insert_hentry(ht, slot_i, hash, key, val);
+      return ECL_NIL;
+    }
+  } end_loop_htable_groups();
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
+}
+
+static inline cl_object
+_ecl_delete_htable(cl_htable ht, cl_object key)
+{
+  cl_index size = ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_key(ht, key);
+  uint8_t fp = ecl_hash_fingerprint(hash);
+  cl_index index = ecl_hash_group_index(hash, size);
+  ecl_hentry record_aux, *record;
+  bool slot_p = false;
+  cl_index slot_i = 0;
+  cl_index idx = 0;
+  /* ignorable */
+  (void)record_aux;
+  loop_htable_groups(ht, index) {
+    loop_htable_record(idx, fp) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record && _ecl_hash_test(ht, hash, key, record))) {
+        slot_p = true;
+        slot_i = idx;
+        break;
+      }
+    }
+    /* If there are other empty slots, we reclaim this one as empty. Otherwise
+       we insert the tombstone. */
+    if (ecl_likely(slot_p)) {
+      if (htable_matchp(idx, ECL_EMPTYSLOT)) {
+        _ecl_delete_hentry(ht, slot_i, ECL_EMPTYSLOT);
+        ht->fill--;
+        ht->left++;
+      } else {
+        _ecl_delete_hentry(ht, slot_i, ECL_TOMBSTONE);
+        ht->fill--;
+      }
+      return ECL_T;
+    } else if (htable_matchp(idx, ECL_EMPTYSLOT)) {
+      return ECL_NIL;
+    }
+  } end_loop_htable_groups();
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
+}
+
+static void
+_ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
+{
+  cl_index size = ecl_htable_size(ht);
+  uint64_t hash = _ecl_hash_key(ht, key);
+  cl_index index = ecl_hash_group_index(hash, size);
+  cl_index idx;
+  uint8_t *head = ht->ctrl;
+  loop_htable_groups(ht, index) {
+    /* We test only for the emptyslot, because _ecl_insert_htable is called only
+       from the rehash function, so there are no tombstones yet. */
+    if (htable_matchp(idx, ECL_EMPTYSLOT)) {
+      _ecl_insert_hentry(ht, idx, hash, key, val);
+      ht->fill++;
+      ht->left--;
+      return;
+    }
+  } end_loop_htable_groups();
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
+}
+
+static cl_htable
+_ecl_rehash_htable(cl_htable ht)
+{
+  cl_index size = ecl_htable_size(ht);
+  cl_index limit = _ecl_htable_limit(ht);
+  uint8_t sizepw = ht->sizepw;
+  uint8_t rehash_pw = ((ht->rehash)&3) + 1;
+  /* We grow the table when >=75% is filled (converserly <=25% of space may be
+     reclaimed from tombtstones). Otherwise we allocate the table of the same
+     size and fill it only with live entries. */
+  uint8_t new_sizepw = (ht->fill >= limit - (limit>>2))
+    ? (sizepw + rehash_pw)
+    : (sizepw);
+  ecl_hentry record_aux, *record;
+  cl_htable new_table;
+  cl_index index = 0;
+  cl_index idx;
+  (void)record_aux;
+  new_table = _ecl_make_htable(new_sizepw, ht->rehash);
+  new_table->test = ht->test;
+  new_table->weak = ht->weak;
+  new_table->slot[0] = ht->slot[0];
+  new_table->slot[1] = ht->slot[1];
+  new_table->slot[2] = ht->slot[2];
+  /* Insert live elements. */
+  loop_htable_groups(ht, index) {
+    loop_htable_any_record(idx) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record!=NULL)) {
+        cl_object key = _ecl_hentry_key(ht, record);
+        _ecl_insert_htable(new_table, key, record->value);
+      }
+    }
+  } end_loop_htable_groups();
+  return new_table;
+}
+
+static void
+_ecl_mapc_htable(cl_htable ht, cl_object fun)
+{
+  cl_index size = ecl_htable_size(ht);
+  ecl_hentry record_aux, *record;
+  cl_index index = 0;
+  cl_index idx, probe;
+  uint8_t *head = ht->ctrl;
+  (void)record_aux;
+  if (!ht->fill) return;
+  loop_htable_groups(ht, index) {
+    loop_htable_any_record(idx) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record!=NULL)) {
+        cl_object key = _ecl_hentry_key(ht, record);
+        cl_funcall(3, fun, key, record->value);
+      }
+    }
+  } end_loop_htable_groups();
+}
+
+/* Closure iterator over the hash table. This _probably_ could be improved,
+   especially if(idx<start) continue; let's settle on this shape for now. */
+static cl_object
+_ecl_iter_htable(cl_narg narg, ...)
+{
+  const cl_env_ptr the_env = ecl_process_env();
+  cl_object env = the_env->function->cclosure.env;
+  cl_object start  = ECL_CONS_CAR(env);
+  ecl_htable *ht = ECL_CONS_CDR(env)->hash.table;
+  ecl_hentry *record, record_aux;
+  cl_index index, size, idx, first;
+  if (start == ECL_NIL) {
+    ecl_return1(the_env, ECL_NIL);
+  }
+  first = ecl_fixnum(start);
+  index = first & ~(cl_index)15;
+  size = ecl_htable_size(ht);
+  loop_htable_groups_no_wrap(ht, index) {
+    loop_htable_any_record(idx) {
+      if(idx<first) continue;
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record!=NULL)) {
+        start = ecl_make_fixnum(idx+1);
+        ECL_RPLACA(env, start);
+        ecl_return3(the_env, start, record->key, record->value);
+      }
+    }
+  } end_loop_htable_groups();
+  /* No more live records. */
+  ECL_RPLACA(env, ECL_NIL);
+  ECL_RPLACD(env, ECL_NIL);
+  ecl_return1(the_env, ECL_NIL);
+}
+
+static cl_object
+_ecl_cons_htable(cl_htable ht)
+{
+  cl_object output = ECL_NIL;
+  cl_index size = ecl_htable_size(ht);
+  ecl_hentry record_aux, *record;
+  cl_index index = 0, idx;
+  (void)record_aux;
+  if (!ht->fill) return ECL_NIL;
+  loop_htable_groups(ht, index) {
+    loop_htable_any_record(idx) {
+      record = _ecl_normalize_hentry(ht, idx, &record_aux);
+      if (ecl_likely(record!=NULL)) {
+        cl_object key=record->key;
+        cl_object val=record->value;
+        output = ecl_cons(ecl_cons(key, val), output);
+      }
+    }
+  } end_loop_htable_groups();
+  return output;
+}
+#else
+
 static inline cl_object
 _ecl_search_htable(cl_htable ht, cl_object key)
 {
@@ -1089,7 +1421,6 @@ _ecl_search_htable(cl_htable ht, cl_object key)
   /* ignorable */
   (void)record_aux;
   while(1) {
-    /* This is the SIMD-optimizable hot path. */
     for(idx=0; idx<16; idx++) {
       uint8_t ctrl = head[index+idx];
       if (ctrl == ECL_EMPTYSLOT) {
@@ -1216,7 +1547,8 @@ _ecl_delete_htable(cl_htable ht, cl_object key)
       return ECL_NIL;
     index = (index+16)&(size-1);
   }
-  return ECL_NIL;
+  /* INV impossible (table is full). */
+  ecl_internal_error("hash-table: the hash table is full.");
 }
 
 static void
@@ -1372,6 +1704,7 @@ _ecl_cons_htable(cl_htable ht)
   }
   return output;
 }
+#endif
 
 
 /* Hash tables */
