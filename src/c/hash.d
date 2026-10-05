@@ -64,21 +64,24 @@ hash_full_string(cl_hashstate *h, cl_object x)
 
 static inline void
 hash_single_float(cl_hashstate *h, float value) {
-  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM)
+  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
+   && (value == (cl_fixnum)value))
     ? hash_word(h, (cl_fixnum)value)
     : hash_data(h, &value, sizeof(value));
 }
 
 static inline void
 hash_double_float(cl_hashstate *h, double value) {
-  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM)
+  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
+   && (value == (cl_fixnum)value))
     ? hash_word(h, (cl_fixnum)value)
     : hash_data(h, &value, sizeof(value));
 }
 
 static inline void
 hash_long_float(cl_hashstate *h, long double value) {
-  if (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM) {
+  if (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
+      && (value == (cl_fixnum)value)) {
     hash_word(h, (cl_fixnum)value);
   } else {
     /* We coerce to double because long double has extra bits
