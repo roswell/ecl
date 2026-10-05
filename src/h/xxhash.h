@@ -4,6 +4,12 @@
 /* This is a header implementation of xxhash family of algorithms:
    https://www.ietf.org/archive/id/draft-josefsson-xxhash-00.html
 
+   SIMD instrinsics:
+   - SSE/AVX: https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html
+   - WASM: https://emscripten.org/docs/porting/simd.html
+   - NEON/SVE: https://developer.arm.com/architectures/instruction-sets/intrinsics/
+   - RVV: https://docs.riscv.org/reference/vector-c-intrinsics/
+
    It is provided to improve the performance of generic function dispatch and
    hash tables. The hash computation is faster than newhash with possibility to
    further optimize it using SSE.
@@ -23,19 +29,8 @@
    in upstream algorithm when the host is big endian. They are competetive with
    upstream and we don't need to pay cost of converting to bytes.
 
-   XXH3 is scalar (so it could be improved for the large variant). Our version
-   is competetive with upstream when we disable SSE and ~2x slower for large
-   inputs (> 240B). Our source code is around 10x smaller.
-
    We hardcode a default secret and seed, but the code to derive a custom one is
    implemented for customization.
-
-   I've also cobbled together a small benchmark to see how we fare compared to
-   FNV1A (SBCL currently uses this for strings) - for short strings <4B we are
-   slower, 4B is a crossover and then we quickly pull ahead. The difference for
-   1B is very small (around 2ns), so I wouldn't stress it, but generally short
-   strings are not our forte. Also FNV1A implementation is trivial (but at a
-   cost of worse hash quality and throughput).
 
    Compared to newhash (our old algorithm) XXH3 one-shot mode is always faster
    (1.7x at 1B and growing with input size) while the streaming version is
@@ -43,8 +38,8 @@
 
    Another tradeoff for XXH3 streaming is that our state is ~1.2KB to keep the
    code of update/digest straightforward, while upstream's state is half of it
-   (while FNV1A and newhash are practically stateless). We allocate the state on
-   the stack and that's not much of a problem (we could move it to cl_env too).
+   (while newhash is practically stateless). We allocate the state on the stack
+   and that's not much of a problem (we could move it to cl_env too).
 
    -- jd 2026-06-05 */
 
@@ -545,24 +540,68 @@ ecl_xxh3_64_129to240(const uint8_t *input, const size_t length)
   return ecl_xxh3_avalanche(acc);
 }
 
-/* Large input. If we want to further optimize using SIMD, then we should focus
-   on the following two functions. -- jd 2026-09-24 */
+/* FIXME Preprocessor macros are predefined here. We need to use ECL_SSE2 flag
+   and add support for others as well in autotools. Alternatively (optimally?)
+   we should have our own portable instructions to avoid duplication. For now
+   let's roll with raw SIMD intrinsics.
+
+   AVX512 implies AVX2 implies SSE2, so preprocessor test order matters.
+   GCC flags to enable extensions:
+
+   - SSE2:    (baseline) - enabled by default when host supports it
+   - AVX2:    -mavx2
+   - AVX512F: -mavx512f */
+
+#define ECL_XXH3_SSE2 1    /* __SSE2__            128-bit    <emmintrin.h>    */
+#define ECL_XXH3_AVX2 0    /* __AVX2__            256-bit    <immintrin.h>    */
+#define ECL_XXH3_AVXF 0    /* __AVX512F__         512-bit    <immintrin.h>    */
+#define ECL_XXH3_WASM 0    /* __wasm_simd128__    128-bit    <wasm_simd128.h> */
+#define ECL_XXH3_NEON 0    /* __ARM_NEON          128-bit    <arm_neon.h>     */
+#define ECL_XXH3_SCALAR 0
+
+/* Profiler shows that ecl_xxh3_64_large_acc is dominating the hash computation.
+   ecl_xxh3_64_large_mix is transformed to hoist xacc. -- jd 2026-10-01 */
+#if ECL_XXH3_SCALAR
+
+typedef uint64_t ecl_xacc[8];
+
 static inline void
-ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, uint64_t acc[8])
+init_xacc(ecl_xacc acc)
 {
-  uint64_t stripe, secret_var, value;
+  acc[0] = ECL_XXH_PRIME32_3; acc[1] = ECL_XXH_PRIME64_1;
+  acc[2] = ECL_XXH_PRIME64_2; acc[3] = ECL_XXH_PRIME64_3;
+  acc[4] = ECL_XXH_PRIME64_4; acc[5] = ECL_XXH_PRIME32_2;
+  acc[6] = ECL_XXH_PRIME64_5; acc[7] = ECL_XXH_PRIME32_1;
+}
+
+static inline void
+load_xacc(ecl_xacc xacc, const uint64_t acc[8])
+{
+  memcpy(xacc, acc, 8*sizeof(uint64_t));
+}
+
+static inline void
+save_xacc(uint64_t acc[8], const ecl_xacc xacc)
+{
+  memcpy(acc, xacc, 8*sizeof(uint64_t));
+}
+
+static inline void
+ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
+{
+  uint64_t stripe, key, value;
   int i;
   for (i=0; i<8; i++) {
     stripe = ecl_xxh3_read64(block+i*8);
-    secret_var = ecl_xxh3_read64(secret+i*8);
-    value = stripe ^ secret_var;
+    key = ecl_xxh3_read64(secret+i*8);
+    value = stripe ^ key;
     acc[i^1] = acc[i^1]+stripe;
     acc[i] += (value & 0xffffffff) * (value>>32);
   }
 }
 
 static inline void
-ecl_xxh3_64_large_mix(uint64_t acc[8])
+ecl_xxh3_64_large_mix(ecl_xacc acc)
 {
   uint64_t secret_var,i ;
   for (i=0; i<8; i++) {
@@ -572,6 +611,238 @@ ecl_xxh3_64_large_mix(uint64_t acc[8])
     acc[i] = acc[i] * ECL_XXH_PRIME32_1;
   }
 }
+#elif ECL_XXH3_SSE2
+#include <emmintrin.h>
+
+/* _MM_SHUFFLE argument order is deranged, XX_SHUFFLE: dst[k] = src[ik]. */
+#define XX_SHUFFLE(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
+/* _mm_set_epi64x has the same issue as with _MM_SHUFFLE -_-.  */
+#define xx_set_epi64x(a, b) _mm_set_epi64x(b, a)
+
+typedef __m128i ecl_xacc[4];
+
+static inline void
+init_xacc(ecl_xacc acc)
+{
+  acc[0] = xx_set_epi64x(ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1);
+  acc[1] = xx_set_epi64x(ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3);
+  acc[2] = xx_set_epi64x(ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2);
+  acc[3] = xx_set_epi64x(ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1);
+}
+
+static inline void
+load_xacc(ecl_xacc xacc, const uint64_t acc[8])
+{
+  xacc[0] = _mm_loadu_si128((__m128i const *)(acc+0));
+  xacc[1] = _mm_loadu_si128((__m128i const *)(acc+2));
+  xacc[2] = _mm_loadu_si128((__m128i const *)(acc+4));
+  xacc[3] = _mm_loadu_si128((__m128i const *)(acc+6));
+}
+
+static inline void
+save_xacc(uint64_t acc[8], const ecl_xacc xacc)
+{
+  _mm_storeu_si128((__m128i *)(acc+0), xacc[0]);
+  _mm_storeu_si128((__m128i *)(acc+2), xacc[1]);
+  _mm_storeu_si128((__m128i *)(acc+4), xacc[2]);
+  _mm_storeu_si128((__m128i *)(acc+6), xacc[3]);
+}
+
+static inline void
+ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
+{
+  __m128i stripe, key, value, extra;
+  int i;
+  for (i=0; i<4; i++) {
+    /* INV x86 (implied by SSE2) is little endian so no need for byte swaps. */
+    stripe = _mm_loadu_si128 ((__m128i const *)(block+i*16));
+    key    = _mm_loadu_si128 ((__m128i const *)(secret+i*16));
+    value = _mm_xor_si128(stripe, key);
+    /* acc[i^1] += stripe; every two iterations translates to:
+       xacc_lower += stripe_upper,
+       xacc_upper += stripe_lower; */
+    stripe = _mm_shuffle_epi32(stripe, XX_SHUFFLE(2, 3, 0, 1));
+    acc[i] = _mm_add_epi64(acc[i], stripe);
+    /* acc[i] += value_lower * value_upper
+         xacc_lower += value[0]*value[1],
+         xacc_upper += value[2]*value[3];
+       but _mm_mul_epu32 is a product:
+         xacc_lower += arg1[0]*arg2[0],
+         xacc_upper += arg1[2]*arg2[2];
+    */
+    extra = _mm_shuffle_epi32(value, XX_SHUFFLE(1, 0, 3, 0));
+    value = _mm_mul_epu32(value, extra);
+    acc[i] = _mm_add_epi64(acc[i], value);
+  }
+}
+
+static inline void
+ecl_xxh3_64_large_mix(ecl_xacc acc)
+{
+  __m128i key, tmp, prime, lo, hi;
+  int i;
+  prime = _mm_set_epi64x(ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1);
+  for (i=0; i<4; i++) {
+    key = _mm_loadu_si128 ((__m128i const *)(ecl_xxh3_secret+192-64+i*16));
+    tmp = acc[i];
+    tmp = _mm_xor_si128(tmp, _mm_srli_epi64(tmp, 47));
+    tmp = _mm_xor_si128(tmp, key);
+    /* acc[i] = acc[i] * ECL_XXH_PRIME32_1; */
+    /* xacc_lower = xacc_lower * ECL_XXH_PRIME32_1 */
+    /* xacc_upper = xacc_upper * ECL_XXH_PRIME32_1 */
+    lo = _mm_mul_epu32(tmp, prime);
+    hi = _mm_mul_epu32(_mm_srli_epi64(tmp, 32), prime);
+    acc[i] = _mm_add_epi64( lo, _mm_slli_epi64(hi, 32));
+  }
+}
+#elif ECL_XXH3_AVX2
+#include <immintrin.h>
+
+/* _MM_SHUFFLE argument order is deranged, XX_SHUFFLE: dst[k] = src[ik]. */
+#define XX_SHUFFLE(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
+
+/* _mm_set_epi64x has the same issue as with _MM_SHUFFLE -_-.  */
+#define xx256_set_epi64x(a, b, c, d) _mm256_set_epi64x(d, c, b, a)
+
+typedef __m256i ecl_xacc[2];
+
+static inline void
+init_xacc(ecl_xacc acc)
+{
+  acc[0] = xx256_set_epi64x(ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1,
+                            ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3);
+  acc[1] = xx256_set_epi64x(ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2,
+                            ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1);
+}
+
+static inline void
+load_xacc(ecl_xacc xacc, const uint64_t acc[8])
+{
+  xacc[0] = _mm256_loadu_si256((__m256i const *)(acc+0));
+  xacc[1] = _mm256_loadu_si256((__m256i const *)(acc+4));
+}
+
+static inline void
+save_xacc(uint64_t acc[8], const ecl_xacc xacc)
+{
+  _mm256_storeu_si256((__m256i *)(acc+0), xacc[0]);
+  _mm256_storeu_si256((__m256i *)(acc+4), xacc[1]);
+}
+
+static inline void
+ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
+{
+  __m256i stripe, key, value, extra;
+  int i;
+  for (i=0; i<2; i++) {
+    /* INV x86 (implied by AVX2) is little endian so no need for byte swaps. */
+    stripe = _mm256_loadu_si256 ((__m256i const *)(block+i*32));
+    key    = _mm256_loadu_si256 ((__m256i const *)(secret+i*32));
+    value = _mm256_xor_si256(stripe, key);
+    /* acc[i^1] += stripe; every two iterations translates to:
+       xacc_q1 += stripe_q2,
+       xacc_q2 += stripe_q1;
+       xacc_q3 += stripe_q4,
+       xacc_q4 += stripe_q3; */
+    stripe = _mm256_shuffle_epi32(stripe, XX_SHUFFLE(2, 3, 0, 1));
+    acc[i] = _mm256_add_epi64(acc[i], stripe);
+    /* acc[i] += value_lower * value_upper */
+    extra = _mm256_shuffle_epi32(value, XX_SHUFFLE(1, 0, 3, 0));
+    value = _mm256_mul_epu32(value, extra);
+    acc[i] = _mm256_add_epi64(acc[i], value);
+  }
+}
+
+static inline void
+ecl_xxh3_64_large_mix(ecl_xacc acc)
+{
+  __m256i key, tmp, prime, lo, hi;
+  int i;
+  prime = _mm256_set_epi64x(ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
+                            ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1);
+  for (i=0; i<2; i++) {
+    key = _mm256_loadu_si256 ((__m256i const *)(ecl_xxh3_secret+192-64+i*32));
+    tmp = acc[i];
+    tmp = _mm256_xor_si256(tmp, _mm256_srli_epi64(tmp, 47));
+    tmp = _mm256_xor_si256(tmp, key);
+
+    lo = _mm256_mul_epu32(tmp, prime);
+    hi = _mm256_mul_epu32(_mm256_srli_epi64(tmp, 32), prime);
+    acc[i] = _mm256_add_epi64( lo, _mm256_slli_epi64(hi, 32));
+  }
+}
+
+#elif ECL_XXH3_AVXF
+#include <immintrin.h>
+
+/* _MM_SHUFFLE argument order is deranged, XX_SHUFFLE: dst[k] = src[ik]. */
+#define XX_SHUFFLE(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
+
+/* _mm_set_epi64x has the same issue as with _MM_SHUFFLE -_-.  */
+#define xx512_set_epi64(a,b,c,d,e,f,g,h) _mm512_set_epi64(h,g,f,e,d,c,b,a)
+
+typedef __m512i ecl_xacc[1];
+
+static inline void
+init_xacc(ecl_xacc acc)
+{
+  acc[0] = xx512_set_epi64(ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1,
+                           ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3,
+                           ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2,
+                           ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1);
+}
+
+static inline void
+load_xacc(ecl_xacc xacc, const uint64_t acc[8])
+{
+  xacc[0] = _mm512_loadu_si512((__m512i const *)(acc+0));
+}
+
+static inline void
+save_xacc(uint64_t acc[8], const ecl_xacc xacc)
+{
+  _mm512_storeu_si512((__m512i *)(acc+0), xacc[0]);
+}
+
+static inline void
+ecl_xxh3_64_large_acc(const uint8_t *block, const uint8_t *secret, ecl_xacc acc)
+{
+  __m512i stripe, key, value, extra;
+  {
+    /* INV x86 (implied by AVX2) is little endian so no need for byte swaps. */
+    stripe = _mm512_loadu_si512 ((__m512i const *)(block));
+    key    = _mm512_loadu_si512 ((__m512i const *)(secret));
+    value = _mm512_xor_si512(stripe, key);
+    /* acc[i^1] += stripe; */
+    stripe = _mm512_shuffle_epi32(stripe, XX_SHUFFLE(2, 3, 0, 1));
+    acc[0] = _mm512_add_epi64(acc[0], stripe);
+    /* acc[i] += value_lower * value_upper */
+    extra = _mm512_shuffle_epi32(value, XX_SHUFFLE(1, 0, 3, 0));
+    value = _mm512_mul_epu32(value, extra);
+    acc[0] = _mm512_add_epi64(acc[0], value);
+  }
+}
+
+static inline void
+ecl_xxh3_64_large_mix(ecl_xacc acc)
+{
+  __m512i key, tmp, prime, lo, hi;
+  prime = _mm512_set_epi64(ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
+                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
+                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1,
+                           ECL_XXH_PRIME32_1, ECL_XXH_PRIME32_1);
+  {
+    key = _mm512_loadu_si512((__m512i const *)(ecl_xxh3_secret+192-64));
+    tmp = acc[0];
+    tmp = _mm512_xor_si512(tmp, _mm512_srli_epi64(tmp, 47));
+    tmp = _mm512_xor_si512(tmp, key);
+
+    lo = _mm512_mul_epu32(tmp, prime);
+    hi = _mm512_mul_epu32(_mm512_srli_epi64(tmp, 32), prime);
+    acc[0] = _mm512_add_epi64( lo, _mm512_slli_epi64(hi, 32));
+  }
+}
+#endif  /* There's more! SVE2 (128-2048b), RVV (128-2048b) */
 
 /* Deliberately not declared inline to allow compiler decide. */
 static uint64_t
@@ -581,20 +852,20 @@ ecl_xxh3_64_large(const uint8_t *input, const size_t length)
      secret_length=192, stripes_per_block=16, block_size=1024 */
   uint64_t i, n, num, value, len;
   const uint8_t *block;
-  /* Step 1. Initialize internal acumulators */
-  uint64_t acc[8] = {
-    ECL_XXH_PRIME32_3, ECL_XXH_PRIME64_1, ECL_XXH_PRIME64_2, ECL_XXH_PRIME64_3,
-    ECL_XXH_PRIME64_4, ECL_XXH_PRIME32_2, ECL_XXH_PRIME64_5, ECL_XXH_PRIME32_1 };
+  /* Step 1. Initialize internal accumulators */
+  uint64_t acc[8];
+  ecl_xacc xacc;
+  init_xacc(xacc);
   /* Step 2. Process blocks */
   len = length;
   block = input;
   while(len > 1024) {
     /* Step 2.1 Process stripes in the block */
     for (n=0; n<16; n++) {
-      ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, acc);
+      ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, xacc);
     }
     /* Step 2.2 Scramble accumulators */
-    ecl_xxh3_64_large_mix(acc);
+    ecl_xxh3_64_large_mix(xacc);
     /* Advance! */
     block += 1024;
     len -= 1024;
@@ -602,13 +873,14 @@ ecl_xxh3_64_large(const uint8_t *input, const size_t length)
   /* Step 3. Process the last block and the last 64 bytes */
   num = (len-1)/64;
   for (n=0; n<num; n++) {
-    ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, acc);
+    ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, xacc);
   }
   /* The last stripe is taken from the end and may overlap. */
   block = input + length - 64;
-  ecl_xxh3_64_large_acc(block, ecl_xxh3_secret+192-71, acc);
+  ecl_xxh3_64_large_acc(block, ecl_xxh3_secret+192-71, xacc);
   /* Step 4. Finalization */
   value = length*ECL_XXH_PRIME64_1;
+  save_xacc(acc, xacc);
   for (i=0; i<4; i++) {
     uint64_t a = acc[i*2]   ^ ecl_xxh3_read64(ecl_xxh3_secret+11+i*16);
     uint64_t b = acc[i*2+1] ^ ecl_xxh3_read64(ecl_xxh3_secret+11+i*16+8);
@@ -655,19 +927,12 @@ ecl_xxh3_reset(ecl_xxh3_state *state)
 }
 
 static inline void
-ecl_xxh3_ensure_acc(ecl_xxh3_state *state, uint64_t acc[8])
+ecl_xxh3_ensure_acc(ecl_xxh3_state *state, ecl_xacc xacc)
 {
   if (state->ready_acc) {
-    memcpy(acc, state->acc, 8*sizeof(uint64_t));
+    load_xacc(xacc, state->acc);
   } else {
-    acc[0]=ECL_XXH_PRIME32_3;
-    acc[1]=ECL_XXH_PRIME64_1;
-    acc[2]=ECL_XXH_PRIME64_2;
-    acc[3]=ECL_XXH_PRIME64_3;
-    acc[4]=ECL_XXH_PRIME64_4;
-    acc[5]=ECL_XXH_PRIME32_2;
-    acc[6]=ECL_XXH_PRIME64_5;
-    acc[7]=ECL_XXH_PRIME32_1;
+    init_xacc(xacc);
   }
 }
 
@@ -681,7 +946,7 @@ ecl_xxh3_update_slow(ecl_xxh3_state *state, const uint8_t *input, const size_t l
   size_t bsize = state->buf_size;
   size_t len = length;
   size_t delta;
-  uint64_t acc[8];
+  ecl_xacc xacc;
   uint64_t idx;
   bool copy_rem = 1;
   bool copy_acc = 0;
@@ -690,14 +955,14 @@ ecl_xxh3_update_slow(ecl_xxh3_state *state, const uint8_t *input, const size_t l
     delta = 1024-bsize;
     memcpy(buffer+bsize, input, delta);
     /* Ensure accumulators */
-    ecl_xxh3_ensure_acc(state, acc);
+    ecl_xxh3_ensure_acc(state, xacc);
     copy_acc = 1;
     /* Step 2.1 Process stripes in the block */
     for (idx=0; idx<16; idx++) {
-      ecl_xxh3_64_large_acc(buffer+idx*64, ecl_xxh3_secret+idx*8, acc);
+      ecl_xxh3_64_large_acc(buffer+idx*64, ecl_xxh3_secret+idx*8, xacc);
     }
     /* Step 2.2 Scramble accumulators */
-    ecl_xxh3_64_large_mix(acc);
+    ecl_xxh3_64_large_mix(xacc);
     /* Advance! */
     block = input + delta;
     len -= delta;
@@ -710,15 +975,15 @@ ecl_xxh3_update_slow(ecl_xxh3_state *state, const uint8_t *input, const size_t l
   /* Continue with input without copying. */
   while(len > 1024) {
     if (!copy_acc) {
-      ecl_xxh3_ensure_acc(state, acc);
+      ecl_xxh3_ensure_acc(state, xacc);
       copy_acc = 1;
     }
     /* Step 2.1 Process stripes in the block */
     for (idx=0; idx<16; idx++) {
-      ecl_xxh3_64_large_acc(block+idx*64, ecl_xxh3_secret+idx*8, acc);
+      ecl_xxh3_64_large_acc(block+idx*64, ecl_xxh3_secret+idx*8, xacc);
     }
     /* Step 2.2 Scramble accumulators */
-    ecl_xxh3_64_large_mix(acc);
+    ecl_xxh3_64_large_mix(xacc);
     /* Advance! */
     block += 1024;
     len -= 1024;
@@ -729,7 +994,7 @@ ecl_xxh3_update_slow(ecl_xxh3_state *state, const uint8_t *input, const size_t l
   /* store accumulators */
   if (copy_acc) {
     state->ready_acc = 1;
-    memcpy(state->acc, acc, sizeof(acc));
+    save_xacc(state->acc, xacc);
   }
   /* Put the reminder in the buffer. */
   memcpy(buffer + bsize, block, len);
@@ -793,27 +1058,28 @@ ecl_xxh3_digest_slow(ecl_xxh3_state *state)
   /* INV total > 240 */
   uint64_t total = state->total_len;
   uint64_t len = state->buf_size;
-  uint64_t acc[8];
-  uint64_t n, i, num, value;
+  ecl_xacc xacc;
+  uint64_t n, i, num, value, acc[8];
   const uint8_t *block = state->buf;
   /* Don't modify the state. */
-  ecl_xxh3_ensure_acc(state, acc);
+  ecl_xxh3_ensure_acc(state, xacc);
   /* Step 3. Process the last block and the last 64 bytes */
   num = (len-1)/64;
   for (n=0; n<num; n++) {
-    ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, acc);
+    ecl_xxh3_64_large_acc(block+n*64, ecl_xxh3_secret+n*8, xacc);
   }
   /* The last stripe is taken from the end and may overlap. */
   if (len>=64) {
-    ecl_xxh3_64_large_acc(block+len-64, ecl_xxh3_secret+192-71, acc);
+    ecl_xxh3_64_large_acc(block+len-64, ecl_xxh3_secret+192-71, xacc);
   } else {
     uint8_t rem[64];
     memcpy(rem, state->rem+len, 64-len);
     memcpy(rem+64-len, block, len);
-    ecl_xxh3_64_large_acc(rem, ecl_xxh3_secret+192-71, acc);
+    ecl_xxh3_64_large_acc(rem, ecl_xxh3_secret+192-71, xacc);
   }
   /* Step 4. Finalization */
   value = total*ECL_XXH_PRIME64_1;
+  save_xacc(acc, xacc);
   for (i=0; i<4; i++) {
     uint64_t a = acc[i*2]   ^ ecl_xxh3_read64(ecl_xxh3_secret+11+i*16);
     uint64_t b = acc[i*2+1] ^ ecl_xxh3_read64(ecl_xxh3_secret+11+i*16+8);
