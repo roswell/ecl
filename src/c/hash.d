@@ -18,6 +18,7 @@
 #include <ecl/xxhash.h>
 #include <ecl/bithacks.h>
 #include <ecl/htable.h>
+#include <ecl/ecl_atomics.h>
 
 typedef uint64_t cl_hashkey;
 typedef ecl_xxh3_state cl_hashstate;
@@ -921,11 +922,24 @@ _ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
   default:
     return output;
   }
-  /* The entry was garbage collected. */
-  entry->key = OBJNULL;
-  entry->value = OBJNULL;
+  /* The entry was garbage collected. We don't assign OBJNULL to the entry key
+     and value to avoid torn reads. */
+#ifdef ECL_THREADS
+  {
+    /* Access to the hashtable is synchronized with a read-write lock, but weak
+       entries may be normalized also by readers. */
+    uint8_t ctrl=ecl_atomic_load(ht->ctrl+index);
+    if (! (ctrl & ECL_CONTROLBIT)) {
+      (void)ecl_atomic_fetch_compare_and_swap(ht->ctrl+index, ctrl, ECL_TOMBSTONE);
+      if (! (ctrl & ECL_CONTROLBIT)) {
+        ecl_atomic_fetch_and_add(&ht->fill, -1);
+      }
+    }
+  }
+#else
   ht->ctrl[index] = ECL_TOMBSTONE;
   ht->fill--;
+#endif
   return NULL;
 }
 #else
