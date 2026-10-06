@@ -872,14 +872,25 @@ normalize_weak_kav(cl_hentry e) {
     return 0;
 }
 
+/* FIXME Normalization of :KEY-OR-VALUE is problematic, because half of the
+   entry may be dead while the other half can be alive, while the original
+   writeup[1] says that the key being alive sustains the value and vice versa.
+
+   Current libgc does not provide abstraction to define ephemerons[2], but in
+   the next version 8.3.0 there is a new primitive GC_set_on_mark_stack_empty[3]
+   that allows implementing them in the user code.
+
+   [1] https://www.haible.de/bruno/papers/cs/weak/WeakDatastructures-writeup.html
+   [2] https://en.wikipedia.org/wiki/Ephemeron
+   [3] https://github.com/bdwgc/bdwgc/blob/master/include/gc/gc_mark.h#L515
+
+   Until now ECL returned OBJNULL as one of entries leaking it into the user
+   code (very bad). As a band-aid we treat :KEY-OR-VALUE as :KEY-AND-VALUE.
+
+   -- jd 2026-10-06 */
 static void *
 normalize_weak_kov(cl_hentry e) {
-  e->key = e->key->weak.value;
-  e->value = e->value->weak.value;
-  if (e->key || e->value)
-    return (void*)e;
-  else
-    return 0;
+  return normalize_weak_kav(e);
 }
 
 /* This function normalizes entries. That means that si_weak_pointer_value
