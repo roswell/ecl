@@ -1422,10 +1422,10 @@ ecl_gethash(cl_object key, cl_object hashtable)
     cl_object output;
 #ifdef ECL_THREADS
     if (hashtable->hash.sync) {
-      cl_htable ht = hashtable->hash.table;
       cl_object sync_lock = ecl_ht_sync_lock(hashtable);
       mp_get_rwlock_read_wait(sync_lock);
       ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        cl_htable ht = hashtable->hash.table;
         output = _ecl_search_htable(ht, key);
       } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
         mp_giveup_rwlock_read(sync_lock);
@@ -1491,10 +1491,10 @@ ecl_remhash(cl_object key, cl_object hashtable)
     cl_object output;
 #ifdef ECL_THREADS
     if (hashtable->hash.sync) {
-      cl_htable ht = hashtable->hash.table;
       cl_object sync_lock = ecl_ht_sync_lock(hashtable);
       mp_get_rwlock_write_wait(sync_lock);
       ECL_UNWIND_PROTECT_BEGIN(ecl_process_env()) {
+        cl_htable ht = hashtable->hash.table;
         output = _ecl_delete_htable(ht, key);
       } ECL_UNWIND_PROTECT_THREAD_SAFE_EXIT {
         mp_giveup_rwlock_write(sync_lock);
