@@ -121,25 +121,6 @@
 #define end_loop_across_frame() }}
 
 /*
- * Loops over a hash table
- */
-
-/* Keys of ecl_htt_pack need to be normalized. See CL_MAPHASH.  */
-#define loop_across_htable(record, hashtable) do {                      \
-  ecl_htable *__ecl_ht = hashtable->hash.table;                         \
-  uint8_t *__ecl_head = __ecl_ht->ctrl;                                 \
-  cl_index __ecl_idx, __ecl_size = ecl_htable_size(__ecl_ht);           \
-  ecl_hentry *record, __ecl_aux;                                        \
-  if (!__ecl_ht->fill) break;                                           \
-  for(__ecl_idx=0; __ecl_idx<__ecl_size; __ecl_idx++) {                 \
-    uint8_t __ecl_ctrl = __ecl_head[__ecl_idx];                         \
-    if (__ecl_ctrl & ECL_CONTROLBIT) continue;                          \
-    record = ecl_normalize_hentry(__ecl_ht, __ecl_idx, &__ecl_aux);     \
-    if(record==NULL) continue;
-
-#define end_loop_across_htable() }} while(0)
-
-/*
  * Static constant definition.
  */
 #ifdef __cplusplus

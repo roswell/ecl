@@ -109,6 +109,22 @@ symbol_add_package(cl_object s, cl_object p)
   alist (local-nickname . package) which is used for having private
   nicknames for other packages.
 */
+
+/* Keys of ecl_htt_pack need to be normalized. See CL_MAPHASH.  */
+/* The table can't have weakness (we don't normalize hentries). */
+#define loop_across_htable_unsafe(record, hashtable) do {               \
+  ecl_htable *_ecl_ht = hashtable->hash.table;                          \
+  uint8_t *_ecl_head = _ecl_ht->ctrl;                                   \
+  cl_index _ecl_idx, _ecl_size = ecl_htable_size(_ecl_ht);              \
+  ecl_hentry *record;                                         \
+  if (!_ecl_ht->fill) break;                                            \
+  for(_ecl_idx=0; _ecl_idx<_ecl_size; _ecl_idx++) {                     \
+    uint8_t _ecl_ctrl = _ecl_head[_ecl_idx];                            \
+    if (_ecl_ctrl & ECL_CONTROLBIT) continue;                           \
+    record = _ecl_ht->data+_ecl_idx;
+
+#define end_loop_across_htable() }} while(0)
+
 static cl_object
 make_package_hashtable()
 {
@@ -674,11 +690,11 @@ cl_delete_package(cl_object p)
   }
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    loop_across_htable(record, p->pack.internal) {
+    loop_across_htable_unsafe(record, p->pack.internal) {
       symbol_remove_package(record->value, p);
     } end_loop_across_htable();
     cl_clrhash(p->pack.internal);
-    loop_across_htable(record, p->pack.external) {
+    loop_across_htable_unsafe(record, p->pack.external) {
       symbol_remove_package(record->value, p);
     } end_loop_across_htable();
     cl_clrhash(p->pack.external);
@@ -859,7 +875,7 @@ ecl_use_package(cl_object x, cl_object p)
                     p, 2, x, p);
 
   ECL_WITH_GLOBAL_ENV_WRLOCK_BEGIN(ecl_process_env()) {
-    loop_across_htable(record, x->pack.external) {
+    loop_across_htable_unsafe(record, x->pack.external) {
       here = record->value;
       name = ecl_symbol_name(here);
       there = find_symbol_inner(name, p, &intern_flag);
