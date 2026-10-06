@@ -1372,9 +1372,11 @@ _ecl_iter_htable(cl_narg narg, ...)
       if(idx<first) continue;
       record = _ecl_normalize_hentry(ht, idx, &record_aux);
       if (ecl_likely(record!=NULL)) {
+        cl_object key=_ecl_hentry_key(ht, record);
+        cl_object val=record->value;
         start = ecl_make_fixnum(idx+1);
         ECL_RPLACA(env, start);
-        ecl_return3(the_env, start, record->key, record->value);
+        ecl_return3(the_env, start, key, val);
       }
     }
   } end_loop_htable_groups();
@@ -1397,7 +1399,7 @@ _ecl_cons_htable(cl_htable ht)
     loop_htable_any_record(idx) {
       record = _ecl_normalize_hentry(ht, idx, &record_aux);
       if (ecl_likely(record!=NULL)) {
-        cl_object key=record->key;
+        cl_object key=_ecl_hentry_key(ht, record);
         cl_object val=record->value;
         output = ecl_cons(ecl_cons(key, val), output);
       }
@@ -1671,9 +1673,11 @@ _ecl_iter_htable(cl_narg narg, ...)
     record = _ecl_normalize_hentry(ht, index, &record_aux);
   }
   if (record!=NULL) {
+    cl_object key=_ecl_hentry_key(ht, record);
+    cl_object val=record->value;
     idx = ecl_make_fixnum(index);
     ECL_RPLACA(env, idx);
-    ecl_return3(the_env, idx, record->key, record->value);
+    ecl_return3(the_env, idx, key, val);
   }
   ECL_RPLACA(env, ECL_NIL);
   ECL_RPLACD(env, ECL_NIL);
@@ -1697,7 +1701,7 @@ _ecl_cons_htable(cl_htable ht)
     if (ctrl & ECL_CONTROLBIT) continue; /* special */
     record = _ecl_normalize_hentry(ht, index, &record_aux);
     if (record!=NULL) {
-      cl_object key=record->key;
+      cl_object key=_ecl_hentry_key(ht, record);
       cl_object val=record->value;
       output = ecl_cons(ecl_cons(key, val), output);
     }
