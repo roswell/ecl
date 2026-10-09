@@ -15,6 +15,7 @@
 #include <ecl/ecl-inl.h>
 #include <ecl/internal.h>
 #include <ecl/xxhash.h>
+#include <ecl/bithacks.h>
 
 typedef uint64_t cl_hashkey;
 typedef ecl_xxh3_state cl_hashstate;

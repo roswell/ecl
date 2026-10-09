@@ -34,6 +34,7 @@
 
 #include <ecl/ecl.h>
 #include <ecl/internal.h>
+#include <ecl/bithacks.h>
 
 static void
 storage_exhausted (void) {
@@ -597,11 +598,22 @@ _ecl_big_tstbit(cl_object x, cl_index n)
 }
 
 cl_fixnum
-_ecl_big_count_bits(cl_object x) {
-  cl_fixnum count;
+_ecl_big_ctz(cl_object x)
+{
   sbig_num_t i = ecl_bignum(x);
-  sbig_num_t j = (i < 0) ? ~i : i;
-  for(count=0 ; j ; j >>=1) if (j & 1) count++;
+  /* negation              v */
+  ubig_num_t j = (i < 0) ? -(ubig_num_t)i : (ubig_num_t)i;
+  return ecl_ctz(count);
+}
+
+cl_fixnum
+_ecl_big_count_bits(cl_object x) {
+
+  sbig_num_t i = ecl_bignum(x);
+  /* complement            v */
+  ubig_num_t j = (i < 0) ? ~(ubig_num_t)i : (ubig_num_t)i;
+  cl_fixnum count=0;
+  while(j) { if (j&1) count++; j>>=1; }
   return count;
 }
 

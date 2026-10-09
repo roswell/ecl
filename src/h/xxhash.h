@@ -55,6 +55,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ecl/bithacks.h>
 
 /* XXH32 */
 
@@ -325,40 +326,13 @@ ecl_xxh3_mul128_fold64(uint64_t a, uint64_t b) {
 #endif
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-# define ecl_xxh3_bswap64(x) __builtin_bswap64(x)
-# define ecl_xxh3_bswap32(x) __builtin_bswap32(x)
-#else
-static inline uint64_t
-ecl_xxh3_bswap64(uint64_t x)
-{
-  return ((x & 0x00000000000000ff) << 56)
-    |    ((x & 0x000000000000ff00) << 40)
-    |    ((x & 0x0000000000ff0000) << 24)
-    |    ((x & 0x00000000ff000000) <<  8)
-    |    ((x & 0x000000ff00000000) >>  8)
-    |    ((x & 0x0000ff0000000000) >> 24)
-    |    ((x & 0x00ff000000000000) >> 40)
-    |    ((x & 0xff00000000000000) >> 56);
-}
-
-static inline uint32_t
-ecl_xxh3_bswap32(uint32_t x)
-{
-  return ((x & 0x000000ff) << 24)
-    |    ((x & 0x0000ff00) <<  8)
-    |    ((x & 0x00ff0000) >>  8)
-    |    ((x & 0xff000000) >> 24);
-}
-#endif
-
 static inline uint32_t
 ecl_xxh3_read32(const uint8_t *src)
 {
   uint32_t val;
   memcpy(&val, src, 4);
 #ifdef WORDS_BIGENDIAN
-  val = ecl_xxh3_bswap32(val);
+  val = ecl_bswap32(val);
 #endif
   return val;
 }
@@ -369,7 +343,7 @@ ecl_xxh3_read64(const uint8_t *src)
   uint64_t val;
   memcpy(&val, src, 8);
 #ifdef WORDS_BIGENDIAN
-  val = ecl_xxh3_bswap64(val);
+  val = ecl_bswap64(val);
 #endif
   return val;
 }
@@ -378,7 +352,7 @@ static inline void
 ecl_xxh3_write32(uint8_t *dst, uint32_t x)
 {
 #ifdef WORDS_BIGENDIAN
-  x = ecl_xxh3_bswap32(x);
+  x = ecl_bswap32(x);
 #endif
   memcpy(dst, &x, 4);
 }
@@ -387,7 +361,7 @@ static inline void
 ecl_xxh3_write64(uint8_t *dst, uint64_t x)
 {
 #ifdef WORDS_BIGENDIAN
-  x = ecl_xxh3_bswap64(x);
+  x = ecl_bswap64(x);
 #endif
   memcpy(dst, &x, 8);
 }
@@ -451,7 +425,7 @@ ecl_xxh3_64_4to8(const uint8_t *input, const size_t length)
   input_first = ecl_xxh3_read32(input);
   input_last = ecl_xxh3_read32(input+length-4);
   modified_seed = ecl_xxh3_seed ^
-    ((uint64_t)ecl_xxh3_bswap32((uint32_t)ecl_xxh3_seed) << 32);
+    ((uint64_t)ecl_bswap32((uint32_t)ecl_xxh3_seed) << 32);
   secret0 = ecl_xxh3_read64(ecl_xxh3_secret+8);
   secret1 = ecl_xxh3_read64(ecl_xxh3_secret+8+8);
   combined = (uint64_t)input_last | ((uint64_t)input_first << 32);
@@ -479,7 +453,7 @@ ecl_xxh3_64_9to16(const uint8_t *input, const size_t length)
   low = ((secret0 ^ secret1) + ecl_xxh3_seed) ^ input_first;
   high= ((secret2 ^ secret3) - ecl_xxh3_seed) ^ input_last;
   fold= ecl_xxh3_mul128_fold64(low, high);
-  value = length + ecl_xxh3_bswap64(low) + high + fold;
+  value = length + ecl_bswap64(low) + high + fold;
   return ecl_xxh3_avalanche(value);
 }
 
