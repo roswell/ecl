@@ -273,21 +273,29 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
   }
 }
 
-/* To ensure consistent hashing of numbers under the predicate EQUALP:
+/* To ensure consistent hashing of numbers under the predicate EQUALP we use a
+   canonical dyadic representation in form (SIGN ODD-INTEGER TWO-EXPONENT) and
+   simplify from that.
 
-   1. Floats that are integers are cast and hashed as integer
-   2. Floats that are not integers are cast and hashed as double-float
-   3. Ratios that are dyadic are cast and hashed as double-float
+   Canonical rule:
 
-   For long floats we must test for integer before casting to double, because
-   otherwise bignums that do not fit in a double would have a different hash.
+   1. Dyadic rationals are hashed as a tuple (sign, mantissa, exponent)
+   2. Other numbers are hashed depending on their type (they are disjoint)
 
-   To ensure that equal ratios and floats have the same hash, we must cast all
-   floats to the same representation as is targeted by ratios.
+   Implementation rule:
 
-   This approach is a clear improvement. Still it has a few issues:
-   - conses bignums for hashing large integer floats
-   - dyadic ratios are cast to double even even when they exceed float precision
+   1. Integer values representable  as FIXNUM         -> (hash fixnum)
+   2. Integer values representable  as LONG-FLOAT     -> (hash dyadic)
+   3. Integer values exceeding LONG-FLOAT precision   -> (hash bignum)
+   4. Dyadic fraction values                          -> (hash double)
+   6. Other numbers are hashed depending on their type (they are disjoint)
+
+   Casting fractional LONG-FLOAT and RATIO to DOUBLE-FLOAT is a performance
+   tradeoff - we trade avoidable collissions for performance and simplicity.
+
+   On the other hand we reduce significantly consing required to bring together
+   bignums and floats, hashing of = ratios and floats is deterministic and
+   typical values, that is fixnums and floats, are always on the fast path.
 
    -- jd 2026-10-07 */
 
@@ -310,55 +318,212 @@ hash_fixnum(cl_hashstate *h, cl_object x) {
   hash_word(h, ecl_fixnum(x));
 }
 
-static inline void
+/* When hashing bignums we see whether they fit in LONG-FLOAT and only then we
+   cast it to a dyadic form. Otherwise we directly hash limbs. */
+static void
 hash_bignum(cl_hashstate *h, cl_object x) {
-  hash_word(h, ecl_bigsgn(x));
-  hash_data(h,
-            ECL_BIGNUM_LIMBS(x),
-            ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+  cl_fixnum signum = ecl_bigsgn(x);
+  cl_fixnum length = _ecl_big_integer_length(x);
+  cl_fixnum exponent = _ecl_big_ctz(x);
+  if (length-exponent<=LDBL_MANT_DIG && length<=LDBL_MAX_EXP) {
+    /* To avoid allocating fresh bignums by ABS and ASH we opencode this:
+       cl_object mantissa = ecl_ash(ecl_abs(x), -exponent); */
+    cl_object mantissa, reg = _ecl_big_register2();
+    if (signum<0) {
+      _ecl_big_neg(reg, x);
+      _ecl_big_div_2exp(reg, reg, exponent);
+    }
+    else {
+      _ecl_big_div_2exp(reg, x, exponent);
+    }
+    mantissa = _ecl_big_register_normalize(reg);
+    _ecl_big_register_free(reg);
+    /* ~ */
+    hash_word(h, 8*exponent+signum);
+    hash_integer(h, mantissa);
+  } else {
+    hash_word(h, signum);
+    hash_data(h,
+              ECL_BIGNUM_LIMBS(x),
+              ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+  }
 }
 
-static inline void
+/* INV value is guaranteed to be > MOST-POSITIVE-FIXNUM. */
+/* These two functions are an example why CL macros are the best. */
+static inline cl_object
+decode_df(double value, int *exponent)
+{
+#if DBL_MANT_DIG <= ECL_LONG_LONG_BITS
+  int ctz;
+  unsigned long long mantissa;
+  value = ldexp(frexp(value, exponent), DBL_MANT_DIG);
+  *exponent -= DBL_MANT_DIG;
+  mantissa = (unsigned long long)value;
+  ctz = ecl_ctz(mantissa);
+  *exponent += ctz;
+  mantissa >>= ctz;
+  return ecl_make_ulong_long(mantissa);
+#else  /* Never happens except for the 1000 year language contest. */
+  /* Make sure that we can call ecl_make_fixnum on the helper. */
+  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
+  /* FIXME use a temporary bignum register for the mantissa to avoid consing. */
+  cl_object mantissa = ecl_make_fixnum(0);
+  cl_fixnum helper, iterator, ctz=0;
+  value = frexp(value, exponent);
+  for(iterator=0; iterator<DBL_MANT_DIG && value; iterator+=fixnum_bits) {
+    value = ldexp(value, fixnum_bits);
+    helper = (cl_fixnum)value;
+    value -= helper;
+    mantissa = ecl_ash(mantissa, fixnum_bits);
+    mantissa = ecl_plus(mantissa, ecl_make_fixnum(helper));
+    /* When this chunk contains only 0s, then we extend trailing zeros by
+       fixnum_bits (chunk's size). Otherwise we start counting again. */
+    ctz = !helper ? ctz+fixnum_bits : ecl_ctz(helper);
+  }
+  /* ctz is a trailing 0 count for the whole mantissa. iterator denotes how many
+     bits we have shifted the mantissa. */
+  *exponent += ctz - iterator;
+  mantissa = ecl_ash(mantissa, -ctz);
+  return mantissa;
+#endif
+}
+
+static inline cl_object
+decode_lf(long double value, int *exponent)
+{
+#if LDBL_MANT_DIG <= ECL_LONG_LONG_BITS
+  int ctz;
+  unsigned long long mantissa;
+  value = ldexpl(frexpl(value, exponent), LDBL_MANT_DIG);
+  *exponent -= LDBL_MANT_DIG;
+  mantissa = (unsigned long long)value;
+  ctz = ecl_ctz(mantissa);
+  *exponent += ctz;
+  mantissa >>= ctz;
+  return ecl_make_ulong_long(mantissa);
+#else  /* Happens for 128bit floats (i.e aarch64). */
+  /* Make sure that we can call ecl_make_fixnum on the helper. */
+  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
+  /* FIXME use a temporary bignum register for the mantissa to avoid consing. */
+  cl_object mantissa = ecl_make_fixnum(0);
+  cl_fixnum helper, iterator, ctz=0;
+  value = frexpl(value, exponent);
+  for(iterator=0; iterator<LDBL_MANT_DIG && value; iterator+=fixnum_bits) {
+    value = ldexpl(value, fixnum_bits);
+    helper = (cl_fixnum)value;
+    value -= helper;
+    mantissa = ecl_ash(mantissa, fixnum_bits);
+    mantissa = ecl_plus(mantissa, ecl_make_fixnum(helper));
+    /* When this chunk contains only 0s, then we extend trailing zeros by
+       fixnum_bits (chunk's size). Otherwise we start counting again. */
+    ctz = !helper ? ctz+fixnum_bits : ecl_ctz(helper);
+  }
+  /* ctz is a trailing 0 count for the whole mantissa. iterator denotes how many
+     bits we have shifted the mantissa. */
+  *exponent += ctz - iterator;
+  mantissa = ecl_ash(mantissa, -ctz);
+  return mantissa;
+#endif
+}
+
+#define hash_single_float(h,v) hash_double_float((h),(double)(v))
+
+static void
 hash_double_float(cl_hashstate *h, double value) {
   if (isfinite(value) && (value==trunc(value))) {
-    cl_object x = _ecl_double_to_integer(value);
-    hash_integer(h, x);
-  } else {
-    hash_data(h, &value, sizeof(value));
+    const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    if (value < limit && value >= -limit) {
+      hash_word(h, (cl_fixnum)value);
+      return;
+    } else {
+      cl_fixnum sign=1;
+      int exponent;
+      cl_object mantissa;
+      if (signbit(value)) {
+        sign=-1;
+        value=-value;
+      }
+      mantissa = decode_df(value, &exponent);
+      hash_word(h, 8*exponent+sign);
+      hash_integer(h, mantissa);
+      return;
+    }
   }
+  /* Fall-through. */
+  hash_data(h, &value, sizeof(value));
 }
 
-static inline void
+/* Long floats when cast lose precision, but hash collisions are allowed. We
+   don't cast things to long float, because there are distinct bit patterns that
+   represent the same finite values. We need to take care to ensure canonical
+   dyadic form when long float has and EQUALP bignum value. */
+static void
 hash_long_float(cl_hashstate *h, long double value) {
   if (isfinite(value) && (value==truncl(value))) {
-    cl_object x = _ecl_long_double_to_integer(value);
-    hash_integer(h, x);
-  } else {
-    /* A cast value may be an integer(!). */
-    hash_double_float(h, (double)value);
+    const long double limit = ldexpl(1.0L, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    if (value < limit && value >= -limit) {
+      hash_word(h, (cl_fixnum)value);
+      return;
+    } else {
+      cl_fixnum sign=1;
+      int exponent;
+      cl_object mantissa;
+      if (signbit(value)) {
+        sign=-1;
+        value=-value;
+      }
+      mantissa = decode_lf(value, &exponent);
+      hash_word(h, 8*exponent+sign);
+      hash_integer(h, mantissa);
+      return;
+    }
   }
-}
-
-static inline void
-hash_single_float(cl_hashstate *h, float value) {
+  /* Fall-through. Note that rounding to double can make the number integral. */
   hash_double_float(h, (double)value);
 }
 
-static inline void
+static void
 hash_ratio(cl_hashstate *h, cl_object x) {
-  /* When the ratio is dyadic, then we always cast it to double to ensure the
-     same hash value. Otherwise we hash separately each part. */
+  /* When the ratio is dyadic and within long-float precision, then we cast it
+     to double for consistent hashing. Otherwise we hash ratio separately. */
   cl_object num = ecl_ratio_num(x);
   cl_object den = ecl_ratio_den(x);
-  cl_object test = ecl_boole(ECL_BOOLAND, den, ecl_one_minus(den));
-  if (ecl_zerop(test)) {
-    double value = ecl_to_double(x);
-    hash_double_float(h, value);
+  /* Ratio is dyadic when denominator is a power of two. To avoid bignum
+     arithmetic we provide an optimized path for each subtype of integer.
+     ecl_zerop(ecl_boole(ECL_BOOLAND, den, ecl_one_minus(den))); */
+  bool dyadic_p;
+  if (ECL_FIXNUMP(den)) {
+    /* Denominator is always positive, so fixnump(x) -> fixnump(x-1) */
+    cl_fixnum dfix = ecl_fixnum(den);
+    dyadic_p = !(dfix & (dfix-1));
   } else {
-    hash_word(h, t_ratio);
-    hash_integer(h, num);
-    hash_integer(h, den);
+    /* When bignum is a pow2, then integer_length == ctz+1 or (popcount==1) */
+    dyadic_p = ((_ecl_big_ctz(den)+1) == _ecl_big_integer_length(den));
   }
+  if (dyadic_p) {
+    /* Normally we would call here
+       cl_fixnum length = ecl_integer_length(ecl_abs(num));
+
+       But! Numerator is normalized to an odd integer because denominator is a
+       power of two. INTEGER-LENGTH returns different values for X and -X only
+       when X is a power of two, and the only odd power of two is X=1.
+
+       (INTEGER-LENGTH -1) == 0 and 0 <= LDBL_MANT_DIG
+       (INTEGER-LENGTH +1) == 1 and 1 <= LDBL_MANT_DIG
+
+       This is why we don't need to call ABS on the numenator. QED. */
+    cl_fixnum length = ecl_integer_length(num);
+    cl_fixnum exponent = -(ecl_integer_length(den)-1);
+    if (length <= LDBL_MANT_DIG && exponent >= LDBL_MIN_EXP-LDBL_MANT_DIG) {
+      hash_double_float(h, ecl_to_double(x));
+      return;
+    }
+  }
+  /* Fall-through. */
+  hash_word(h, t_ratio);
+  hash_integer(h, num);
+  hash_integer(h, den);
 }
 
 static void
