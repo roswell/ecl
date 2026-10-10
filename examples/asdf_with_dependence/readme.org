@@ -60,8 +60,8 @@ but has not been created
 #+END_EXAMPLE
 
 then try putting the latest ~uiop.asd~ somewhere accessible to
-~asdf:*central-repository*~ and put ~#+ecl :uiop~ in your ~.asd~'s
-~#depends-on~ list.  Likewise for ~:sockets~ and ~:sb-bsd-sockets~.
+~asdf:*central-repository*~ and put ~"uiop"~ in your ~.asd~'s
+~:depends-on~ list.  Likewise for ~"sockets"~ and ~"sb-bsd-sockets"~.
 
 ** Build it as shared library and use in C
 
