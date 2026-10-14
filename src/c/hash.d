@@ -273,49 +273,92 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
   }
 }
 
-/* To ensure consistent hashing of numbers under the predicate EQUALP we coerce
-   them to DOUBLE-FLOAT and hash the result. This approach, albeit simple, has a
-   few serious demerits:
+/* To ensure consistent hashing of numbers under the predicate EQUALP:
 
-   - aesthetically speaking it is a very crude approach
-   - double precision is not that great (i.e many collissions for 64bit UUIDs)
-   - it is slower and conses more for rationals due to frequent conversions
+   1. Floats that are integers are cast and hashed as integer
+   2. Floats that are not integers are cast and hashed as double-float
+   3. Ratios that are dyadic are cast and hashed as double-float
 
-   That said it works well as a baseline solution. Previously ECL computed
-   different hashes for = numbers and that was a correctness issue under EQUALP.
-   Next commtis introduce more performant solutions that produce better hashes.
+   For long floats we must test for integer before casting to double, because
+   otherwise bignums that do not fit in a double would have a different hash.
+
+   To ensure that equal ratios and floats have the same hash, we must cast all
+   floats to the same representation as is targeted by ratios.
+
+   This approach is a clear improvement. Still it has a few issues:
+   - conses bignums for hashing large integer floats
+   - dyadic ratios are cast to double even even when they exceed float precision
 
    -- jd 2026-10-07 */
 
-#define hash_single_float(h,v) hash_float((h), (double)(v))
-#define hash_double_float(h,v) hash_float((h), (double)(v))
-
-static inline void
-hash_float(cl_hashstate *h, double v)
+/* Hashes integer unconditionally. */
+static void
+hash_integer(cl_hashstate *h, cl_object x)
 {
-  if (v==-0.0) v=0.0;
-  hash_data(h, &v, sizeof(v));
+  if (ECL_FIXNUMP(x)) {
+    hash_word(h, ecl_fixnum(x));
+  } else {
+    hash_word(h, ecl_bigsgn(x));
+    hash_data(h,
+              ECL_BIGNUM_LIMBS(x),
+              ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+  }
 }
 
 static inline void
-hash_long_float(cl_hashstate *h, long double v)
-{
-  ECL_WITHOUT_FPE_BEGIN {
-    hash_float(h, (double)(v));
-  } ECL_WITHOUT_FPE_END;
+hash_fixnum(cl_hashstate *h, cl_object x) {
+  hash_word(h, ecl_fixnum(x));
 }
 
-#define hash_fixnum(h,x) hash_float((h),(double)ecl_fixnum(x))
-#define hash_bignum(h,x) hash_rational((h),(x))
-#define hash_ratio(h,x)  hash_rational((h),(x))
+static inline void
+hash_bignum(cl_hashstate *h, cl_object x) {
+  hash_word(h, ecl_bigsgn(x));
+  hash_data(h,
+            ECL_BIGNUM_LIMBS(x),
+            ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+}
 
 static inline void
-hash_rational(cl_hashstate *h, cl_object x)
-{
-  ECL_WITHOUT_FPE_BEGIN {
-    double v = ecl_to_double(x);
-    hash_float(h, v);
-  } ECL_WITHOUT_FPE_END;
+hash_double_float(cl_hashstate *h, double value) {
+  if (isfinite(value) && (value==trunc(value))) {
+    cl_object x = _ecl_double_to_integer(value);
+    hash_integer(h, x);
+  } else {
+    hash_data(h, &value, sizeof(value));
+  }
+}
+
+static inline void
+hash_long_float(cl_hashstate *h, long double value) {
+  if (isfinite(value) && (value==truncl(value))) {
+    cl_object x = _ecl_long_double_to_integer(value);
+    hash_integer(h, x);
+  } else {
+    /* A cast value may be an integer(!). */
+    hash_double_float(h, (double)value);
+  }
+}
+
+static inline void
+hash_single_float(cl_hashstate *h, float value) {
+  hash_double_float(h, (double)value);
+}
+
+static inline void
+hash_ratio(cl_hashstate *h, cl_object x) {
+  /* When the ratio is dyadic, then we always cast it to double to ensure the
+     same hash value. Otherwise we hash separately each part. */
+  cl_object num = ecl_ratio_num(x);
+  cl_object den = ecl_ratio_den(x);
+  cl_object test = ecl_boole(ECL_BOOLAND, den, ecl_one_minus(den));
+  if (ecl_zerop(test)) {
+    double value = ecl_to_double(x);
+    hash_double_float(h, value);
+  } else {
+    hash_word(h, t_ratio);
+    hash_integer(h, num);
+    hash_integer(h, den);
+  }
 }
 
 static void
