@@ -897,7 +897,7 @@ normalize_weak_kov(cl_hentry e) {
 /* This function normalizes entries. That means that si_weak_pointer_value
    shouldn't be called on resulting entry key and value. -- jd 2019-05-28 */
 static inline cl_hentry
-_ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
+normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
 {
   cl_hentry entry = &ht->data[index];
   *output = *entry;
@@ -942,6 +942,11 @@ _ecl_normalize_hentry(cl_htable ht, cl_index index, cl_hentry output)
 #endif
   return NULL;
 }
+
+# define _ecl_normalize_hentry(ht,index,output)         \
+  ((ht)->weak==ecl_htt_not_weak                         \
+   ? (&(ht)->data[index])                               \
+   : normalize_hentry((ht),(index),(output)))
 #else
 # define _ecl_hentry_store_key(ht,key) (key)
 # define _ecl_hentry_store_val(ht,val) (val)
@@ -1016,10 +1021,9 @@ _ecl_hash_key(cl_htable ht, cl_object key) {
 }
 
 static inline bool
-_ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
+hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
 {
   cl_object hkey = record->key;
-  cl_object hval = record->value;
   switch (ht->test) {
   case ecl_htt_eq:     return (key == hkey);
   case ecl_htt_eql:    return ecl_eql(key, hkey);
@@ -1027,6 +1031,7 @@ _ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
   case ecl_htt_equalp: return ecl_equalp(key, hkey);
   case ecl_htt_pack: {
     cl_object sh = hash_to_fixnum(hash);
+    cl_object hval = record->value;
     return (sh == hkey && ecl_string_eq(key, _ecl_htt_pack_key(hval)));
   }
   case ecl_htt_generic: {
@@ -1037,6 +1042,9 @@ _ecl_hash_test(cl_htable ht, cl_hashkey hash, cl_object key, cl_hentry record)
     ecl_internal_error("hash-table: unknown test function.");
   }
 }
+
+#define _ecl_hash_test(ht,hash,key,record) \
+  (key==record->key || hash_test(ht,hash,key,record))
 
 static inline cl_index
 _ecl_htable_limit(cl_htable ht)
@@ -1285,7 +1293,6 @@ _ecl_insert_htable(cl_htable ht, cl_object key, cl_object val)
   uint64_t hash = _ecl_hash_key(ht, key);
   cl_index index = ecl_hash_group_index(hash, size);
   cl_index idx;
-  uint8_t *head = ht->ctrl;
   loop_htable_groups(ht, index) {
     /* We test only for the emptyslot, because _ecl_insert_htable is called only
        from the rehash function, so there are no tombstones yet. */
@@ -1343,8 +1350,7 @@ _ecl_mapc_htable(cl_htable ht, cl_object fun)
   cl_index size = ecl_htable_size(ht);
   ecl_hentry record_aux, *record;
   cl_index index = 0;
-  cl_index idx, probe;
-  uint8_t *head = ht->ctrl;
+  cl_index idx;
   (void)record_aux;
   if (!ht->fill) return;
   loop_htable_groups(ht, index) {
