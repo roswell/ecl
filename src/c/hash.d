@@ -35,39 +35,6 @@ typedef ecl_xxh3_state cl_hashstate;
 #define hash_to_fixnum(x) \
   ecl_make_fixnum((cl_fixnum)((x) & (uint64_t)MOST_POSITIVE_FIXNUM))
 
-static inline void
-hash_single_float(cl_hashstate *h, float value) {
-  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
-   && (value == (cl_fixnum)value))
-    ? hash_word(h, (cl_fixnum)value)
-    : hash_data(h, &value, sizeof(value));
-}
-
-static inline void
-hash_double_float(cl_hashstate *h, double value) {
-  (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
-   && (value == (cl_fixnum)value))
-    ? hash_word(h, (cl_fixnum)value)
-    : hash_data(h, &value, sizeof(value));
-}
-
-static inline void
-hash_long_float(cl_hashstate *h, long double value) {
-  if (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
-      && (value == (cl_fixnum)value)) {
-    hash_word(h, (cl_fixnum)value);
-  } else {
-    /* We coerce to double because long double has extra bits
-     * that give rise to different hash key and are not
-     * meaningful */
-    struct { double mantissa; int exponent; int sign; } aux;
-    aux.mantissa = frexpl(value, &aux.exponent);
-    aux.sign = (value < 0)? -1: 1;
-    if (aux.mantissa == 0.0) aux.mantissa = 0.0;
-    hash_data(h, &aux, sizeof(aux));
-  }
-}
-
 
 /* Hashing */
 
@@ -306,6 +273,51 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
   }
 }
 
+/* To ensure consistent hashing of numbers under the predicate EQUALP we coerce
+   them to DOUBLE-FLOAT and hash the result. This approach, albeit simple, has a
+   few serious demerits:
+
+   - aesthetically speaking it is a very crude approach
+   - double precision is not that great (i.e many collissions for 64bit UUIDs)
+   - it is slower and conses more for rationals due to frequent conversions
+
+   That said it works well as a baseline solution. Previously ECL computed
+   different hashes for = numbers and that was a correctness issue under EQUALP.
+   Next commtis introduce more performant solutions that produce better hashes.
+
+   -- jd 2026-10-07 */
+
+#define hash_single_float(h,v) hash_float((h), (double)(v))
+#define hash_double_float(h,v) hash_float((h), (double)(v))
+
+static inline void
+hash_float(cl_hashstate *h, double v)
+{
+  if (v==-0.0) v=0.0;
+  hash_data(h, &v, sizeof(v));
+}
+
+static inline void
+hash_long_float(cl_hashstate *h, long double v)
+{
+  ECL_WITHOUT_FPE_BEGIN {
+    hash_float(h, (double)(v));
+  } ECL_WITHOUT_FPE_END;
+}
+
+#define hash_fixnum(h,x) hash_float((h),(double)ecl_fixnum(x))
+#define hash_bignum(h,x) hash_rational((h),(x))
+#define hash_ratio(h,x)  hash_rational((h),(x))
+
+static inline void
+hash_rational(cl_hashstate *h, cl_object x)
+{
+  ECL_WITHOUT_FPE_BEGIN {
+    double v = ecl_to_double(x);
+    hash_float(h, v);
+  } ECL_WITHOUT_FPE_END;
+}
+
 static void
 _hash_equalp(cl_hashstate *h, cl_object x, int depth)
 {
@@ -344,59 +356,67 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     }
     return;
   case t_fixnum:
-    /* INV we hash by value because (EQUALP 1 1.0) is true. */
-    hash_word(h, ecl_fixnum(x));
+    hash_fixnum(h, x);
     return;
   case t_bignum:
-    /* FIXME! We should be more precise here! Notably large floats and bignums
-       won't agree on the hash, even when they are EQUALP to each other. */
-    hash_data(h,
-              ECL_BIGNUM_LIMBS(x),
-              ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+    hash_bignum(h, x);
     return;
-  case t_ratio:
-    _hash_equalp(h, ecl_ratio_num(x), 0);
-    _hash_equalp(h, ecl_ratio_den(x), 0);
+  case t_ratio: {
+    hash_ratio(h, x);
     return;
+  }
   case t_singlefloat:
-    /* FIXME! we only cast to integer when the float is within integer range.
-       t_bignums won't agree on large values.
-       t_ratio   won't agree on fract values. */
     hash_single_float(h, ecl_single_float(x));
     return;
   case t_doublefloat:
-    /* FIXME! ditto */
     hash_double_float(h, ecl_double_float(x));
     return;
   case t_longfloat:
-    /* FIXME! ditto */
     hash_long_float(h, ecl_long_float(x));
     return;
   case t_complex:
+    hash_word(h, t_complex);
     _hash_equalp(h, ecl_complex_real(x), 0);
     _hash_equalp(h, ecl_complex_imag(x), 0);
     return;
 #ifdef ECL_COMPLEX_FLOAT
   case t_csfloat: {
-    /* FIXME! the problem is similar to float vs ratio, but here we have a
-       problem with (complex float) vs (complex rational). */
     _Complex float v = ecl_csfloat(x);
-    hash_single_float(h, crealf(v));
-    hash_single_float(h, cimagf(v));
+    float real = crealf(v);
+    float imag = cimagf(v);
+    if (imag == 0) {
+      hash_single_float(h, real);
+    } else {
+      hash_word(h, t_complex);
+      hash_single_float(h, real);
+      hash_single_float(h, imag);
+    }
     return;
   }
   case t_cdfloat: {
-    /* FIXME! ditto */
     _Complex double v = ecl_cdfloat(x);
-    hash_double_float(h, creal(v));
-    hash_double_float(h, cimag(v));
+    double real = creal(v);
+    double imag = cimag(v);
+    if (imag == 0) {
+      hash_double_float(h, real);
+    } else {
+      hash_word(h, t_complex);
+      hash_double_float(h, real);
+      hash_double_float(h, imag);
+    }
     return;
   }
   case t_clfloat: {
-    /* FIXME! ditto */
     _Complex long double v = ecl_clfloat(x);
-    hash_long_float(h, creall(v));
-    hash_long_float(h, cimagl(v));
+    long double real = creall(v);
+    long double imag = cimagl(v);
+    if (imag == 0) {
+      hash_long_float(h, real);
+    } else {
+      hash_word(h, t_complex);
+      hash_long_float(h, real);
+      hash_long_float(h, imag);
+    }
     return;
   }
 #endif
