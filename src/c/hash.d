@@ -35,34 +35,6 @@ typedef ecl_xxh3_state cl_hashstate;
 #define hash_to_fixnum(x) \
   ecl_make_fixnum((cl_fixnum)((x) & (uint64_t)MOST_POSITIVE_FIXNUM))
 
-#ifdef ECL_UNICODE
-static inline void
-hash_base_string(cl_hashstate *h, cl_object x)
-{
-  const cl_index length = x->base_string.fillp;
-  const ecl_base_char *self = x->base_string.self;
-  ecl_character buffer[256];
-  cl_index index = 0, jdx;
-  while (index < length) {
-    cl_index take = length-index;
-    if (take > 256) take=256;
-    for (jdx=0; jdx<take; jdx++) {
-      buffer[jdx] = self[index+jdx];
-    }
-    hash_data(h, buffer, take*sizeof(ecl_character));
-    index += take;
-  }
-}
-
-static inline void
-hash_full_string(cl_hashstate *h, cl_object x)
-{
-  const cl_index length = x->string.fillp;
-  const ecl_character *self = x->string.self;
-  hash_data(h, self, length*sizeof(ecl_character));
-}
-#endif
-
 static inline void
 hash_single_float(cl_hashstate *h, float value) {
   (MOST_NEGATIVE_FIXNUM <= value && value <= MOST_POSITIVE_FIXNUM
@@ -169,6 +141,34 @@ _hash_eql(cl_hashstate *state, cl_object x)
     return;
   }
 }
+
+#ifdef ECL_UNICODE
+static inline void
+hash_base_string(cl_hashstate *h, cl_object x)
+{
+  const cl_index length = x->base_string.fillp;
+  const ecl_base_char *self = x->base_string.self;
+  ecl_character buffer[256];
+  cl_index index = 0, jdx;
+  while (index < length) {
+    cl_index take = length-index;
+    if (take > 256) take=256;
+    for (jdx=0; jdx<take; jdx++) {
+      buffer[jdx] = self[index+jdx];
+    }
+    hash_data(h, buffer, take*sizeof(ecl_character));
+    index += take;
+  }
+}
+
+static inline void
+hash_full_string(cl_hashstate *h, cl_object x)
+{
+  const cl_index length = x->string.fillp;
+  const ecl_character *self = x->string.self;
+  hash_data(h, self, length*sizeof(ecl_character));
+}
+#endif
 
 static void
 _hash_equal(cl_hashstate *h, cl_object x, int depth)
