@@ -287,17 +287,15 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
    1. Integer values representable  as FIXNUM         -> (hash fixnum)
    2. Integer values representable  as LONG-FLOAT     -> (hash dyadic)
    3. Integer values exceeding LONG-FLOAT precision   -> (hash bignum)
-   4. Dyadic fraction values                          -> (hash double)
+   4. Dyadic fraction values representable as double  -> (hash double)
+   5. Dyadic fraction values representable as lfloat  -> (hash lfloat)
    6. Other numbers are hashed depending on their type (they are disjoint)
 
-   Casting fractional LONG-FLOAT and RATIO to DOUBLE-FLOAT is a performance
-   tradeoff - we trade avoidable collissions for performance and simplicity.
+   This way we reduce significantly consing required to bring together bignums
+   and floats, hashing of and floats is deterministic and typical values, that
+   is fixnums and floats, are always on the fast path.
 
-   On the other hand we reduce significantly consing required to bring together
-   bignums and floats, hashing of = ratios and floats is deterministic and
-   typical values, that is fixnums and floats, are always on the fast path.
-
-   -- jd 2026-10-07 */
+   -- jd 2026-10-15 */
 
 /* Hashes integer unconditionally. */
 static void
@@ -349,7 +347,7 @@ hash_bignum(cl_hashstate *h, cl_object x) {
   }
 }
 
-/* INV value is guaranteed to be > MOST-POSITIVE-FIXNUM. */
+/* INV value is guaranteed to be > 0. */
 /* These two functions are an example why CL macros are the best. */
 static inline cl_object
 decode_df(double value, int *exponent)
@@ -454,39 +452,44 @@ hash_double_float(cl_hashstate *h, double value) {
   hash_data(h, &value, sizeof(value));
 }
 
-/* Long floats when cast lose precision, but hash collisions are allowed. We
-   don't cast things to long float, because there are distinct bit patterns that
-   represent the same finite values. We need to take care to ensure canonical
-   dyadic form when long float has and EQUALP bignum value. */
+/* We need to ensure, that when long double can be represented as double without
+   loss of precision, that is value == (double)value, to hash it as double. */
 static void
 hash_long_float(cl_hashstate *h, long double value) {
-  if (isfinite(value) && (value==truncl(value))) {
+  /* Hash as double. */
+  if (!isfinite(value)
+      || (fabsl(value) <= DBL_MAX && value==(double)value) ) {
+    hash_double_float(h, (double)value);
+    return;
+  }
+  /* Hash as fixnum. */
+  {
     const long double limit = ldexpl(1.0L, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
-    if (value < limit && value >= -limit) {
+    if ((value==truncl(value)) && (value < limit) && value >= -limit) {
       hash_word(h, (cl_fixnum)value);
-      return;
-    } else {
-      cl_fixnum sign=1;
-      int exponent;
-      cl_object mantissa;
-      if (signbit(value)) {
-        sign=-1;
-        value=-value;
-      }
-      mantissa = decode_lf(value, &exponent);
-      hash_word(h, 8*exponent+sign);
-      hash_integer(h, mantissa);
       return;
     }
   }
-  /* Fall-through. Note that rounding to double can make the number integral. */
-  hash_double_float(h, (double)value);
+  /* Hash as long double in dyadic form -- this is both for compatibility with
+     bignums and to avoid hashing padding bits on x87. */
+  {
+    cl_fixnum sign=1;
+    int exponent;
+    cl_object mantissa;
+    if (signbit(value)) {
+      sign=-1;
+      value=-value;
+    }
+    mantissa = decode_lf(value, &exponent);
+    hash_word(h, 8*exponent+sign);
+    hash_integer(h, mantissa);
+  }
 }
 
 static void
 hash_ratio(cl_hashstate *h, cl_object x) {
   /* When the ratio is dyadic and within long-float precision, then we cast it
-     to double for consistent hashing. Otherwise we hash ratio separately. */
+     to long double for consistent hashes. Otherwise we hash ratio as is. */
   cl_object num = ecl_ratio_num(x);
   cl_object den = ecl_ratio_den(x);
   /* Ratio is dyadic when denominator is a power of two. To avoid bignum
@@ -516,7 +519,7 @@ hash_ratio(cl_hashstate *h, cl_object x) {
     cl_fixnum length = ecl_integer_length(num);
     cl_fixnum exponent = -(ecl_integer_length(den)-1);
     if (length <= LDBL_MANT_DIG && exponent >= LDBL_MIN_EXP-LDBL_MANT_DIG) {
-      hash_double_float(h, ecl_to_double(x));
+      hash_long_float(h, ecl_to_long_double(x));
       return;
     }
   }
