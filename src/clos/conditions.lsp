@@ -745,7 +745,16 @@ memory limits before executing the program again."))
                 (return-from ,error-return
                   (handler-case (return-from ,normal-return ,form)
                      ,@(remove no-error-clause cases)))))))
-        (let* ((tag (gensym))
+        (progn
+          ;; Validate cases syntax
+          (dolist (case cases)
+            (destructuring-bind (specifier lambda-list &body body) case
+              (declare (ignorable specifier body))
+              (unless (and (proper-list-p lambda-list) (>= 1 (length lambda-list)))
+                (simple-program-error "Syntax error in ~A.~%Malformed case: ~A."
+                                    'handler-case
+                                    case))))
+          (let* ((tag (gensym))
                (var (gensym))
                (annotated-cases (mapcar #'(lambda (case) (cons (gensym) case))
                                         cases)))
@@ -772,7 +781,7 @@ memory limits before executing the program again."))
                                                  ,@body)
                                                ;; We must allow declarations!
                                                `(locally ,@body))))))
-                           annotated-cases))))))))
+                           annotated-cases)))))))))
 
 (defmacro ignore-errors (&rest forms)
   `(handler-case (progn ,@forms)
