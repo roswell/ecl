@@ -297,36 +297,58 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
 
    -- jd 2026-10-15 */
 
-/* Hashes integer unconditionally. */
+static inline void
+hash_fixnum_data(cl_hashstate *h, cl_object x) {
+  hash_word(h, ecl_fixnum(x));
+}
+
+#define hash_fixnum(h,x) hash_fixnum_data(h,x)
+
+static inline void
+hash_bignum_data(cl_hashstate *h, cl_object x) {
+  hash_word(h, ecl_bigsgn(x));
+  hash_data(h,
+            ECL_BIGNUM_LIMBS(x),
+            ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+}
+
 static void
 hash_integer(cl_hashstate *h, cl_object x)
 {
   if (ECL_FIXNUMP(x)) {
-    hash_word(h, ecl_fixnum(x));
+    hash_fixnum_data(h, x);
   } else {
-    hash_word(h, ecl_bigsgn(x));
-    hash_data(h,
-              ECL_BIGNUM_LIMBS(x),
-              ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+    hash_bignum_data(h, x);
   }
 }
 
 static inline void
-hash_fixnum(cl_hashstate *h, cl_object x) {
-  hash_word(h, ecl_fixnum(x));
+hash_and_free_bignum_register(cl_hashstate *h, cl_object mantissa) {
+  /* INV this function assumes that mantissa is already positive. The bignum may
+     not be normalized. We free the register after hashing. */
+  if (ECL_BIGNUM_SIZE(mantissa) == 1) {
+    ecl_limb_t y = ECL_BIGNUM_LIMBS(mantissa)[0];
+    if (y <= MOST_POSITIVE_FIXNUM) {
+      hash_word(h, y);
+      goto DONE;
+    }
+  }
+  hash_bignum_data(h, mantissa);
+ DONE:
+  _ecl_big_register_free(mantissa);
 }
 
 /* When hashing bignums we see whether they fit in LONG-FLOAT and only then we
    cast it to a dyadic form. Otherwise we directly hash limbs. */
 static void
 hash_bignum(cl_hashstate *h, cl_object x) {
-  cl_fixnum signum = ecl_bigsgn(x);
   cl_fixnum length = _ecl_big_integer_length(x);
   cl_fixnum exponent = _ecl_big_ctz(x);
   if (length-exponent<=LDBL_MANT_DIG && length<=LDBL_MAX_EXP) {
     /* To avoid allocating fresh bignums by ABS and ASH we opencode this:
        cl_object mantissa = ecl_ash(ecl_abs(x), -exponent); */
-    cl_object mantissa, reg = _ecl_big_register2();
+    cl_object reg = _ecl_big_register2();
+    cl_fixnum signum = ecl_bigsgn(x);
     if (signum<0) {
       _ecl_big_neg(reg, x);
       _ecl_big_div_2exp(reg, reg, exponent);
@@ -334,96 +356,121 @@ hash_bignum(cl_hashstate *h, cl_object x) {
     else {
       _ecl_big_div_2exp(reg, x, exponent);
     }
-    mantissa = _ecl_big_register_normalize(reg);
-    _ecl_big_register_free(reg);
-    /* ~ */
     hash_word(h, 8*exponent+signum);
-    hash_integer(h, mantissa);
+    hash_and_free_bignum_register(h, reg);
   } else {
-    hash_word(h, signum);
-    hash_data(h,
-              ECL_BIGNUM_LIMBS(x),
-              ECL_BIGNUM_USIZE(x) * sizeof(ecl_limb_t));
+    hash_bignum_data(h, x);
   }
 }
 
-/* INV value is guaranteed to be > 0. */
+/* INV value is guaranteed to be finite and != 0. */
 /* These two functions are an example why CL macros are the best. */
-static inline cl_object
-decode_df(double value, int *exponent)
+#define DECODE_SIGNUM(value,signum) \
+  do { if (signbit(value)) { signum=-1; value=-value; } } while(0)
+
+static inline void
+hash_dfloat(cl_hashstate *h, double value)
 {
-#if DBL_MANT_DIG <= ECL_LONG_LONG_BITS
-  int ctz;
-  unsigned long long mantissa;
-  value = ldexp(frexp(value, exponent), DBL_MANT_DIG);
-  *exponent -= DBL_MANT_DIG;
-  mantissa = (unsigned long long)value;
+#if DBL_MANT_DIG <= ECL_FIXNUM_BITS
+  int ctz, exponent, signum=1;
+  cl_index mantissa;
+  DECODE_SIGNUM(value, signum);
+  value = ldexp(frexp(value, &exponent), DBL_MANT_DIG);
+  exponent -= DBL_MANT_DIG;
+  mantissa = (cl_index)value;
   ctz = ecl_ctz(mantissa);
-  *exponent += ctz;
+  exponent += ctz;
   mantissa >>= ctz;
-  return ecl_make_ulong_long(mantissa);
-#else  /* Never happens except for the 1000 year language contest. */
-  /* Make sure that we can call ecl_make_fixnum on the helper. */
+  /* binary64 mantissa is 53 bits so it is always <= MOST_POSITIVE_FIXNUM, but
+     we can imagine an exotic C implementation where double is binary80. */
+  if (mantissa <= MOST_POSITIVE_FIXNUM) {
+    hash_word(h, 8*exponent+signum);
+    hash_word(h, mantissa);
+  } else {
+    cl_object reg = _ecl_big_register2();
+    _ecl_big_set_idx(reg, mantissa);
+    hash_word(h, 8*exponent+signum);
+    hash_bignum_data(h, reg);
+    _ecl_big_register_free(reg);
+  }
+#else  /* Happens for binary64 float and 32bit fixnum (i.e i686). */
   const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
-  /* FIXME use a temporary bignum register for the mantissa to avoid consing. */
-  cl_object mantissa = ecl_make_fixnum(0);
-  cl_fixnum helper, iterator, ctz=0;
-  value = frexp(value, exponent);
+  int ctz=0, exponent, signum=1;
+  cl_object mantissa = _ecl_big_register2();
+  cl_fixnum helper, iterator;
+  DECODE_SIGNUM(value, signum);
+  value = frexp(value, &exponent);
+  _ecl_big_set_ui(mantissa, 0);
   for(iterator=0; iterator<DBL_MANT_DIG && value; iterator+=fixnum_bits) {
     value = ldexp(value, fixnum_bits);
     helper = (cl_fixnum)value;
     value -= helper;
-    mantissa = ecl_ash(mantissa, fixnum_bits);
-    mantissa = ecl_plus(mantissa, ecl_make_fixnum(helper));
+    _ecl_big_mul_2exp(mantissa, mantissa, fixnum_bits);
+    _ecl_big_add_ui(mantissa, mantissa, helper);
     /* When this chunk contains only 0s, then we extend trailing zeros by
        fixnum_bits (chunk's size). Otherwise we start counting again. */
     ctz = !helper ? ctz+fixnum_bits : ecl_ctz(helper);
   }
   /* ctz is a trailing 0 count for the whole mantissa. iterator denotes how many
      bits we have shifted the mantissa. */
-  *exponent += ctz - iterator;
-  mantissa = ecl_ash(mantissa, -ctz);
-  return mantissa;
+  exponent += ctz - iterator;
+  _ecl_big_div_2exp(mantissa, mantissa, ctz);
+  hash_word(h, 8*exponent+signum);
+  hash_and_free_bignum_register(h, mantissa);
 #endif
 }
 
-static inline cl_object
-decode_lf(long double value, int *exponent)
+static inline void
+hash_lfloat(cl_hashstate *h, long double value)
 {
-#if LDBL_MANT_DIG <= ECL_LONG_LONG_BITS
-  int ctz;
-  unsigned long long mantissa;
-  value = ldexpl(frexpl(value, exponent), LDBL_MANT_DIG);
-  *exponent -= LDBL_MANT_DIG;
-  mantissa = (unsigned long long)value;
+#if LDBL_MANT_DIG <= ECL_FIXNUM_BITS
+  int ctz, exponent, signum=1;
+  cl_index mantissa;
+  DECODE_SIGNUM(value, signum);
+  value = ldexpl(frexpl(value, &exponent), LDBL_MANT_DIG);
+  exponent -= LDBL_MANT_DIG;
+  mantissa = (cl_index)value;
   ctz = ecl_ctz(mantissa);
-  *exponent += ctz;
+  exponent += ctz;
   mantissa >>= ctz;
-  return ecl_make_ulong_long(mantissa);
-#else  /* Happens for 128bit floats (i.e aarch64). */
-  /* Make sure that we can call ecl_make_fixnum on the helper. */
+  /* binary80 mantissa is 64 bits so it can falsify <= MOST_POSITIVE_FIXNUM. */
+  if (mantissa <= MOST_POSITIVE_FIXNUM) {
+    hash_word(h, 8*exponent+signum);
+    hash_word(h, mantissa);
+  } else {
+    cl_object reg = _ecl_big_register2();
+    _ecl_big_set_idx(reg, mantissa);
+    hash_word(h, 8*exponent+signum);
+    hash_bignum_data(h, reg);
+    _ecl_big_register_free(reg);
+  }
+#else /* Happens for 128bit floats (i.e aarch64). */
   const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
-  /* FIXME use a temporary bignum register for the mantissa to avoid consing. */
-  cl_object mantissa = ecl_make_fixnum(0);
-  cl_fixnum helper, iterator, ctz=0;
-  value = frexpl(value, exponent);
+  int ctz=0, exponent, signum=1;
+  cl_object mantissa = _ecl_big_register2();
+  cl_fixnum helper, iterator;
+  DECODE_SIGNUM(value, signum);
+  value = frexpl(value, &exponent);
+  _ecl_big_set_ui(mantissa, 0);
   for(iterator=0; iterator<LDBL_MANT_DIG && value; iterator+=fixnum_bits) {
     value = ldexpl(value, fixnum_bits);
     helper = (cl_fixnum)value;
     value -= helper;
-    mantissa = ecl_ash(mantissa, fixnum_bits);
-    mantissa = ecl_plus(mantissa, ecl_make_fixnum(helper));
+    _ecl_big_mul_2exp(mantissa, mantissa, fixnum_bits);
+    _ecl_big_add_ui(mantissa, mantissa, helper);
     /* When this chunk contains only 0s, then we extend trailing zeros by
        fixnum_bits (chunk's size). Otherwise we start counting again. */
     ctz = !helper ? ctz+fixnum_bits : ecl_ctz(helper);
   }
   /* ctz is a trailing 0 count for the whole mantissa. iterator denotes how many
      bits we have shifted the mantissa. */
-  *exponent += ctz - iterator;
-  mantissa = ecl_ash(mantissa, -ctz);
-  return mantissa;
+  exponent += ctz - iterator;
+  _ecl_big_div_2exp(mantissa, mantissa, ctz);
+  hash_word(h, 8*exponent+signum);
+  hash_and_free_bignum_register(h, mantissa);
 #endif
 }
+#undef DECODE_SIGNUM
 
 #define hash_single_float(h,v) hash_double_float((h),(double)(v))
 
@@ -434,19 +481,9 @@ hash_double_float(cl_hashstate *h, double value) {
     if (value < limit && value >= -limit) {
       hash_word(h, (cl_fixnum)value);
       return;
-    } else {
-      cl_fixnum sign=1;
-      int exponent;
-      cl_object mantissa;
-      if (signbit(value)) {
-        sign=-1;
-        value=-value;
-      }
-      mantissa = decode_df(value, &exponent);
-      hash_word(h, 8*exponent+sign);
-      hash_integer(h, mantissa);
-      return;
     }
+    hash_dfloat(h, value);
+    return;
   }
   /* Fall-through. */
   hash_data(h, &value, sizeof(value));
@@ -472,18 +509,7 @@ hash_long_float(cl_hashstate *h, long double value) {
   }
   /* Hash as long double in dyadic form -- this is both for compatibility with
      bignums and to avoid hashing padding bits on x87. */
-  {
-    cl_fixnum sign=1;
-    int exponent;
-    cl_object mantissa;
-    if (signbit(value)) {
-      sign=-1;
-      value=-value;
-    }
-    mantissa = decode_lf(value, &exponent);
-    hash_word(h, 8*exponent+sign);
-    hash_integer(h, mantissa);
-  }
+  hash_lfloat(h, value);
 }
 
 static void
