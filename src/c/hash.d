@@ -541,11 +541,20 @@ hash_ratio(cl_hashstate *h, cl_object x) {
        (INTEGER-LENGTH -1) == 0 and 0 <= LDBL_MANT_DIG
        (INTEGER-LENGTH +1) == 1 and 1 <= LDBL_MANT_DIG
 
-       This is why we don't need to call ABS on the numenator. QED. */
-    cl_fixnum length = ecl_integer_length(num);
+       This is why we don't need to call ABS on the numerator. QED. */
+    cl_fixnum length = (ECL_FIXNUMP(num)
+                        ? ecl_integer_length(num)
+                        : _ecl_big_integer_length(num));
     cl_fixnum exponent = -(ecl_integer_length(den)-1);
     if (length <= LDBL_MANT_DIG && exponent >= LDBL_MIN_EXP-LDBL_MANT_DIG) {
-      hash_long_float(h, ecl_to_long_double(x));
+      /* Generic way to do this is: hash_long_float(h, ecl_to_long_double(x));
+         that path recomputes mantissa and exponent from ratio using a generic
+         arithmetic. We already have everything ready. */
+      long double value = (ECL_FIXNUMP(num)
+                           ? ecl_fixnum(num)
+                           : _ecl_big_get_lf(num));
+      value = ldexpl(value, exponent);
+      hash_long_float(h, value);
       return;
     }
   }
