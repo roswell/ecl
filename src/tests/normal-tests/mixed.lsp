@@ -728,3 +728,26 @@
 ;;;     does not enforce strict float parsing.
 (deftest mix.0037.reader.parse-number ()
   (is (typep (read-from-string "1.0/2") 'symbol)))
+
+
+;;; Reported by: akater
+;;; Created: 2026-10-19
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/776
+;;; Description
+;;;
+;;;     HANDLER-CASE used to allow error clauses without a lambda list,
+;;;     as well as clauses with more than 1 argument.
+(deftest mix.0038.conditions.hangler-case-lambda-list ()
+  (signals si:simple-program-error
+    (macroexpand
+     '(handler-case (error "")
+       (t))))
+  (signals si:simple-program-error
+    (macroexpand
+     '(handler-case (error "")
+       (error (a b c)))))
+  (is (handler-case (error "")
+        (error () t)))
+  (is-equal 6 (handler-case (values 1 2 3)
+                (error ())
+                (:no-error (a b c) (+ a b c)))))
