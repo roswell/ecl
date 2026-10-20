@@ -298,14 +298,14 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
    -- jd 2026-10-15 */
 
 static inline void
-hash_fixnum_data(cl_hashstate *h, cl_object x) {
+equalp_hash_fixnum_data(cl_hashstate *h, cl_object x) {
   hash_word(h, ecl_fixnum(x));
 }
 
-#define hash_fixnum(h,x) hash_fixnum_data(h,x)
+#define equalp_hash_fixnum(h,x) equalp_hash_fixnum_data(h,x)
 
 static inline void
-hash_bignum_data(cl_hashstate *h, cl_object x) {
+equalp_hash_bignum_data(cl_hashstate *h, cl_object x) {
   hash_word(h, ecl_bigsgn(x));
   hash_data(h,
             ECL_BIGNUM_LIMBS(x),
@@ -313,17 +313,17 @@ hash_bignum_data(cl_hashstate *h, cl_object x) {
 }
 
 static void
-hash_integer(cl_hashstate *h, cl_object x)
+equalp_hash_integer(cl_hashstate *h, cl_object x)
 {
   if (ECL_FIXNUMP(x)) {
-    hash_fixnum_data(h, x);
+    equalp_hash_fixnum_data(h, x);
   } else {
-    hash_bignum_data(h, x);
+    equalp_hash_bignum_data(h, x);
   }
 }
 
 static inline void
-hash_and_free_bignum_register(cl_hashstate *h, cl_object mantissa) {
+equalp_hash_and_free_bignum_register(cl_hashstate *h, cl_object mantissa) {
   /* INV this function assumes that mantissa is already positive. The bignum may
      not be normalized. We free the register after hashing. */
   if (ECL_BIGNUM_SIZE(mantissa) == 1) {
@@ -333,7 +333,7 @@ hash_and_free_bignum_register(cl_hashstate *h, cl_object mantissa) {
       goto DONE;
     }
   }
-  hash_bignum_data(h, mantissa);
+  equalp_hash_bignum_data(h, mantissa);
  DONE:
   _ecl_big_register_free(mantissa);
 }
@@ -341,7 +341,7 @@ hash_and_free_bignum_register(cl_hashstate *h, cl_object mantissa) {
 /* When hashing bignums we see whether they fit in LONG-FLOAT and only then we
    cast it to a dyadic form. Otherwise we directly hash limbs. */
 static void
-hash_bignum(cl_hashstate *h, cl_object x) {
+equalp_hash_bignum(cl_hashstate *h, cl_object x) {
   cl_fixnum length = _ecl_big_integer_length(x);
   cl_fixnum exponent = _ecl_big_ctz(x);
   if (length-exponent<=LDBL_MANT_DIG && length<=LDBL_MAX_EXP) {
@@ -357,9 +357,9 @@ hash_bignum(cl_hashstate *h, cl_object x) {
       _ecl_big_div_2exp(reg, x, exponent);
     }
     hash_word(h, 8*exponent+signum);
-    hash_and_free_bignum_register(h, reg);
+    equalp_hash_and_free_bignum_register(h, reg);
   } else {
-    hash_bignum_data(h, x);
+    equalp_hash_bignum_data(h, x);
   }
 }
 
@@ -369,7 +369,7 @@ hash_bignum(cl_hashstate *h, cl_object x) {
   do { if (signbit(value)) { signum=-1; value=-value; } } while(0)
 
 static inline void
-hash_dfloat(cl_hashstate *h, double value)
+equalp_hash_dfloat(cl_hashstate *h, double value)
 {
 #if DBL_MANT_DIG <= ECL_FIXNUM_BITS
   int ctz, exponent, signum=1;
@@ -390,7 +390,7 @@ hash_dfloat(cl_hashstate *h, double value)
     cl_object reg = _ecl_big_register2();
     _ecl_big_set_idx(reg, mantissa);
     hash_word(h, 8*exponent+signum);
-    hash_bignum_data(h, reg);
+    equalp_hash_bignum_data(h, reg);
     _ecl_big_register_free(reg);
   }
 #else  /* Happens for binary64 float and 32bit fixnum (i.e i686). */
@@ -416,12 +416,12 @@ hash_dfloat(cl_hashstate *h, double value)
   exponent += ctz - iterator;
   _ecl_big_div_2exp(mantissa, mantissa, ctz);
   hash_word(h, 8*exponent+signum);
-  hash_and_free_bignum_register(h, mantissa);
+  equalp_hash_and_free_bignum_register(h, mantissa);
 #endif
 }
 
 static inline void
-hash_lfloat(cl_hashstate *h, long double value)
+equalp_hash_lfloat(cl_hashstate *h, long double value)
 {
 #if LDBL_MANT_DIG <= ECL_FIXNUM_BITS
   int ctz, exponent, signum=1;
@@ -441,7 +441,7 @@ hash_lfloat(cl_hashstate *h, long double value)
     cl_object reg = _ecl_big_register2();
     _ecl_big_set_idx(reg, mantissa);
     hash_word(h, 8*exponent+signum);
-    hash_bignum_data(h, reg);
+    equalp_hash_bignum_data(h, reg);
     _ecl_big_register_free(reg);
   }
 #else /* Happens for 128bit floats (i.e aarch64). */
@@ -467,22 +467,22 @@ hash_lfloat(cl_hashstate *h, long double value)
   exponent += ctz - iterator;
   _ecl_big_div_2exp(mantissa, mantissa, ctz);
   hash_word(h, 8*exponent+signum);
-  hash_and_free_bignum_register(h, mantissa);
+  equalp_hash_and_free_bignum_register(h, mantissa);
 #endif
 }
 #undef DECODE_SIGNUM
 
-#define hash_single_float(h,v) hash_double_float((h),(double)(v))
+#define equalp_hash_single_float(h,v) equalp_hash_double_float((h),(double)(v))
 
 static void
-hash_double_float(cl_hashstate *h, double value) {
+equalp_hash_double_float(cl_hashstate *h, double value) {
   if (isfinite(value) && (value==trunc(value))) {
     const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
     if (value < limit && value >= -limit) {
       hash_word(h, (cl_fixnum)value);
       return;
     }
-    hash_dfloat(h, value);
+    equalp_hash_dfloat(h, value);
     return;
   }
   /* Fall-through. */
@@ -492,11 +492,11 @@ hash_double_float(cl_hashstate *h, double value) {
 /* We need to ensure, that when long double can be represented as double without
    loss of precision, that is value == (double)value, to hash it as double. */
 static void
-hash_long_float(cl_hashstate *h, long double value) {
+equalp_hash_long_float(cl_hashstate *h, long double value) {
   /* Hash as double. */
   if (!isfinite(value)
       || (fabsl(value) <= DBL_MAX && value==(double)value) ) {
-    hash_double_float(h, (double)value);
+    equalp_hash_double_float(h, (double)value);
     return;
   }
   /* Hash as fixnum. */
@@ -509,11 +509,11 @@ hash_long_float(cl_hashstate *h, long double value) {
   }
   /* Hash as long double in dyadic form -- this is both for compatibility with
      bignums and to avoid hashing padding bits on x87. */
-  hash_lfloat(h, value);
+  equalp_hash_lfloat(h, value);
 }
 
 static void
-hash_ratio(cl_hashstate *h, cl_object x) {
+equalp_hash_ratio(cl_hashstate *h, cl_object x) {
   /* When the ratio is dyadic and within long-float precision, then we cast it
      to long double for consistent hashes. Otherwise we hash ratio as is. */
   cl_object num = ecl_ratio_num(x);
@@ -554,14 +554,14 @@ hash_ratio(cl_hashstate *h, cl_object x) {
                            ? ecl_fixnum(num)
                            : _ecl_big_get_lf(num));
       value = ldexpl(value, exponent);
-      hash_long_float(h, value);
+      equalp_hash_long_float(h, value);
       return;
     }
   }
   /* Fall-through. */
   hash_word(h, t_ratio);
-  hash_integer(h, num);
-  hash_integer(h, den);
+  equalp_hash_integer(h, num);
+  equalp_hash_integer(h, den);
 }
 
 static void
@@ -602,23 +602,23 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     }
     return;
   case t_fixnum:
-    hash_fixnum(h, x);
+    equalp_hash_fixnum(h, x);
     return;
   case t_bignum:
-    hash_bignum(h, x);
+    equalp_hash_bignum(h, x);
     return;
   case t_ratio: {
-    hash_ratio(h, x);
+    equalp_hash_ratio(h, x);
     return;
   }
   case t_singlefloat:
-    hash_single_float(h, ecl_single_float(x));
+    equalp_hash_single_float(h, ecl_single_float(x));
     return;
   case t_doublefloat:
-    hash_double_float(h, ecl_double_float(x));
+    equalp_hash_double_float(h, ecl_double_float(x));
     return;
   case t_longfloat:
-    hash_long_float(h, ecl_long_float(x));
+    equalp_hash_long_float(h, ecl_long_float(x));
     return;
   case t_complex:
     hash_word(h, t_complex);
@@ -631,11 +631,11 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     float real = crealf(v);
     float imag = cimagf(v);
     if (imag == 0) {
-      hash_single_float(h, real);
+      equalp_hash_single_float(h, real);
     } else {
       hash_word(h, t_complex);
-      hash_single_float(h, real);
-      hash_single_float(h, imag);
+      equalp_hash_single_float(h, real);
+      equalp_hash_single_float(h, imag);
     }
     return;
   }
@@ -644,11 +644,11 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     double real = creal(v);
     double imag = cimag(v);
     if (imag == 0) {
-      hash_double_float(h, real);
+      equalp_hash_double_float(h, real);
     } else {
       hash_word(h, t_complex);
-      hash_double_float(h, real);
-      hash_double_float(h, imag);
+      equalp_hash_double_float(h, real);
+      equalp_hash_double_float(h, imag);
     }
     return;
   }
@@ -657,11 +657,11 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     long double real = creall(v);
     long double imag = cimagl(v);
     if (imag == 0) {
-      hash_long_float(h, real);
+      equalp_hash_long_float(h, real);
     } else {
       hash_word(h, t_complex);
-      hash_long_float(h, real);
-      hash_long_float(h, imag);
+      equalp_hash_long_float(h, real);
+      equalp_hash_long_float(h, imag);
     }
     return;
   }
