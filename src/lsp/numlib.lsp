@@ -329,13 +329,15 @@ Returns the hyperbolic arc tangent of NUMBER."
 #+(or ecl-min (not complex-float))
 (defun complex-atanh (z)
   (declare (number z) (si::c-local))
-  (let* ((re-z (realpart z))
-         (im-z (imagpart z))
-         ;; add real and imaginary parts separately for correct signed
-         ;; zero handling around the branch cuts
-         (log-1+z (log (complex (+ 1 re-z) im-z)))
-         (log-1-z (log (complex (- 1 re-z) (- im-z)))))
-    (/ (- log-1+z log-1-z) 2)))
+  ;; atanh(z) = i*atan(-i*z)
+  (let ((result (* imag-one (atan (- (* imag-one z)))))
+        (r (realpart z))
+        (i (imagpart z)))
+    (if (and (zerop i) (> r 1)
+             (not (and (floatp i) (= (float-sign i) -1))))
+        ;; branch cut handling
+        (complex (realpart result) (- (imagpart result)))
+        result)))
 
 (defun ffloor (x &optional (y 1.0f0))
   "Args: (number &optional (divisor 1))
