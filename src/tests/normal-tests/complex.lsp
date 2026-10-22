@@ -310,3 +310,21 @@
       (is (typep (expt -1.4l0 #C(1 2)) '(complex long-float)))
       (is (typep (expt #C(1.0 3.0) 0.0d0) '(complex double-float)))
       (is (typep (expt #C(1.0 3.0) 0.0l0) '(complex long-float))))
+
+(test complex.0012.log1p
+      ;; Basic test to check if (si::log1p x) and (log (1+ x)) agree
+      ;; for numbers x which are not too small such that (log (1+ x))
+      ;; still gives accurate results. This should at least catch
+      ;; obvious implementation mistakes in si::log1p.
+      (loop for (type . epsilon) in `((integer . ,single-float-epsilon)
+                                      (single-float . ,single-float-epsilon)
+                                      (double-float . ,double-float-epsilon)
+                                      (long-float . ,long-float-epsilon))
+            do (loop repeat 10
+                     for x = (+ 1/2 (random (coerce 1 type)))
+                     do (is (< (abs (- (si::log1p x) (log (1+ x)))) (* 10 epsilon))))
+               (loop repeat 10
+                     for x = (+ 1/2 (random (coerce 1 type)))
+                     for y = (+ 1/2 (random (coerce 1 type)))
+                     for z = (complex x y)
+                     do (is (< (abs (- (si::log1p z) (log (1+ z)))) (* 10 epsilon))))))
