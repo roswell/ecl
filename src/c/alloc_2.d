@@ -1181,7 +1181,8 @@ stacks_scanner()
   loop_for_on_unsafe(l) {
     cl_object dll = ECL_CONS_CAR(l);
     if (dll->cblock.locked) {
-      GC_push_conditional((void *)dll, (void *)(&dll->cblock + 1), 1);
+      /* clbock.locked means: make the library persistent. */
+      GC_push_all((void *)dll, (void *)(&dll->cblock + 1));
       GC_set_mark_bit((void *)dll);
     }
   } end_loop_for_on_unsafe(l);
