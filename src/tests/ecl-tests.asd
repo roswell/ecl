@@ -35,7 +35,8 @@
                         :default-component-class asdf:cl-source-file.lsp
                         :components
                         ((:file "multiprocessing" :if-feature :threads)
-			                (:file "thread-sync-interrupt" :if-feature :threads)))))
+			 (:file "thread-sync-interrupt" :if-feature :threads)
+                         (:file "deep-stack-gc")))))
 
 (asdf:defsystem #:ecl-tests/stress
   :serial t
