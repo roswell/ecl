@@ -1156,22 +1156,56 @@ update_bytes_consed () {
  *              GARBAGE COLLECTOR                         *
  **********************************************************/
 
+/* On single-threaded builds libgc (as of 8.2.8) scans the C stack before
+   pushing other roots. Scanning the C stack is safe, because it will resize the
+   mark stack on overflow, but GC_push_all is not (it will abort with error).
+   That leads to a peculiar situation where the stack may leave no entries left
+   on the mark stack for other roots and make us crash when we call GC_push_all.
+
+   This situation applies only to single-threaded builds; when many threads are
+   configured, libgc scans C stacks from own callback in GC_push_other_roots and
+   we invoke the old value after we add our roots. In that case other roots are
+   treated the same as static roots and abort the program only when static roots
+   _and_ other roots overflow the mark stack.
+
+   As a stop-gap measure we use GC_push_all_eager on single-threaded builds.
+   That function immediately scans the pushed range. That can still push on the
+   mark stack during scanning, but this is gracefully handled and the stack is
+   resized accordingly. There is a demerit of using GC_push_all_eager, namely it
+   may do too much work (compared to lazy scanning) and it always considers
+   interior pointers (leading to a possible performance penalty).
+
+   FIXME when libgc fixes this issue upstream, and after we vendor that version,
+   we should switch back to GC_push_all. Relevant links:
+
+   https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/860
+   https://github.com/bdwgc/bdwgc/issues/997
+   https://github.com/bdwgc/bdwgc/pull/1000
+
+   -- jd 2026-10-28 */
+#ifdef ECL_THREADS
+# define ECL_push_all(from,to) GC_push_all((from),(to))
+#else
+# define ECL_push_all(from,to) GC_push_all_eager((from),(to))
+#endif
+
 static void
 ecl_mark_env(struct cl_env_struct *env)
 {
   /* Environments and stacks are allocated without GC */
   if (env->run_stack.org)
-    GC_push_all((void *)env->run_stack.org, (void *)env->run_stack.top);
+    ECL_push_all((void *)env->run_stack.org, (void *)env->run_stack.top);
   if (env->frs_stack.org)
-    GC_push_all((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1));
+    ECL_push_all((void *)env->frs_stack.org, (void *)(env->frs_stack.top+1));
   if (env->bds_stack.org)
-    GC_push_all((void *)env->bds_stack.org, (void *)(env->bds_stack.top+1));
+    ECL_push_all((void *)env->bds_stack.org, (void *)(env->bds_stack.top+1));
 #ifdef ECL_THREADS
   if (env->bds_stack.tl_bindings)
-    GC_push_all((void *)env->bds_stack.tl_bindings,
-                (void *)(env->bds_stack.tl_bindings + env->bds_stack.tl_bindings_size));
+    ECL_push_all((void *)env->bds_stack.tl_bindings,
+                 (void *)(env->bds_stack.tl_bindings
+                          + env->bds_stack.tl_bindings_size));
 #endif
-  GC_push_all((void *)env, (void *)(env + 1));
+  ECL_push_all((void *)env, (void *)(env + 1));
 }
 
 static void
@@ -1182,13 +1216,13 @@ stacks_scanner()
     cl_object dll = ECL_CONS_CAR(l);
     if (dll->cblock.locked) {
       /* clbock.locked means: make the library persistent. */
-      GC_push_all((void *)dll, (void *)(&dll->cblock + 1));
+      ECL_push_all((void *)dll, (void *)(&dll->cblock + 1));
       GC_set_mark_bit((void *)dll);
     }
   } end_loop_for_on_unsafe(l);
-  GC_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
-  GC_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
-  GC_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
+  ECL_push_all((void *)(&ecl_core), (void *)(&ecl_core + 1));
+  ECL_push_all((void *)(&cl_core), (void *)(&cl_core + 1));
+  ECL_push_all((void *)cl_symbols, (void *)(cl_symbols + cl_num_symbols_in_core));
   ecl_mark_env(ecl_core.first_env);
 #ifdef ECL_THREADS
   l = ecl_core.processes;
