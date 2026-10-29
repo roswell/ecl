@@ -6825,7 +6825,7 @@ printf "%s\n" "#define ECL_GMPLIB 1" >>confdefs.h
   EXTRA_OBJS="${EXTRA_OBJS} bignum.o"
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   if test "x$GMP_INCDIR" != "x"; then
     GMP_CPPFLAGS="-I$GMP_INCDIR"
   fi
@@ -6841,7 +6841,7 @@ if test "x${without_gmp}" == "x"; then
   LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   ECL_GMP_HEADER=
   if test "${with_system_gmp}" = "yes"; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __gmpz_init in -lgmp" >&5
@@ -6947,7 +6947,7 @@ fi
   fi
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
 
   if test "x${with_system_gmp}" = "xno" ; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Configuring included GMP library:" >&5
@@ -6989,7 +6989,7 @@ printf "%s\n" "$as_me: Configuring included GMP library:" >&6;}
   fi
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking GMP autoconf" >&5
 printf %s "checking GMP autoconf... " >&6; }
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"${with_system_gmp}.${enable_slow_config}\"" >&5
