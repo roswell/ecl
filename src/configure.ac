@@ -429,7 +429,7 @@ else
   EXTRA_OBJS="${EXTRA_OBJS} bignum.o"
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   if test "x$GMP_INCDIR" != "x"; then
     GMP_CPPFLAGS="-I$GMP_INCDIR"
   fi
@@ -445,7 +445,7 @@ if test "x${without_gmp}" == "x"; then
   LDFLAGS="$LDFLAGS $GMP_LDFLAGS"
 fi
 
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   ECL_GMP_HEADER=
   if test "${with_system_gmp}" = "yes"; then
     AC_CHECK_LIB( [gmp], [__gmpz_init],
@@ -466,7 +466,7 @@ fi
 
 dnl ----------------------------------------------------------------------
 dnl Configure local GMP if needed
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   AC_SUBST(ECL_GMP_HEADER)
   if test "x${with_system_gmp}" = "xno" ; then
     AC_MSG_NOTICE(Configuring included GMP library:)
@@ -510,7 +510,7 @@ fi
 
 dnl -----------------------------------------------------------------------
 dnl GMP-based search of C/C++ compiler and linker flags
-if test "x${without_gmp}" == "x"; then
+if test "x${without_gmp}" = "x"; then
   AC_MSG_CHECKING([GMP autoconf])
   AC_MSG_RESULT(["${with_system_gmp}.${enable_slow_config}"])
   if test "x${enable_slow_config}" = "xyes"; then
