@@ -328,3 +328,14 @@
                      for y = (+ 1/2 (random (coerce 1 type)))
                      for z = (complex x y)
                      do (is (< (abs (- (si::log1p z) (log (1+ z)))) (* 10 epsilon))))))
+
+(test complex.0013.complex-rationals
+      ;; Basic test to check if all functions accept complex rationals
+      (loop for z in '(#C(2 3) #C(2 -7/3) #C(5/2 -7/3))
+            do (loop for f in '(exp log abs sqrt
+                                sin cos tan sinh cosh tanh
+                                asin acos atan asinh acosh atanh
+                                phase conjugate realpart imagpart)
+                     do (is (< (abs (- (funcall f z)
+                                       (funcall f (coerce z '(complex single-float)))))
+                               (* 10 single-float-epsilon))))))
