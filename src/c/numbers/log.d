@@ -424,6 +424,47 @@ si_log1p(cl_object x)
   @(return ecl_log1p(x));
 }
 
+/* For complex values, we rewrite
+ *  log(1+z) = log(abs(1+z)) + I*phase(1+z)
+ * and
+ *  log(abs(1+z)) = log((1+x)^2+y^2)/2 = log(1+x^2+2*x+y^2)/2
+ */
+#ifdef ECL_COMPLEX_FLOAT
+static float _Complex
+clog1pf(float _Complex z)
+{
+  float x = crealf(z);
+  float y = cimagf(z);
+  return 0.5f*log1pf(x*x + 2.0f*x + y*y) + I * atan2f(y,1.0f+x);
+}
+
+static double _Complex
+clog1p(double _Complex z)
+{
+  double x = creal(z);
+  double y = cimag(z);
+  return 0.5*log1p(x*x + 2.0*x + y*y) + I * atan2(y,1.0+x);
+}
+
+static long double _Complex
+clog1pl(long double _Complex z)
+{
+  long double x = creall(z);
+  long double y = cimagl(z);
+  return 0.5l*log1pl(x*x + 2.0l*x + y*y) + I * atan2l(y,1.0l+x);
+}
+#else
+static cl_object
+ecl_log1p_complex_inner(cl_object x, cl_object y)
+{
+  return ecl_make_complex(ecl_divide(ecl_log1p(ecl_plus(ecl_times(x,x),
+                                                        ecl_plus(ecl_times(ecl_make_fixnum(2),x),
+                                                                 ecl_times(y,y)))),
+                                     ecl_make_fixnum(2)),
+                          ecl_atan2(y,ecl_one_plus(x)));
+}
+#endif
+
 static cl_object
 ecl_log1p_simple(cl_object x)
 {
@@ -431,10 +472,10 @@ ecl_log1p_simple(cl_object x)
   if (f < -1) {
 #ifdef ECL_COMPLEX_FLOAT
     cl_object result = ecl_alloc_object(t_csfloat);
-    ecl_csfloat(result) = clogf(1.0+f);
+    ecl_csfloat(result) = clog1pf(f);
     return result;
 #else
-    return ecl_log1_complex_inner(ecl_one_plus(x), ecl_make_fixnum(0));
+    return ecl_log1p_complex_inner(x, ecl_make_fixnum(0));
 #endif
   }
   return ecl_make_single_float(log1pf(ecl_to_float(x)));
@@ -448,10 +489,10 @@ ecl_log1p_single_float(cl_object x)
   if (f < -1) {
 #ifdef ECL_COMPLEX_FLOAT
     cl_object result = ecl_alloc_object(t_csfloat);
-    ecl_csfloat(result) = clogf(1+f);
+    ecl_csfloat(result) = clog1pf(f);
     return result;
 #else
-    return ecl_log1_complex_inner(ecl_one_plus(x), ecl_make_fixnum(0));
+    return ecl_log1p_complex_inner(x, ecl_make_fixnum(0));
 #endif
   }
   return ecl_make_single_float(log1pf(f));
@@ -465,10 +506,10 @@ ecl_log1p_double_float(cl_object x)
   if (f < -1) {
 #ifdef ECL_COMPLEX_FLOAT
     cl_object result = ecl_alloc_object(t_cdfloat);
-    ecl_cdfloat(result) = clog(1+f);
+    ecl_cdfloat(result) = clog1p(f);
     return result;
 #else
-    return ecl_log1_complex_inner(ecl_one_plus(x), ecl_make_fixnum(0));
+    return ecl_log1p_complex_inner(x, ecl_make_fixnum(0));
 #endif
   }
   return ecl_make_double_float(log1p(f));
@@ -482,10 +523,10 @@ ecl_log1p_long_float(cl_object x)
   if (f < -1) {
 #ifdef ECL_COMPLEX_FLOAT
     cl_object result = ecl_alloc_object(t_clfloat);
-    ecl_clfloat(result) = clogl(1+f);
+    ecl_clfloat(result) = clog1pl(f);
     return result;
 #else
-    return ecl_log1_complex_inner(ecl_one_plus(x), ecl_make_fixnum(0));
+    return ecl_log1p_complex_inner(x, ecl_make_fixnum(0));
 #endif
   }
   return ecl_make_long_float(log1pl(f));
@@ -496,12 +537,11 @@ ecl_log1p_complex(cl_object x)
 {
 #ifdef ECL_COMPLEX_FLOAT
   cl_object result = ecl_alloc_object(t_csfloat);
-  float _Complex fc = (ecl_to_float(ecl_complex_real(x))
-                       + I * ecl_to_float(ecl_complex_real(x)));
-  ecl_csfloat(result) = clogf(1+fc);
+  float _Complex fc = ecl_to_float(ecl_complex_real(x)) + I * ecl_to_float(ecl_complex_imag(x));
+  ecl_csfloat(result) = clog1pf(fc);
   return result;
 #else
-  return ecl_log1_complex_inner(ecl_one_plus(x), ecl_make_fixnum(0));
+  return ecl_log1p_complex_inner(ecl_complex_real(x), ecl_complex_imag(x));
 #endif
 }
 
@@ -510,7 +550,7 @@ static cl_object
 ecl_log1p_csfloat(cl_object x)
 {
   cl_object result = ecl_alloc_object(t_csfloat);
-  ecl_csfloat(result) = clogf(1+ecl_csfloat(x));
+  ecl_csfloat(result) = clog1pf(ecl_csfloat(x));
   return result;
 }
 
@@ -518,7 +558,7 @@ static cl_object
 ecl_log1p_cdfloat(cl_object x)
 {
   cl_object result = ecl_alloc_object(t_cdfloat);
-  ecl_cdfloat(result) = clog(1+ecl_cdfloat(x));
+  ecl_cdfloat(result) = clog1p(ecl_cdfloat(x));
   return result;
 }
 
@@ -526,7 +566,7 @@ static cl_object
 ecl_log1p_clfloat(cl_object x)
 {
   cl_object result = ecl_alloc_object(t_clfloat);
-  ecl_clfloat(result) = clogl(1+ecl_clfloat(x));
+  ecl_clfloat(result) = clog1pl(ecl_clfloat(x));
   return result;
 }
 #endif

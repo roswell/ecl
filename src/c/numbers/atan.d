@@ -23,10 +23,10 @@
 
 ecl_def_ct_single_float(ecl_ct_flt_zero,0,static,const);
 ecl_def_ct_single_float(ecl_ct_flt_one,1,static,const);
-ecl_def_ct_single_float(ecl_ct_flt_one_neg,-1,static,const);
+ecl_def_ct_single_float(ecl_ct_flt_two,2,static,const);
 
 ecl_def_ct_complex(ecl_ct_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_one,static,const);
-ecl_def_ct_complex(ecl_ct_minus_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_one_neg,static,const);
+ecl_def_ct_complex(ecl_ct_twice_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_two,static,const);
 
 cl_object
 ecl_atan2(cl_object y, cl_object x)
@@ -56,31 +56,76 @@ ecl_atan2(cl_object y, cl_object x)
   return output;
 }
 
+#if defined(ECL_COMPLEX_FLOAT)
+cl_object
+ecl_atan1(cl_object y)
+{
+  cl_object result;
+  switch (ecl_t_of(y)) {
+  case t_csfloat:
+    result = ecl_alloc_object(t_csfloat);
+    ECL_MATHERR_CLEAR;
+    ecl_csfloat(result) = catanf(ecl_csfloat(y));
+    ECL_MATHERR_TEST;
+    return result;
+  case t_cdfloat:
+    result = ecl_alloc_object(t_cdfloat);
+    ECL_MATHERR_CLEAR;
+    ecl_cdfloat(result) = catan(ecl_cdfloat(y));
+    ECL_MATHERR_TEST;
+    return result;
+  case t_clfloat:
+    result = ecl_alloc_object(t_clfloat);
+    ECL_MATHERR_CLEAR;
+    ecl_clfloat(result) = catanl(ecl_clfloat(y));
+    ECL_MATHERR_TEST;
+    return result;
+  case t_complex:
+    result = ecl_alloc_object(t_csfloat);
+    ECL_MATHERR_CLEAR;
+    ecl_csfloat(result) = catanf(ecl_to_float(ecl_complex_real(y)) + I * ecl_to_float(ecl_complex_imag(y)));
+    ECL_MATHERR_TEST;
+    return result;
+  default:
+    return ecl_atan2(y, ecl_make_fixnum(1));
+  }
+}
+#else
 cl_object
 ecl_atan1(cl_object y)
 {
   if (ECL_COMPLEXP(y)) {
-#if 0 /* ANSI states it should be this first part */
+    /* The ANSI standard specifies atan as (log(1+iy) - log(1-iy))/(2i). */
+    /* We use the equivalent formula log(1 + 2*i*y/(1-i*y))/(2*i).
+     * This is more accurate for small values of y when using log1p.
+     * We avoid potential inaccuracies around y = +I introduced by
+     * this rewriting through reflecting inputs from the upper half
+     * plane into the lower half plane and using atan(-y) = -atan(y).
+     */
+    bool reflect = FALSE;
+    if (ecl_greater(ecl_complex_imag(y), ecl_make_fixnum(0))) {
+      y = ecl_negate(y);
+      reflect = TRUE;
+    }
     cl_object z = ecl_times(ecl_ct_imag_unit, y);
-    z = ecl_plus(ecl_log1(ecl_one_plus(z)),
-                 ecl_log1(ecl_minus(ecl_make_fixnum(1), z)));
-    z = ecl_divide(z, ecl_times(ecl_make_fixnum(2),
-                                ecl_ct_imag_unit));
-#else
-    cl_object z1, z = ecl_times(ecl_ct_imag_unit, y);
-    z = ecl_one_plus(z);
-    z1 = ecl_times(y, y);
-    z1 = ecl_one_plus(z1);
-    z1 = ecl_sqrt(z1);
-    z = ecl_divide(z, z1);
-    z = ecl_log1(z);
-    z = ecl_times(ecl_ct_minus_imag_unit, z);
-#endif /* ANSI */
-    return z;
+    cl_object result = ecl_divide(ecl_log1p(ecl_divide(ecl_times(ecl_make_fixnum(2), z),
+                                                       ecl_minus(ecl_make_fixnum(1), z))),
+                                  ecl_ct_twice_imag_unit);
+    /* Branch cut handling */
+    cl_object r = ecl_complex_real(y);
+    cl_object i = ecl_complex_imag(y);
+    if (ecl_zerop(r) && ecl_lower(i,ecl_make_fixnum(-1)) && ecl_t_of(r) != t_fixnum && ecl_signbit(r)) {
+      result = ecl_make_complex(ecl_times(ecl_make_fixnum(-1),ecl_complex_real(result)), ecl_complex_imag(result));
+    }
+    if (reflect) {
+      result = ecl_negate(result);
+    }
+    return result;
   } else {
     return ecl_atan2(y, ecl_make_fixnum(1));
   }
 }
+#endif /* ECL_COMPLEX_FLOAT */
 
 @(defun atan (x &optional (y OBJNULL))
   @
