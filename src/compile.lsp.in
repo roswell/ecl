@@ -113,7 +113,7 @@
 (setf c::*ld-flags* "@LDFLAGS@")
 #-:wants-dlopen
 (setf c::*ld-libs* "@LIBPREFIX@ecl.@LIBEXT@ @CORE_LIBS@ @FASL_LIBS@ @LIBS@")
-#+(and :wants-dlopen (not nonstop))
+#+:wants-dlopen
 (setf c::*ld-libs*
       "@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
       c::*ld-shared-flags*
@@ -122,14 +122,6 @@
       "@BUNDLE_LDFLAGS@ @LDFLAGS@"
       c::*ld-program-flags*
       "@PROGRAM_LDFLAGS@ @LDFLAGS@")
-;;; FIXME: The nonstop platform does not support soname
-#+(and :wants-dlopen nonstop)
-(setf c::*ld-libs*
-      "-Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@ @LIBS@"
-      c::*ld-shared-flags*
-      "@SHARED_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@"
-      c::*ld-bundle-flags*
-      "@BUNDLE_LDFLAGS@ @LDFLAGS@ -Wld=-l@SHAREDPREFIX@ecl.@SHAREDEXT@")
 
 ;;;
 ;;; * Avoid name clashes with user supplied code.

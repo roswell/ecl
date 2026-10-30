@@ -496,17 +496,6 @@ case "${host_os}" in
                 fi
                 ECL_ADD_FEATURE(unix)
                 ;;
-        nsk*)
-                # HP Non-Stop platform
-                thehost='nonstop'
-                shared='yes'
-                PICFLAG='-call_shared'
-                THREAD_CFLAGS='-spthread'
-                SHARED_LDFLAGS="-shared ${LDFLAGS}"
-                BUNDLE_LDFLAGS="-shared ${LDFLAGS}"
-                ECL_LDRPATH='-Wld=\"-rld_l ~A\"'
-                clibs="-Wld=-lrld ${clibs}"
-                ;;
         haiku*)
                 thehost='haiku'
                 THREAD_LIBS=''
