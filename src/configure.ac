@@ -30,8 +30,18 @@ AC_ARG_WITH(cross_config,
 
 AC_ARG_ENABLE(shared,
   AS_HELP_STRING( [--enable-shared],
-                  [enable loading compiled files (default=YES)]),
+                  [build a shared library (default=YES)]),
   [], [enable_shared=yes])
+
+AC_ARG_ENABLE(static,
+  AS_HELP_STRING( [--enable-static],
+                  [build a static library (default=YES)]),
+  [], [enable_static=yes])
+
+AC_ARG_ENABLE(dlopen,
+  AS_HELP_STRING( [--enable-dlopen],
+                  [enable loading FAS files and DFFI (default=YES)]),
+  [], [with_dlopen=yes])
 
 AC_ARG_ENABLE(rpath,
   AS_HELP_STRING( [--enable-rpath],
@@ -825,14 +835,17 @@ ECL_ATOMICS
 dnl ----------------------------------------------------------------------
 dnl Lisp library and libecl features
 if test ${enable_shared} = "yes"; then
-  AC_DEFINE(ENABLE_DLOPEN, [1], [Allow loading dynamically linked code])
   LSP_LIBRARIES="${SHAREDPREFIX}ecl.${SHAREDEXT}"
+fi
+
+if test ${enable_static} = "yes"; then
+  LSP_LIBRARIES="${LSP_LIBRARIES} ${LIBPREFIX}ecl.${LIBEXT}"
+fi
+
+if test ${enable_dlopen} = "yes"; then
+  AC_DEFINE(ENABLE_DLOPEN, [1], [Allow loading dynamically linked code])
   ECL_ADD_LISP_MODULE([dlopen])
   ECL_ADD_FEATURE(dlopen)
-else
-  enable_soname=no
-  LSP_LIBRARIES="${LIBPREFIX}ecl.${LIBEXT}"
-  ECL_LDRPATH=''
 fi
 
 if test "x${enable_rpath}" = "xno"; then
