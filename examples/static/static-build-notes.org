@@ -1,0 +1,46 @@
+
+- description: https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/849
+- poc-example: https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/391
+
+* roadmap
+
+** DONE split static/shared/dlopen as configure options (done)
+** DONE test that static linking works (ignore dlopen, test -static too)
+** TODO tweak compile.lsp.in to distinguish :wants-static and :wants-shared
+** TODO ensure that --enable-static --disable-shared --enable-dlopen works
+   - remember about `-rdynamic` flag to not optimize symbols in .a file --
+     that's important for fas loading.
+** TODO make it possible to disable dlopen at runtime (for -static builds)
+** TODO improve c::builder to allow building static from shared adn vice versa
+   - for that all .o files need -fPIC, but this is fine.  I'm leaning towards
+     enabling -fPIC even for purely static builds for simplicity.
+** TODO run a controlled test where we measure binary increase with program growth
+** TODO ensure that help.doc is not necessary to run ecl (especially a static one)
+** TODO bonus points for compiling only necessary modules (let's say 3 bonus points)
+
+* results
+
+- [ ] add a baseline (normal "shared" build)
+
+|              | normal build | strip | rss -static | rss -lc |
+|--------------+--------------+-------+-------------+---------|
+| x86-64 glibc | 12M          | 3.3M  | 9120K       | 11640K  |
+| x86-32 muslc | 10.2M        | 2.6M  | 5120K       | 5632K   |
+|--------------+--------------+-------+-------------+---------|
+
+Generally static linking works, and it works well (no unexpected issues).
+
+* ecl-config
+
+- ecl-config does not list some libraries (leclgc lffi etc) -- investigate
+- ecl-config lists for static builds -Wl,--rpath,/path/to/lib64 -- unnecessary
+- ecl-config lists -ldl even when dlopen is not enabled
+
+* measuring rss
+
+
+shell's time doesn't handle -v, use /usr/bin/time instead
+/usr/bin/time -v ./test.out 2>&1 | grep "Maximum res"
+
+But (!) Alpine 32bit time (and possibly time in other distros) has a bug where
+it quadruples measured size. The file rss.c performs a direct measurement.
