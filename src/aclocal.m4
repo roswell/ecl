@@ -568,14 +568,16 @@ case "${host_cpu}" in
 		CFLAGS="${CFLAGS} -mieee";;
 esac
 ECL_CFLAGS="-D${thehost}"
+
 AC_MSG_CHECKING(for ld flags when building shared libraries)
 if test "${enable_shared}" = "yes"; then
 AC_MSG_RESULT([${SHARED_LDFLAGS}])
-CFLAGS="${CFLAGS} ${PICFLAG}"
 else
 shared="no";
 AC_MSG_RESULT(cannot build)
 fi
+
+CFLAGS="${CFLAGS} ${PICFLAG}"
 LIBS="${clibs} ${LIBS}"
 AC_MSG_CHECKING(for required libraries)
 AC_MSG_RESULT([${clibs}])
