@@ -35,6 +35,8 @@ typedef ecl_xxh3_state cl_hashstate;
 #define hash_to_fixnum(x) \
   ecl_make_fixnum((cl_fixnum)((x) & (uint64_t)MOST_POSITIVE_FIXNUM))
 
+#define SYMBOL_NAME(x) (Null(x)? ECL_NIL_SYMBOL->symbol.name : (x)->symbol.name)
+
 
 /* Hashing */
 
@@ -143,7 +145,7 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
   switch (ecl_t_of(x)) {
   case t_list:
     if (Null(x)) {
-      _hash_equal(h, ECL_NIL_SYMBOL->symbol.name, depth);
+      hash_word(h, ECL_NIL);
       return;
     }
     if (--depth <= 0) {
@@ -154,13 +156,6 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
       return;
     }
 #ifdef ECL_UNICODE
-  case t_symbol:
-    x = x->symbol.name;
-    (ecl_t_of(x) == t_base_string)
-      ? hash_base_string(h, x)
-      : hash_full_string(h, x);
-    return;
-    /* Bytes may differ strings may be still equal. Hash each character. */
   case t_base_string:
     hash_base_string(h, x);
     return;
@@ -168,9 +163,6 @@ _hash_equal(cl_hashstate *h, cl_object x, int depth)
     hash_full_string(h, x);
     return;
 #else
-  case t_symbol:
-    x = x->symbol.name;
-    /* fall-through */
   case t_base_string:
     hash_data(h, x->base_string.self, x->base_string.fillp * sizeof(ecl_base_char));
     return;
@@ -574,7 +566,7 @@ _hash_equalp(cl_hashstate *h, cl_object x, int depth)
     return;
   case t_list:
     if (Null(x)) {
-      _hash_equalp(h, ECL_NIL_SYMBOL->symbol.name, depth);
+      hash_word(h, ECL_NIL);
       return;
     }
     if (--depth <= 0) {
@@ -714,6 +706,7 @@ static inline cl_hashkey
 _ecl_hash_eql(cl_object key) {
   /* Some types that may be hashed in one-shot are optimized here. */
   switch(ecl_t_of(key)) {
+  case t_symbol:
   case t_fixnum:
   case t_character:
     return hash_once(key);
@@ -731,9 +724,6 @@ _ecl_hash_equal(cl_object key) {
   /* Some types that may be hashed in one-shot are optimized here. */
  AGAIN:
   switch(ecl_t_of(key)) {
-  case t_symbol:
-    key = key->symbol.name;
-    goto AGAIN;
 #ifdef ECL_UNICODE
   case t_string:
     return hash_only(key->string.self,
@@ -743,6 +733,7 @@ _ecl_hash_equal(cl_object key) {
     return hash_only(key->base_string.self,
                      key->base_string.fillp * sizeof(ecl_base_char));
 #endif
+  case t_symbol:
   case t_fixnum:
   case t_character:
     return hash_once(key);
@@ -822,15 +813,17 @@ _ecl_hash_equalp(cl_object key) {
 cl_object
 cl_sxhash(cl_object key)
 {
-  cl_hashkey output = _ecl_hash_equal(key);
+  /* SXHASH is specified to respect object similarity. For symbols similarity is
+     defined as (equal (symbol-name a) (symbol-name b). That requirement is not
+     binding for hash tables and EQUAL for symbols calls EQ. -- jd 2026-11-02 */
+  if (ECL_SYMBOLP(key))
+    key = SYMBOL_NAME(key);
   /* We truncate the hash to fit in a fixnum. */
-  @(return hash_to_fixnum(output));
+  @(return hash_to_fixnum(_ecl_hash_equal(key)));
 }
 
 
 /* Hash tables */
-
-#define SYMBOL_NAME(x) (Null(x)? ECL_NIL_SYMBOL->symbol.name : (x)->symbol.name)
 
 static void ECL_INLINE
 assert_type_hash_table(cl_object function, cl_narg narg, cl_object p)
