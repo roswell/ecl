@@ -121,15 +121,14 @@ int (*foo)(int) = (int (*)(int))#0;
 ;;;     in a commit ad5fe834.
 #+complex-float
 (test ffi.0006.complex-floats
-  ;; dffi
+  #+dffi ;; Dynamic FFI (DFFI, requires libffi)
   (let* ((arg #C(10.0s0 0.5s0))
          (expect (atanh arg)))
     (finishes (ffi:def-function "catanhf" ((x :csfloat))
                 :returning :csfloat
                 :module :default))
     (is (= expect (catanhf arg))))
-  ;; sffi
-  #-ecl-bytecmp
+  #-ecl-bytecmp ;; Static FFI (SFFI, requires C compiler)
   (let* ((arg #C(10.0s0 0.5s0))
          (expect (atanh arg)))
     (finishes (ffi:def-function "catanhf" ((x :csfloat))
