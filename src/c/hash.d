@@ -705,12 +705,12 @@ _hash_generic(cl_object ht, cl_object key) {
 
 /* Internal top-level interface to hashing functions. */
 
-static inline uint64_t
+static inline cl_hashkey
 _ecl_hash_eq(cl_object key) {
   return hash_once(key);
 }
 
-static inline uint64_t
+static inline cl_hashkey
 _ecl_hash_eql(cl_object key) {
   /* Some types that may be hashed in one-shot are optimized here. */
   switch(ecl_t_of(key)) {
@@ -726,7 +726,7 @@ _ecl_hash_eql(cl_object key) {
   }
 }
 
-static inline uint64_t
+static inline cl_hashkey
 _ecl_hash_equal(cl_object key) {
   /* Some types that may be hashed in one-shot are optimized here. */
  AGAIN:
@@ -755,7 +755,7 @@ _ecl_hash_equal(cl_object key) {
   }
 }
 
-static inline uint64_t
+static inline cl_hashkey
 _ecl_hash_equalp(cl_object key) {
   /* INV don't try to make fixnums faster by hashing whole object with the tag,
      because (EQUALP 1 1.0) is T. -- jd 2026-09-24 */
@@ -767,7 +767,7 @@ _ecl_hash_equalp(cl_object key) {
 
 @(defun si::hash-eql (&rest args)
 @
-  uint64_t h;
+  cl_hashkey h;
   if (narg == 1) {
     h = _ecl_hash_eql(ecl_va_arg(args));
   } else {
@@ -785,7 +785,7 @@ _ecl_hash_equalp(cl_object key) {
 
 @(defun si::hash-equal (&rest args)
 @
-  uint64_t h;
+  cl_hashkey h;
   if (narg == 1) {
     h = _ecl_hash_equal(ecl_va_arg(args));
   } else {
@@ -803,7 +803,7 @@ _ecl_hash_equalp(cl_object key) {
 
 @(defun si::hash-equalp (&rest args)
 @
-  uint64_t h;
+  cl_hashkey h;
   if (narg == 1) {
     h = _ecl_hash_equalp(ecl_va_arg(args));
   } else {
@@ -822,7 +822,7 @@ _ecl_hash_equalp(cl_object key) {
 cl_object
 cl_sxhash(cl_object key)
 {
-  cl_index output = _ecl_hash_equal(key);
+  cl_hashkey output = _ecl_hash_equal(key);
   /* We truncate the hash to fit in a fixnum. */
   @(return hash_to_fixnum(output));
 }
@@ -958,7 +958,7 @@ _ecl_hash_loop_eql(cl_hashkey h, cl_object key, cl_object hashtable)
 static cl_object
 _ecl_gethash_eql(cl_object key, cl_object hashtable, cl_object def)
 {
-  uint64_t hash = _ecl_hash_eql(key);
+  cl_hashkey hash = _ecl_hash_eql(key);
   struct ecl_hashtable_entry *e = _ecl_hash_loop_eql(hash, key, hashtable);
   return (e->key == OBJNULL)? def : e->value;
 }
