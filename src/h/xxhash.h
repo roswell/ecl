@@ -519,12 +519,10 @@ ecl_xxh3_64_129to240(const uint8_t *input, const size_t length)
   return ecl_xxh3_avalanche(acc);
 }
 
-/* FIXME Preprocessor macros are predefined here. We need to use ECL_SSE2 flag
-   and add support for others as well in autotools. Alternatively (optimally?)
-   we should have our own portable instructions to avoid duplication. For now
-   let's roll with raw SIMD intrinsics. */
+/* FIXME We should have our own portable instructions to avoid duplication. Some
+   support is provied by ECL_SSE2. For now let's use raw SIMD intrinsics. */
 
-#ifdef ECL_SSE2
+#ifdef __SSE2__
 # define ECL_XXH3_SCALAR 0
 # define ECL_XXH3_SSE2   1 /* __SSE2__            128-bit    <emmintrin.h>    */
 # define ECL_XXH3_WASM   0 /* __wasm_simd128__    128-bit    <wasm_simd128.h> */
