@@ -74,7 +74,7 @@ out_of_memory_check(size_t requested_bytes)
 }
 
 static void
-no_warnings(char *msg, GC_word arg)
+no_warnings(const char *msg, GC_word arg)
 {
 }
 
