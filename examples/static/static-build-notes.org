@@ -17,6 +17,11 @@
 ** TODO run a controlled test where we measure binary increase with program growth
 ** TODO ensure that help.doc is not necessary to run ecl (especially a static one)
 ** TODO bonus points for compiling only necessary modules (let's say 3 bonus points)
+** TODO documentation
+   - [ ] explain orthogonality of build options
+   - [ ] explain differences between linking targets
+   - [ ] explain where and when dlopen can be compiled and when and why it can't
+   - [ ] briefly discuss size impact
 
 * results
 
