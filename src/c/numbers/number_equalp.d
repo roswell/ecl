@@ -69,26 +69,27 @@ equalp_lfloat_fixnum(long double d, cl_object nval)
   }
 }
 
-/* float <> rational stubs that cons (again) a float lisp object and coerce it
-   to rational. This is a transitional change. */
+/* float <> rational functions are inspired by equalp hashing defined in
+   hash.d. They don't cons and operate on scratch registers when necessary. */
+
 static int
 equalp_dfloat_bignum(double dval, cl_object nval)
 {
   if (isfinite(dval) && dval==trunc(dval)) {
     /* Cheap tests first (compare signs and ranges). */
     const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
-    cl_fixnum length_n = _ecl_big_integer_length(nval);
-    cl_fixnum exponent_n = _ecl_big_ctz(nval);
     int signum_d = signbit(dval)      ? -1 : +1;
     int signum_n = ecl_bigsgn(nval)<0 ? -1 : +1;
     if ((signum_d != signum_n) ||
-        (dval < limit && dval >= -limit) ||
-        (length_n-exponent_n > DBL_MANT_DIG) ||
-        (length_n > DBL_MAX_EXP)) {
+        (dval < limit && dval >= -limit)) {
       return 0;
     } else {
-      cl_object x = cl_rational(ecl_make_double_float(dval));
-      return ecl_number_equalp(x, nval);
+      cl_object reg = _ecl_big_register2();
+      int equalp;
+      _ecl_big_set_d(reg, dval);
+      equalp = (_ecl_big_compare(reg, nval) == 0);
+      _ecl_big_register_free(reg);
+      return equalp;
     }
   }
   return 0;
