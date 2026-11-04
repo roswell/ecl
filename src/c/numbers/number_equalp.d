@@ -15,7 +15,6 @@
 
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch2.h>
-#include "numbers/float_fix_compare.d"
 
 @(defun = (num &rest nums)
   int i;
@@ -31,6 +30,42 @@
   }
   @(return ECL_T);
   @)
+
+/* Helpers */
+
+static int
+equalp_dfloat_fixnum(double d, cl_fixnum n)
+{
+  /* Rounding to IEEE floats is monotonic. This is why cast of a signed integer
+     to double can be used to see whether it is smaller or bigger. */
+  if ((double)n != d) {
+    return 0;
+  } else {
+#if DBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 1;
+#else
+    /* If mantissa is too small we may have false positives for equal. */
+    return (n == (cl_fixnum)d) ? 1 : 0;
+#endif
+  }
+}
+
+static int
+equalp_lfloat_fixnum(long double d, cl_fixnum n)
+{
+  /* Rounding to IEEE floats is monotonic. This is why cast of a signed integer
+     to double can be used to see whether it is smaller or bigger. */
+  if ((long double)n != d) {
+    return 0;
+  } else {
+#if LDBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 1;
+#else
+    /* If mantissa is too small we may have false positives for equal. */
+    return (n == (cl_fixnum)d) ? 1 : 0;
+#endif
+  }
+}
 
 /* Returns 1 if both numbers compare to equal */
 int
@@ -53,21 +88,14 @@ ecl_number_equalp(cl_object x, cl_object y)
     CASE_BIGNUM_FIXNUM;
     CASE_BIGNUM_RATIO;
     CASE_RATIO_FIXNUM;
-    CASE_RATIO_BIGNUM {
-      return 0; }
-    /* rational x float */
-    CASE_FIXNUM_SINGLE_FLOAT {
-      return double_fix_compare(ecl_fixnum(x), ecl_single_float(y)) == 0; }
-    CASE_SINGLE_FLOAT_FIXNUM {
-      return double_fix_compare(ecl_fixnum(y), ecl_single_float(x)) == 0; }
-    CASE_FIXNUM_DOUBLE_FLOAT {
-      return double_fix_compare(ecl_fixnum(x), ecl_double_float(y)) == 0; }
-    CASE_DOUBLE_FLOAT_FIXNUM {
-      return double_fix_compare(ecl_fixnum(y), ecl_double_float(x)) == 0; }
-    CASE_FIXNUM_LONG_FLOAT   {
-      return long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)) == 0; }
-    CASE_LONG_FLOAT_FIXNUM   {
-      return long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)) == 0; }
+    CASE_RATIO_BIGNUM { return 0; }
+    /* float x rational */
+    CASE_FIXNUM_SINGLE_FLOAT { return equalp_dfloat_fixnum(ecl_single_float(y), ecl_fixnum(x)); }
+    CASE_SINGLE_FLOAT_FIXNUM { return equalp_dfloat_fixnum(ecl_single_float(x), ecl_fixnum(y)); }
+    CASE_FIXNUM_DOUBLE_FLOAT { return equalp_dfloat_fixnum(ecl_double_float(y), ecl_fixnum(x)); }
+    CASE_DOUBLE_FLOAT_FIXNUM { return equalp_dfloat_fixnum(ecl_double_float(x), ecl_fixnum(y)); }
+    CASE_FIXNUM_LONG_FLOAT { return equalp_lfloat_fixnum(ecl_long_float(y), ecl_fixnum(x)); }
+    CASE_LONG_FLOAT_FIXNUM { return equalp_lfloat_fixnum(ecl_long_float(x), ecl_fixnum(y)); }
     CASE_BIGNUM_SINGLE_FLOAT;
     CASE_BIGNUM_DOUBLE_FLOAT;
     CASE_RATIO_SINGLE_FLOAT;

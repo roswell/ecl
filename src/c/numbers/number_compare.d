@@ -15,7 +15,52 @@
 
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch2.h>
-#include "numbers/float_fix_compare.d"
+
+/* Helpers */
+
+/* In Common Lisp, comparisons between floats and integers are performed via an
+ * intermediate rationalization of the floating point number. In C, on the other
+ * hand, the comparison is performed by converting the integer into a floating
+ * point number. However, if the double type is too small this may lead to a
+ * loss of precision and two numbers being told equal when, by Common Lisp
+ * standards, would not. */
+static int
+compare_dfloat_fixnum(double d, cl_fixnum n)
+{
+  if (d == (double)n) {
+#if DBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 0;
+#else
+    /* When we reach here, the double type has no significant decimal
+     * part. However, as explained above, the double type is too small and
+     * integers may coerce to the same double number giving a false
+     * positive. Hence we perform the comparison in integer space. */
+    cl_fixnum m = (cl_fixnum)d;
+    if (n == m) {
+      return 0;
+    }
+    return (m < n) ? -1 : +1;
+#endif
+  }
+  return (d < (double)n) ? -1 : +1;
+}
+
+static int
+compare_lfloat_fixnum(long double d, cl_fixnum n)
+{
+  if (d == (long double)n) {
+#if LDBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 0;
+#else
+    cl_fixnum m = (cl_fixnum)d;
+    if (n == m) {
+      return 0;
+    }
+    return (m < n) ? -1 : +1;
+#endif
+  }
+  return (d < (long double)n) ? -1 : +1;
+}
 
 /*
  *
@@ -58,18 +103,12 @@ ecl_number_compare(cl_object x, cl_object y)
       return ecl_number_compare(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
                                 ecl_times(ecl_ratio_num(y), ecl_ratio_den(x))); }
     /* float x fixnum */
-    CASE_SINGLE_FLOAT_FIXNUM {
-      return -double_fix_compare(ecl_fixnum(y), ecl_single_float(x)); }
-    CASE_FIXNUM_SINGLE_FLOAT {
-      return double_fix_compare(ecl_fixnum(x), ecl_single_float(y)); }
-    CASE_DOUBLE_FLOAT_FIXNUM {
-      return -double_fix_compare(ecl_fixnum(y), ecl_double_float(x)); }
-    CASE_FIXNUM_DOUBLE_FLOAT {
-      return  double_fix_compare(ecl_fixnum(x), ecl_double_float(y)); }
-    CASE_LONG_FLOAT_FIXNUM {
-      return -long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)); }
-    CASE_FIXNUM_LONG_FLOAT {
-      return  long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)); }
+    CASE_SINGLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_single_float(x), ecl_fixnum(y)); }
+    CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), ecl_fixnum(x)); }
+    CASE_DOUBLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_double_float(x), ecl_fixnum(y)); }
+    CASE_FIXNUM_DOUBLE_FLOAT { return -compare_dfloat_fixnum(ecl_double_float(y), ecl_fixnum(x)); }
+    CASE_LONG_FLOAT_FIXNUM { return +compare_lfloat_fixnum(ecl_long_float(x), ecl_fixnum(y)); }
+    CASE_FIXNUM_LONG_FLOAT { return -compare_lfloat_fixnum(ecl_long_float(y), ecl_fixnum(x)); }
     /* float x [bignum,ratio] */
     CASE_SINGLE_FLOAT_BIGNUM;
     CASE_SINGLE_FLOAT_RATIO;
