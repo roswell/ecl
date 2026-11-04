@@ -67,24 +67,84 @@ compare_lfloat_fixnum(long double d, cl_object nval)
 static int
 compare_ratio_integer(cl_object xval, cl_object yval)
 {
-  return ecl_number_compare(ecl_ratio_num(xval),
-                            ecl_times(yval, ecl_ratio_den(xval)));
+  cl_object xnum = ecl_ratio_num(xval);
+  cl_object xden = ecl_ratio_den(xval);
+  /* Ratio and integer are never equal and ratio is never 0. */
+  /* 0. Cheap test (sign). */
+  int xsig = ecl_minusp(xnum) ? -1 : +1;
+  int ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+  if(xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. compare magnitudes */
+  /* 2. fast path for fixnums ifdef (__SIZEOF_INT128__) */
+  /* 3. slow path for bignums (in the scratch register) */
+  /* Unoptimized version: */
+  return ecl_number_compare(xnum,
+                            ecl_times(yval, xden));
 }
 
 static int
 compare_ratio_ratio(cl_object xval, cl_object yval)
 {
-  return ecl_number_compare(ecl_times(ecl_ratio_num(xval), ecl_ratio_den(yval)),
-                            ecl_times(ecl_ratio_num(yval), ecl_ratio_den(xval)));
+  cl_object xnum = ecl_ratio_num(xval);
+  cl_object xden = ecl_ratio_den(xval);
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
+  /* Cheap tests: */
+  int xsig = ecl_minusp(xnum) ? -1 : +1;
+  int ysig = ecl_minusp(ynum) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* Integer comparison is cheap. */
+  if (ecl_number_equalp(xden, yden))
+    return ecl_number_compare(xnum, ynum);
+  /* 1. compare magnitudes */
+  /* 2. fast path for fixnums ifdef (__SIZEOF_INT128__) */
+  /* 3. slow path for bignums (in the scratch register) */
+  /* Unoptimized version: */
+  return ecl_number_compare(ecl_times(xnum, yden),
+                            ecl_times(ynum, xden));
 }
 
 static int
-compare_float_rational(cl_object xval, cl_object yval)
+compare_dfloat_rational(double dval, cl_object yval)
 {
+  int xsig, ysig;
+  cl_object xval;
+  /* Cheap tests: */
 #ifdef ECL_IEEE_FP
-  if (ecl_float_infinity_p(xval))
-    return ecl_number_compare(xval, ecl_make_fixnum(0));
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
 #endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : (ecl_zerop(yval) ? 0 : -1);
+  xsig = signbit(dval) ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. compare magnitudes */
+  /* 2. dyadic comparison in a register */
+  /* Unoptimized version: */
+  xval = ecl_make_double_float(dval);
+  return ecl_number_compare(cl_rational(xval), yval);
+}
+
+static int
+compare_lfloat_rational(long double dval, cl_object yval)
+{
+  int xsig, ysig;
+  cl_object xval;
+  /* Cheap tests: */
+#ifdef ECL_IEEE_FP
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
+#endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : (ecl_zerop(yval) ? 0 : -1);
+  xsig = signbit(dval) ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. compare magnitudes */
+  /* 2. dyadic comparison in a register */
+  /* Unoptimized version: */
+  xval = ecl_make_long_float(dval);
   return ecl_number_compare(cl_rational(xval), yval);
 }
 
@@ -126,21 +186,21 @@ ecl_number_compare(cl_object x, cl_object y)
     CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), x); }
     CASE_DOUBLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_double_float(x), y); }
     CASE_FIXNUM_DOUBLE_FLOAT { return -compare_dfloat_fixnum(ecl_double_float(y), x); }
-    CASE_LONG_FLOAT_FIXNUM { return +compare_lfloat_fixnum(ecl_long_float(x), y); }
-    CASE_FIXNUM_LONG_FLOAT { return -compare_lfloat_fixnum(ecl_long_float(y), x); }
+    CASE_LONG_FLOAT_FIXNUM   { return +compare_lfloat_fixnum(ecl_long_float(x), y); }
+    CASE_FIXNUM_LONG_FLOAT   { return -compare_lfloat_fixnum(ecl_long_float(y), x); }
     /* float x [bignum,ratio] */
     CASE_SINGLE_FLOAT_BIGNUM;
-    CASE_SINGLE_FLOAT_RATIO;
-    CASE_DOUBLE_FLOAT_BIGNUM;
-    CASE_DOUBLE_FLOAT_RATIO;
-    CASE_LONG_FLOAT_BIGNUM;
-    CASE_LONG_FLOAT_RATIO { return compare_float_rational(x, y); }
+    CASE_SINGLE_FLOAT_RATIO  { return +compare_dfloat_rational(ecl_single_float(x), y); }
     CASE_BIGNUM_SINGLE_FLOAT;
-    CASE_RATIO_SINGLE_FLOAT;
+    CASE_RATIO_SINGLE_FLOAT  { return -compare_dfloat_rational(ecl_single_float(y), x); }
+    CASE_DOUBLE_FLOAT_BIGNUM;
+    CASE_DOUBLE_FLOAT_RATIO  { return +compare_dfloat_rational(ecl_double_float(x), y); }
     CASE_BIGNUM_DOUBLE_FLOAT;
-    CASE_RATIO_DOUBLE_FLOAT;
+    CASE_RATIO_DOUBLE_FLOAT  { return -compare_dfloat_rational(ecl_double_float(y), x); }
+    CASE_LONG_FLOAT_BIGNUM;
+    CASE_LONG_FLOAT_RATIO    { return +compare_lfloat_rational(ecl_long_float(x), y); }
     CASE_BIGNUM_LONG_FLOAT;
-    CASE_RATIO_LONG_FLOAT { return -compare_float_rational(y, x); }
+    CASE_RATIO_LONG_FLOAT    { return -compare_lfloat_rational(ecl_long_float(y), x); }
     /* float x float */
     CASE_SINGLE_FLOAT_SINGLE_FLOAT {
       dx = ecl_single_float(x);
