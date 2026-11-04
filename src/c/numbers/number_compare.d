@@ -25,8 +25,9 @@
  * loss of precision and two numbers being told equal when, by Common Lisp
  * standards, would not. */
 static int
-compare_dfloat_fixnum(double d, cl_fixnum n)
+compare_dfloat_fixnum(double d, cl_object nval)
 {
+  cl_fixnum n = ecl_fixnum(nval);
   if (d == (double)n) {
 #if DBL_MANT_DIG >= ECL_FIXNUM_BITS
     return 0;
@@ -46,8 +47,9 @@ compare_dfloat_fixnum(double d, cl_fixnum n)
 }
 
 static int
-compare_lfloat_fixnum(long double d, cl_fixnum n)
+compare_lfloat_fixnum(long double d, cl_object nval)
 {
+  cl_fixnum n = ecl_fixnum(nval);
   if (d == (long double)n) {
 #if LDBL_MANT_DIG >= ECL_FIXNUM_BITS
     return 0;
@@ -103,12 +105,12 @@ ecl_number_compare(cl_object x, cl_object y)
       return ecl_number_compare(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
                                 ecl_times(ecl_ratio_num(y), ecl_ratio_den(x))); }
     /* float x fixnum */
-    CASE_SINGLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_single_float(x), ecl_fixnum(y)); }
-    CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), ecl_fixnum(x)); }
-    CASE_DOUBLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_double_float(x), ecl_fixnum(y)); }
-    CASE_FIXNUM_DOUBLE_FLOAT { return -compare_dfloat_fixnum(ecl_double_float(y), ecl_fixnum(x)); }
-    CASE_LONG_FLOAT_FIXNUM { return +compare_lfloat_fixnum(ecl_long_float(x), ecl_fixnum(y)); }
-    CASE_FIXNUM_LONG_FLOAT { return -compare_lfloat_fixnum(ecl_long_float(y), ecl_fixnum(x)); }
+    CASE_SINGLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_single_float(x), y); }
+    CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), x); }
+    CASE_DOUBLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_double_float(x), y); }
+    CASE_FIXNUM_DOUBLE_FLOAT { return -compare_dfloat_fixnum(ecl_double_float(y), x); }
+    CASE_LONG_FLOAT_FIXNUM { return +compare_lfloat_fixnum(ecl_long_float(x), y); }
+    CASE_FIXNUM_LONG_FLOAT { return -compare_lfloat_fixnum(ecl_long_float(y), x); }
     /* float x [bignum,ratio] */
     CASE_SINGLE_FLOAT_BIGNUM;
     CASE_SINGLE_FLOAT_RATIO;
