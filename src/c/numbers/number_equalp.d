@@ -149,12 +149,38 @@ equalp_lfloat_bignum(long double dval, cl_object nval)
   return 0;
 }
 
+static inline int
+dyadic_p(cl_object den)
+{
+  if (ECL_FIXNUMP(den)) {
+    cl_fixnum dfix = ecl_fixnum(den);
+    /* INV dfix>=2 so (dfix-1)>=1. */
+    return !(dfix & (dfix-1));
+  } else {
+    /* When bignum is a pow2, then integer_length == ctz+1 or (popcount==1) */
+    return ((_ecl_big_ctz(den)+1) == _ecl_big_integer_length(den));
+  }
+}
+
 static int
 equalp_dfloat_ratio(double dval, cl_object nval)
 {
   if (isfinite(dval) && dval!=trunc(dval)) {
-    cl_object x = cl_rational(ecl_make_double_float(dval));
-    return ecl_number_equalp(x, nval);
+    cl_object num = ecl_ratio_num(nval);
+    cl_object den = ecl_ratio_den(nval);
+    if (dyadic_p(den)) {
+      /* See comment in equalp_hash_ratio to understand why we don't need abs:
+         length = ecl_integer_length(ecl_abs(num));. */
+      cl_fixnum length = (ECL_FIXNUMP(num)
+                          ? ecl_integer_length(num)
+                          : _ecl_big_integer_length(num));
+      cl_fixnum exponent = -(ecl_integer_length(den)-1);
+      if (length <= DBL_MANT_DIG && exponent >= DBL_MIN_EXP-DBL_MANT_DIG) {
+        double value = (ECL_FIXNUMP(num) ? ecl_fixnum(num) : _ecl_big_get_d(num));
+        value = ldexp(value, exponent);
+        return value == dval;
+      }
+    }
   }
   return 0;
 }
@@ -163,10 +189,30 @@ static int
 equalp_lfloat_ratio(long double dval, cl_object nval)
 {
   if (isfinite(dval) && dval!=truncl(dval)) {
-    cl_object x = cl_rational(ecl_make_long_float(dval));
-    return ecl_number_equalp(x, nval);
+    cl_object num = ecl_ratio_num(nval);
+    cl_object den = ecl_ratio_den(nval);
+    if (dyadic_p(den)) {
+      /* See comment in equalp_hash_ratio to understand why we don't need abs:
+         length = ecl_integer_length(ecl_abs(num));. */
+      cl_fixnum length = (ECL_FIXNUMP(num)
+                          ? ecl_integer_length(num)
+                          : _ecl_big_integer_length(num));
+      cl_fixnum exponent = -(ecl_integer_length(den)-1);
+      if (length <= LDBL_MANT_DIG && exponent >= LDBL_MIN_EXP-LDBL_MANT_DIG) {
+        long double value = (ECL_FIXNUMP(num) ? ecl_fixnum(num) : _ecl_big_get_lf(num));
+        value = ldexpl(value, exponent);
+        return value == dval;
+      }
+    }
   }
   return 0;
+}
+
+/* This variant is exact and it conses, included for completness. */
+static int
+equalp_xfloat_rational(cl_object dval, cl_object nval)
+{
+  return ecl_number_equalp(cl_rational(dval), nval);
 }
 
 /* Returns 1 if both numbers compare to equal */
