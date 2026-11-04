@@ -2,7 +2,7 @@
 /* vim: set filetype=c tabstop=2 shiftwidth=2 expandtab: */
 
 /*
- * number_compare.c - number comparison and sorting
+ * number_equalp.c - number equivalence
  *
  * Copyright (c) 1984 Taiichi Yuasa and Masami Hagiya
  * Copyright (c) 1990 Giuseppe Attardi
@@ -211,7 +211,7 @@ equalp_lfloat_ratio(long double dval, cl_object nval)
 /* This variant is exact and it conses, included for completness. Not used. */
 #if 0
 static int
-equalp_xfloat_rational(cl_object dval, cl_object nval)
+equalp_xfloat_real(cl_object dval, cl_object nval)
 {
   return ecl_number_equalp(cl_rational(dval), nval);
 }
@@ -219,39 +219,57 @@ equalp_xfloat_rational(cl_object dval, cl_object nval)
 
 #ifdef ECL_COMPLEX_FLOAT
 static int
-equalp_dfloat_rational(double dval, cl_object nval)
+equalp_dfloat_real(double dval, cl_object nval)
 {
   switch(ecl_t_of(nval)) {
   case t_fixnum: return equalp_dfloat_fixnum(dval, nval);
   case t_bignum: return equalp_dfloat_bignum(dval, nval);
   case t_ratio: return equalp_dfloat_ratio(dval, nval);
+  case t_singlefloat: return dval == ecl_single_float(nval);
+  case t_doublefloat: return dval == ecl_double_float(nval);
+  case t_longfloat: return dval == ecl_long_float(nval);
   default:
-    ecl_internal_error("equalp_dfloat_rational: unexpected branch.");
+    ecl_internal_error("equalp_dfloat_real: unexpected branch.");
   }
 }
 
 static int
-equalp_lfloat_rational(long double dval, cl_object nval)
+equalp_lfloat_real(long double dval, cl_object nval)
 {
   switch(ecl_t_of(nval)) {
   case t_fixnum: return equalp_lfloat_fixnum(dval, nval);
   case t_bignum: return equalp_lfloat_bignum(dval, nval);
   case t_ratio: return equalp_lfloat_ratio(dval, nval);
+  case t_singlefloat: return dval == ecl_single_float(nval);
+  case t_doublefloat: return dval == ecl_double_float(nval);
+  case t_longfloat: return dval == ecl_long_float(nval);
   default:
-    ecl_internal_error("equalp_lfloat_rational: unexpected branch.");
+    ecl_internal_error("equalp_lfloat_real: unexpected branch.");
   }
 }
 
 static int
 equalp_cdfloat_complex(double _Complex dval, cl_object nval) {
-  return (equalp_dfloat_rational(creal(dval), ecl_complex_real(nval)) &&
-          equalp_dfloat_rational(cimag(dval), ecl_complex_imag(nval)));
+  return (equalp_dfloat_real(creal(dval), ecl_complex_real(nval)) &&
+          equalp_dfloat_real(cimag(dval), ecl_complex_imag(nval)));
 }
 
 static int
 equalp_clfloat_complex(long double _Complex dval, cl_object nval) {
-  return (equalp_lfloat_rational(creall(dval), ecl_complex_real(nval)) &&
-          equalp_lfloat_rational(cimagl(dval), ecl_complex_imag(nval)));
+  return (equalp_lfloat_real(creall(dval), ecl_complex_real(nval)) &&
+          equalp_lfloat_real(cimagl(dval), ecl_complex_imag(nval)));
+}
+
+static int
+equalp_cdfloat_rational(double _Complex dval, cl_object nval) {
+  if (cimag(dval) != 0) return 0;
+  return equalp_dfloat_real(creal(dval), nval);
+}
+
+static int
+equalp_clfloat_rational(long double _Complex dval, cl_object nval) {
+  if (cimagl(dval) != 0) return 0;
+  return equalp_lfloat_real(creall(dval), nval);
 }
 #endif
 
@@ -327,51 +345,45 @@ ecl_number_equalp(cl_object x, cl_object y)
               ecl_number_equalp(ecl_complex_imag(x), ecl_complex_imag(y)));
     }
 #ifdef ECL_COMPLEX_FLOAT
-    /* c?float x real */
+    /* csfloat x real */
     CASE_CSFLOAT_FIXNUM;
     CASE_CSFLOAT_BIGNUM;
     CASE_CSFLOAT_RATIO;
     CASE_CSFLOAT_SINGLE_FLOAT;
     CASE_CSFLOAT_DOUBLE_FLOAT;
-    CASE_CDFLOAT_FIXNUM;
-    CASE_CDFLOAT_BIGNUM;
-    CASE_CDFLOAT_RATIO;
-    CASE_CDFLOAT_SINGLE_FLOAT;
-    CASE_CDFLOAT_DOUBLE_FLOAT;
-    CASE_CLFLOAT_FIXNUM;
-    CASE_CLFLOAT_BIGNUM;
-    CASE_CLFLOAT_RATIO;
-    CASE_CLFLOAT_SINGLE_FLOAT;
-    CASE_CLFLOAT_DOUBLE_FLOAT;
-    CASE_CSFLOAT_LONG_FLOAT;
-    CASE_CDFLOAT_LONG_FLOAT;
-    CASE_CLFLOAT_LONG_FLOAT;
-    {
-      if (!ecl_zerop(cl_imagpart(x))) { return 0; }
-      return ecl_number_equalp(cl_realpart(x), y);
-    }
+    CASE_CSFLOAT_LONG_FLOAT {return equalp_cdfloat_rational(ecl_csfloat(x), y); }
     CASE_FIXNUM_CSFLOAT;
     CASE_BIGNUM_CSFLOAT;
     CASE_RATIO_CSFLOAT;
     CASE_SINGLE_FLOAT_CSFLOAT;
     CASE_DOUBLE_FLOAT_CSFLOAT;
+    CASE_LONG_FLOAT_CSFLOAT {return equalp_cdfloat_rational(ecl_csfloat(y), x); }
+    /* cdfloat x real */
+    CASE_CDFLOAT_FIXNUM;
+    CASE_CDFLOAT_BIGNUM;
+    CASE_CDFLOAT_RATIO;
+    CASE_CDFLOAT_SINGLE_FLOAT;
+    CASE_CDFLOAT_DOUBLE_FLOAT;
+    CASE_CDFLOAT_LONG_FLOAT {return equalp_cdfloat_rational(ecl_cdfloat(x), y); }
     CASE_FIXNUM_CDFLOAT;
     CASE_BIGNUM_CDFLOAT;
     CASE_RATIO_CDFLOAT;
     CASE_SINGLE_FLOAT_CDFLOAT;
     CASE_DOUBLE_FLOAT_CDFLOAT;
+    CASE_LONG_FLOAT_CDFLOAT {return equalp_cdfloat_rational(ecl_cdfloat(y), x); }
+    /* clfloat x real */
+    CASE_CLFLOAT_FIXNUM;
+    CASE_CLFLOAT_BIGNUM;
+    CASE_CLFLOAT_RATIO;
+    CASE_CLFLOAT_SINGLE_FLOAT;
+    CASE_CLFLOAT_DOUBLE_FLOAT;
+    CASE_CLFLOAT_LONG_FLOAT {return equalp_clfloat_rational(ecl_clfloat(x), y); }
     CASE_FIXNUM_CLFLOAT;
     CASE_BIGNUM_CLFLOAT;
     CASE_RATIO_CLFLOAT;
     CASE_SINGLE_FLOAT_CLFLOAT;
     CASE_DOUBLE_FLOAT_CLFLOAT;
-    CASE_LONG_FLOAT_CSFLOAT;
-    CASE_LONG_FLOAT_CDFLOAT;
-    CASE_LONG_FLOAT_CLFLOAT;
-    {
-      if (!ecl_zerop(cl_imagpart(y))) { return 0; }
-      return ecl_number_equalp(cl_realpart(y), x);
-    }
+    CASE_LONG_FLOAT_CLFLOAT {return equalp_clfloat_rational(ecl_clfloat(y), x); }
     /* complex x c?float */
     CASE_COMPLEX_CSFLOAT { return equalp_cdfloat_complex(ecl_csfloat(y), x); }
     CASE_CSFLOAT_COMPLEX { return equalp_cdfloat_complex(ecl_csfloat(x), y); }
