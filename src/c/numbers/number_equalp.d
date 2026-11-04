@@ -101,18 +101,49 @@ equalp_lfloat_bignum(long double dval, cl_object nval)
   if (isfinite(dval) && dval==truncl(dval)) {
     /* Cheap tests first (compare signs and ranges). */
     const long double limit = ldexpl(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
-    cl_fixnum length_n = _ecl_big_integer_length(nval);
-    cl_fixnum exponent_n = _ecl_big_ctz(nval);
     int signum_d = signbit(dval)      ? -1 : +1;
     int signum_n = ecl_bigsgn(nval)<0 ? -1 : +1;
     if ((signum_d != signum_n) ||
-        (dval < limit && dval >= -limit) ||
-        (length_n-exponent_n > LDBL_MANT_DIG) ||
-        (length_n > LDBL_MAX_EXP) ) {
+        (dval < limit && dval >= -limit)) {
       return 0;
     } else {
-      cl_object x = cl_rational(ecl_make_long_float(dval));
-      return ecl_number_equalp(x, nval);
+      /* GMP doesn't have setter from long double. We first compute the mantissa
+         as a bignum and then multiply it by 2^exp in bignum representation . */
+#if LDBL_MANT_DIG <= ECL_FIXNUM_BITS
+      int exponent, equalp, shift;
+      long double dsrc = (signum_d==-1) ? -dval : dval;
+      cl_object reg = _ecl_big_register2();
+      cl_index mantissa = ldexpl(frexpl(dsrc, &exponent), LDBL_MANT_DIG);
+      shift=exponent-LDBL_MANT_DIG;
+      _ecl_big_set_idx(reg, mantissa);
+      if (shift<0) _ecl_big_div_2exp(reg, reg, -shift); /* overshot */
+      else         _ecl_big_mul_2exp(reg, reg, +shift); /* undershot */
+      if(signum_d==-1) _ecl_big_neg(reg, reg);
+      equalp = (_ecl_big_compare(reg, nval) == 0);
+      _ecl_big_register_free(reg);
+      return equalp;
+#else
+      int iterator, exponent, equalp, shift;
+      long double frac;
+      cl_object reg = _ecl_big_register2();
+      unsigned long int limb;
+      frac = (signum_d==-1) ? frexpl(-dval, &exponent) : frexpl(+dval, &exponent);
+      _ecl_big_set_ui(reg, 0);
+      for (iterator=0; iterator<LDBL_MANT_DIG && frac; iterator+=LONG_BITS) {
+        frac=ldexpl(frac, LONG_BITS);
+        limb=(unsigned long int)frac;
+        frac-=limb;
+        _ecl_big_mul_2exp(reg, reg, LONG_BITS);
+        _ecl_big_add_ui(reg, reg, limb);
+      }
+      shift = exponent-iterator;
+      if (shift<0) _ecl_big_div_2exp(reg, reg, -shift); /* overshot */
+      else         _ecl_big_mul_2exp(reg, reg, +shift); /* undershot */
+      if (signum_d==-1) _ecl_big_neg(reg, reg);
+      equalp = (_ecl_big_compare(reg, nval) == 0);
+      _ecl_big_register_free(reg);
+      return equalp;
+#endif
     }
   }
   return 0;
