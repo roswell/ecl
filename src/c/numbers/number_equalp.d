@@ -208,12 +208,52 @@ equalp_lfloat_ratio(long double dval, cl_object nval)
   return 0;
 }
 
-/* This variant is exact and it conses, included for completness. */
+/* This variant is exact and it conses, included for completness. Not used. */
+#if 0
 static int
 equalp_xfloat_rational(cl_object dval, cl_object nval)
 {
   return ecl_number_equalp(cl_rational(dval), nval);
 }
+#endif
+
+#ifdef ECL_COMPLEX_FLOAT
+static int
+equalp_dfloat_rational(double dval, cl_object nval)
+{
+  switch(ecl_t_of(nval)) {
+  case t_fixnum: return equalp_dfloat_fixnum(dval, nval);
+  case t_bignum: return equalp_dfloat_bignum(dval, nval);
+  case t_ratio: return equalp_dfloat_ratio(dval, nval);
+  default:
+    ecl_internal_error("equalp_dfloat_rational: unexpected branch.");
+  }
+}
+
+static int
+equalp_lfloat_rational(long double dval, cl_object nval)
+{
+  switch(ecl_t_of(nval)) {
+  case t_fixnum: return equalp_lfloat_fixnum(dval, nval);
+  case t_bignum: return equalp_lfloat_bignum(dval, nval);
+  case t_ratio: return equalp_lfloat_ratio(dval, nval);
+  default:
+    ecl_internal_error("equalp_lfloat_rational: unexpected branch.");
+  }
+}
+
+static int
+equalp_cdfloat_complex(double _Complex dval, cl_object nval) {
+  return (equalp_dfloat_rational(creal(dval), ecl_complex_real(nval)) &&
+          equalp_dfloat_rational(cimag(dval), ecl_complex_imag(nval)));
+}
+
+static int
+equalp_clfloat_complex(long double _Complex dval, cl_object nval) {
+  return (equalp_lfloat_rational(creall(dval), ecl_complex_real(nval)) &&
+          equalp_lfloat_rational(cimagl(dval), ecl_complex_imag(nval)));
+}
+#endif
 
 /* Returns 1 if both numbers compare to equal */
 int
@@ -340,29 +380,12 @@ ecl_number_equalp(cl_object x, cl_object y)
     }
 #ifdef ECL_COMPLEX_FLOAT
     /* complex x c?float */
-    CASE_COMPLEX_CSFLOAT {
-      cl_object aux = ecl_alloc_object(t_csfloat);
-      ecl_csfloat(aux) = (ecl_to_float(ecl_complex_real(x))
-                          + I * ecl_to_float(ecl_complex_imag(x)));
-      return ecl_number_equalp(aux, y);
-    }
-    CASE_COMPLEX_CDFLOAT {
-      cl_object aux = ecl_alloc_object(t_cdfloat);
-      ecl_cdfloat(aux) = (ecl_to_double(ecl_complex_real(x))
-                          + I * ecl_to_double(ecl_complex_imag(x)));
-      return ecl_number_equalp(aux, y);
-    }
-    CASE_COMPLEX_CLFLOAT {
-      cl_object aux = ecl_alloc_object(t_clfloat);
-      ecl_clfloat(aux) = (ecl_to_long_double(ecl_complex_real(x))
-                          + I * ecl_to_long_double(ecl_complex_imag(x)));
-      return ecl_number_equalp(aux, y);
-    }
-    CASE_CSFLOAT_COMPLEX;
-    CASE_CDFLOAT_COMPLEX;
-    CASE_CLFLOAT_COMPLEX {
-      return ecl_number_equalp(y, x);
-    }
+    CASE_COMPLEX_CSFLOAT { return equalp_cdfloat_complex(ecl_csfloat(y), x); }
+    CASE_CSFLOAT_COMPLEX { return equalp_cdfloat_complex(ecl_csfloat(x), y); }
+    CASE_COMPLEX_CDFLOAT { return equalp_cdfloat_complex(ecl_cdfloat(y), x); }
+    CASE_CDFLOAT_COMPLEX { return equalp_cdfloat_complex(ecl_cdfloat(x), y); }
+    CASE_COMPLEX_CLFLOAT { return equalp_clfloat_complex(ecl_clfloat(y), x); }
+    CASE_CLFLOAT_COMPLEX { return equalp_clfloat_complex(ecl_clfloat(x), y); }
     /* c?float x c?float */
     CASE_CSFLOAT_CSFLOAT { return ecl_csfloat(x) == ecl_csfloat(y); }
     CASE_CSFLOAT_CDFLOAT { return ecl_csfloat(x) == ecl_cdfloat(y); }
