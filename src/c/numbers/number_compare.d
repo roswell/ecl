@@ -64,6 +64,30 @@ compare_lfloat_fixnum(long double d, cl_object nval)
   return (d < (long double)n) ? -1 : +1;
 }
 
+static int
+compare_ratio_integer(cl_object xval, cl_object yval)
+{
+  return ecl_number_compare(ecl_ratio_num(xval),
+                            ecl_times(yval, ecl_ratio_den(xval)));
+}
+
+static int
+compare_ratio_ratio(cl_object xval, cl_object yval)
+{
+  return ecl_number_compare(ecl_times(ecl_ratio_num(xval), ecl_ratio_den(yval)),
+                            ecl_times(ecl_ratio_num(yval), ecl_ratio_den(xval)));
+}
+
+static int
+compare_float_rational(cl_object xval, cl_object yval)
+{
+#ifdef ECL_IEEE_FP
+  if (ecl_float_infinity_p(xval))
+    return ecl_number_compare(xval, ecl_make_fixnum(0));
+#endif
+  return ecl_number_compare(cl_rational(xval), yval);
+}
+
 /*
  *
  * The value of ecl_number_compare(x, y) is
@@ -79,7 +103,6 @@ ecl_number_compare(cl_object x, cl_object y)
 {
   double dx, dy;
   long double ldx, ldy;
- BEGIN:
   MATH_DISPATCH2_BEGIN(x,y) {
     /* rational x rational */
     CASE_FIXNUM_FIXNUM {
@@ -94,16 +117,10 @@ ecl_number_compare(cl_object x, cl_object y)
     CASE_BIGNUM_FIXNUM { return ecl_bigsgn(x) < 0 ? -1 :  1; }
     CASE_BIGNUM_BIGNUM { return _ecl_big_compare(x, y); }
     CASE_FIXNUM_RATIO;
-    CASE_BIGNUM_RATIO {
-      return ecl_number_compare(ecl_times(x, ecl_ratio_den(y)),
-                                ecl_ratio_num(y)); }
+    CASE_BIGNUM_RATIO { return -compare_ratio_integer(y, x); }
     CASE_RATIO_FIXNUM;
-    CASE_RATIO_BIGNUM {
-      return ecl_number_compare(ecl_ratio_num(x),
-                                ecl_times(y, ecl_ratio_den(x))); }
-    CASE_RATIO_RATIO  {
-      return ecl_number_compare(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
-                                ecl_times(ecl_ratio_num(y), ecl_ratio_den(x))); }
+    CASE_RATIO_BIGNUM { return +compare_ratio_integer(x, y); }
+    CASE_RATIO_RATIO  { return compare_ratio_ratio(x, y); }
     /* float x fixnum */
     CASE_SINGLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_single_float(x), y); }
     CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), x); }
@@ -117,29 +134,13 @@ ecl_number_compare(cl_object x, cl_object y)
     CASE_DOUBLE_FLOAT_BIGNUM;
     CASE_DOUBLE_FLOAT_RATIO;
     CASE_LONG_FLOAT_BIGNUM;
-    CASE_LONG_FLOAT_RATIO;
-    {
-#ifdef ECL_IEEE_FP
-      if (ecl_float_infinity_p(x))
-        return ecl_number_compare(x, ecl_make_fixnum(0));
-#endif
-      x = cl_rational(x);
-      goto BEGIN;
-    }
+    CASE_LONG_FLOAT_RATIO { return compare_float_rational(x, y); }
     CASE_BIGNUM_SINGLE_FLOAT;
     CASE_RATIO_SINGLE_FLOAT;
     CASE_BIGNUM_DOUBLE_FLOAT;
     CASE_RATIO_DOUBLE_FLOAT;
     CASE_BIGNUM_LONG_FLOAT;
-    CASE_RATIO_LONG_FLOAT;
-    {
-#ifdef ECL_IEEE_FP
-      if (ecl_float_infinity_p(y))
-        return ecl_number_compare(ecl_make_fixnum(0), y);
-#endif
-      y = cl_rational(y);
-      goto BEGIN;
-    }
+    CASE_RATIO_LONG_FLOAT { return -compare_float_rational(y, x); }
     /* float x float */
     CASE_SINGLE_FLOAT_SINGLE_FLOAT {
       dx = ecl_single_float(x);
