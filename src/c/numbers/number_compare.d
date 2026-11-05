@@ -111,6 +111,15 @@ compare_ratio_integer(cl_object xval, cl_object yval)
     if (yleft  >= xright) return xsig==+1 ? -1 : +1;
   }
   /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+#if defined(__SIZEOF_INT128__) && ECL_FIXNUM_BITS<=64
+  if (ECL_FIXNUMP(xnum) && ECL_FIXNUMP(xden) && ECL_FIXNUMP(yval)) {
+    cl_fixnum a = ecl_fixnum(xnum);
+    cl_fixnum b = ecl_fixnum(xden);
+    cl_fixnum c = ecl_fixnum(yval);
+    __int128 result = (__int128)b * c;
+    return ((__int128)a < result) ? -1 : +1;
+  }
+#endif
   /* 3. slow path using a bignum register. */
   {
     /* Since we operate strictly on bignums, there is no need to normalize to
@@ -165,6 +174,17 @@ compare_ratio_ratio(cl_object xval, cl_object yval)
     if (yleft  >= xright) return xsig==+1 ? -1 : +1;
   }
   /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+#if defined(__SIZEOF_INT128__) && ECL_FIXNUM_BITS<=64
+  if (ECL_FIXNUMP(xnum) && ECL_FIXNUMP(xden) && ECL_FIXNUMP(ynum) && ECL_FIXNUMP(yden)) {
+    cl_fixnum a = ecl_fixnum(xnum);
+    cl_fixnum b = ecl_fixnum(xden);
+    cl_fixnum c = ecl_fixnum(ynum);
+    cl_fixnum d = ecl_fixnum(yden);
+    __int128 r1 = (__int128)a * d;
+    __int128 r2 = (__int128)c * b;
+    return (r1 < r2) ? -1 : +1;
+  }
+#endif
   /* 3. slow path using a bignum register. */
   {
     /* Since we operate strictly on bignums, there is no need to normalize to
