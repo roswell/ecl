@@ -84,8 +84,8 @@ equalp_dfloat_bignum(double dval, cl_object nval)
         (dval < limit && dval >= -limit)) {
       return 0;
     } else {
-      cl_object reg = _ecl_big_register2();
       int equalp;
+      cl_object reg = _ecl_big_register2();
       _ecl_big_set_d(reg, dval);
       equalp = (_ecl_big_compare(reg, nval) == 0);
       _ecl_big_register_free(reg);
@@ -107,43 +107,12 @@ equalp_lfloat_bignum(long double dval, cl_object nval)
         (dval < limit && dval >= -limit)) {
       return 0;
     } else {
-      /* GMP doesn't have setter from long double. We first compute the mantissa
-         as a bignum and then multiply it by 2^exp in bignum representation . */
-#if LDBL_MANT_DIG <= ECL_FIXNUM_BITS
-      int exponent, equalp, shift;
-      long double dsrc = (signum_d==-1) ? -dval : dval;
+      int equalp;
       cl_object reg = _ecl_big_register2();
-      cl_index mantissa = ldexpl(frexpl(dsrc, &exponent), LDBL_MANT_DIG);
-      shift=exponent-LDBL_MANT_DIG;
-      _ecl_big_set_idx(reg, mantissa);
-      if (shift<0) _ecl_big_div_2exp(reg, reg, -shift); /* overshot */
-      else         _ecl_big_mul_2exp(reg, reg, +shift); /* undershot */
-      if(signum_d==-1) _ecl_big_neg(reg, reg);
+      _ecl_big_set_lf(reg, dval);
       equalp = (_ecl_big_compare(reg, nval) == 0);
       _ecl_big_register_free(reg);
       return equalp;
-#else
-      int iterator, exponent, equalp, shift;
-      long double frac;
-      cl_object reg = _ecl_big_register2();
-      unsigned long int limb;
-      frac = (signum_d==-1) ? frexpl(-dval, &exponent) : frexpl(+dval, &exponent);
-      _ecl_big_set_ui(reg, 0);
-      for (iterator=0; iterator<LDBL_MANT_DIG && frac; iterator+=LONG_BITS) {
-        frac=ldexpl(frac, LONG_BITS);
-        limb=(unsigned long int)frac;
-        frac-=limb;
-        _ecl_big_mul_2exp(reg, reg, LONG_BITS);
-        _ecl_big_add_ui(reg, reg, limb);
-      }
-      shift = exponent-iterator;
-      if (shift<0) _ecl_big_div_2exp(reg, reg, -shift); /* overshot */
-      else         _ecl_big_mul_2exp(reg, reg, +shift); /* undershot */
-      if (signum_d==-1) _ecl_big_neg(reg, reg);
-      equalp = (_ecl_big_compare(reg, nval) == 0);
-      _ecl_big_register_free(reg);
-      return equalp;
-#endif
     }
   }
   return 0;
