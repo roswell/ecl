@@ -112,8 +112,27 @@ compare_ratio_integer(cl_object xval, cl_object yval)
   }
   /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
   /* 3. slow path using a bignum register. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    int result;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    /* Initialize registers. */
+    if (ECL_FIXNUMP(xnum)) _ecl_big_set_fix(reg1, ecl_fixnum(xnum));
+    else                   _ecl_big_set(reg1, xnum);
+    if (ECL_FIXNUMP(yval)) _ecl_big_set_fix(reg2, ecl_fixnum(yval));
+    else                   _ecl_big_set(reg2, yval);
+    /* INV denominator is always positive. */
+    if (ECL_FIXNUMP(xden)) _ecl_big_mul_ui(reg2, reg2, ecl_fixnum(xden));
+    else                   _ecl_big_mul(reg2, reg2, xden);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return result;
+  }
   /* Unoptimized version (never reached): */
-  return ecl_number_compare(xnum, ecl_times(yval, xden));
+  /* return ecl_number_compare(xnum, ecl_times(yval, xden)); */
 }
 
 static int
@@ -147,9 +166,30 @@ compare_ratio_ratio(cl_object xval, cl_object yval)
   }
   /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
   /* 3. slow path using a bignum register. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    int result;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    /* Initialize registers. */
+    if (ECL_FIXNUMP(xnum)) _ecl_big_set_fix(reg1, ecl_fixnum(xnum));
+    else                   _ecl_big_set(reg1, xnum);
+    if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+    else                   _ecl_big_set(reg2, ynum);
+    /* INV denominator is always positive. */
+    if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+    else                   _ecl_big_mul(reg1, reg1, yden);
+    if (ECL_FIXNUMP(xden)) _ecl_big_mul_ui(reg2, reg2, ecl_fixnum(xden));
+    else                   _ecl_big_mul(reg2, reg2, xden);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return result;
+  }
   /* Unoptimized version (never reached): */
-  return ecl_number_compare(ecl_times(xnum, yden),
-                            ecl_times(ynum, xden));
+  /* return ecl_number_compare(ecl_times(xnum, yden), */
+  /*                           ecl_times(ynum, xden)); */
 }
 
 static int
@@ -200,11 +240,12 @@ compare_lfloat_rational(long double dval, cl_object yval)
  *
  * The value of ecl_number_compare(x, y) is
  *
- * -1      if      x < y
+ * -n      if      x < y
  *  0      if      x = y
- *  1      if      x > y.
+ * +n      if      x > y.
  *
  * If x or y is not real, it fails.
+ * n is a positive int (c.f mpz_cmp ).
 */
 int
 ecl_number_compare(cl_object x, cl_object y)
