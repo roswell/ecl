@@ -94,7 +94,8 @@
   was cast to (complex single-float) instead of (complex /y-float-type/)
   leading to inconsistent results
 
-- performance: checking whether numbers are equal never conses memory
+- performance: comparing = < <= >= > numbers doesn't cons memory and is
+  optimized for faster execution
 
 * 26.5.5 changes since 26.3.27
 
