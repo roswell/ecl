@@ -67,6 +67,7 @@ extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
 #define _ecl_big_get_d(x)           mpz_get_d(ecl_bignum(x))
 #define _ecl_big_get_str(buf,n,x,b) mpz_get_str(buf,-b,ecl_bignum(x))
 
+extern ECL_API void _ecl_big_set_lf(cl_object x, long double d);
 extern ECL_API long double _ecl_big_get_lf(cl_object x);
 
 /* Type conversion predicates */
@@ -138,6 +139,7 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_set_ui(x, i)       (ecl_bignum(x)=(unsigned long int)i)
 #define _ecl_big_set_si(x, i)       (ecl_bignum(x)=(long int)i)
 #define _ecl_big_set_d(x, d)        (ecl_bignum(x)=(double)d)
+#define _ecl_big_set_lf(x, d)       (ecl_bignum(x)=(long double)d)
 
 #define _ecl_big_get_idx(x)         (cl_index)ecl_bignum(x)
 #define _ecl_big_get_fix(x)         (cl_fixnum)ecl_bignum(x)
