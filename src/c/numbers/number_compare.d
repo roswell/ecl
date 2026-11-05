@@ -12,7 +12,7 @@
  *
  */
 
-
+#include <float.h>
 #include <ecl/ecl.h>
 #include <ecl/bithacks.h>
 #include <ecl/impl/math_dispatch2.h>
@@ -55,7 +55,7 @@ compare_ratio_integer(cl_object xval, cl_object yval)
     /* ln   <= (la-lb-1) -> xnum/xden > ynum */
     /* ln-1 >= (la-lb+1) -> xnum/xden < ynum */
     cl_fixnum alen = magnitude_length(xnum);
-    cl_fixnum blen = ecl_integer_length(xden);
+    cl_fixnum blen = magnitude_length(xden);
     cl_fixnum nlen = magnitude_length(yval);
     cl_fixnum xleft  = (alen-blen-1);
     cl_fixnum xright = (alen-blen+1);
@@ -74,7 +74,7 @@ compare_ratio_integer(cl_object xval, cl_object yval)
     return ((__int128)a < result) ? -1 : +1;
   }
 #endif
-  /* 3. slow path using a bignum register. */
+  /* 3. Slow path using a bignum register. */
   {
     /* Since we operate strictly on bignums, there is no need to normalize to
        fixnum even when the result falls in a fixnum range. */
@@ -117,9 +117,9 @@ compare_ratio_ratio(cl_object xval, cl_object yval)
   /* 1. Compare magnitudes (c.f compare_ratio_integer) */
   {
     cl_fixnum alen = magnitude_length(xnum);
-    cl_fixnum blen = ecl_integer_length(xden);
+    cl_fixnum blen = magnitude_length(xden);
     cl_fixnum clen = magnitude_length(ynum);
-    cl_fixnum dlen = ecl_integer_length(yden);
+    cl_fixnum dlen = magnitude_length(yden);
     cl_fixnum xleft  = (alen-blen-1);
     cl_fixnum xright = (alen-blen+1);
     cl_fixnum yleft  = (clen-dlen-1);
@@ -139,23 +139,24 @@ compare_ratio_ratio(cl_object xval, cl_object yval)
     return (r1 < r2) ? -1 : +1;
   }
 #endif
-  /* 3. slow path using a bignum register. */
+  /* 3. Slow path using bignum registers. */
   {
     /* Since we operate strictly on bignums, there is no need to normalize to
        fixnum even when the result falls in a fixnum range. */
     int result;
     cl_object reg1 = _ecl_big_register1();
     cl_object reg2 = _ecl_big_register2();
-    /* Initialize registers. */
+    /* xnum*yden */
     if (ECL_FIXNUMP(xnum)) _ecl_big_set_fix(reg1, ecl_fixnum(xnum));
     else                   _ecl_big_set(reg1, xnum);
-    if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
-    else                   _ecl_big_set(reg2, ynum);
-    /* INV denominator is always positive. */
     if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
     else                   _ecl_big_mul(reg1, reg1, yden);
+    /* ynum*xden */
+    if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+    else                   _ecl_big_set(reg2, ynum);
     if (ECL_FIXNUMP(xden)) _ecl_big_mul_ui(reg2, reg2, ecl_fixnum(xden));
     else                   _ecl_big_mul(reg2, reg2, xden);
+    /* ~ */
     result = _ecl_big_compare(reg1, reg2);
     _ecl_big_register_free(reg1);
     _ecl_big_register_free(reg2);
@@ -285,45 +286,165 @@ compare_lfloat_bignum(long double dval, cl_object yval)
 static int
 compare_dfloat_ratio(double dval, cl_object yval)
 {
-  int xsig, ysig;
-  cl_object xval;
+  int xsig, ysig, exponent;
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
   /* Cheap tests: */
 #ifdef ECL_IEEE_FP
   if (isinf(dval))
     return (dval<0) ? -1 : +1;
 #endif
   if (dval==0)
-    return ecl_minusp(yval) ? +1 : (ecl_zerop(yval) ? 0 : -1);
-  xsig = signbit(dval) ? -1 : +1;
-  ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
   if (xsig!=ysig) return xsig<ysig ? -1 : +1;
-  /* 1. compare magnitudes */
-  /* 2. dyadic comparison in a register */
-  /* Unoptimized version: */
-  xval = ecl_make_double_float(dval);
-  return ecl_number_compare(cl_rational(xval), yval);
+  /* 1. Compare magnitudes. */
+  {
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = magnitude_length(yden);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    cl_fixnum xleft, xright;
+    /* Floats are unnormalized ratios in disguise. There is a difference:
+       ratio: [2^(e-1), 2^(e+1))
+       float: [2^(e-1), 2^(e+0)) */
+    frexp(dval, &exponent);
+    xleft  = exponent-1;
+    xright = exponent;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. Slow path in bignum registers. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    /* (mantissa*yden < ynum*exponent) */
+    int result, iterator, shift;
+    unsigned long int limb;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    double frac = (xsig<0) ? frexp(-dval,&exponent) : frexp(+dval,&exponent);
+    _ecl_big_set_ui(reg1, 0);
+    for (iterator=0; iterator<DBL_MANT_DIG && frac; iterator+=ECL_LONG_BITS) {
+      frac=ldexp(frac, ECL_LONG_BITS);
+      limb=(unsigned long int)frac;
+      frac-=limb;
+      _ecl_big_mul_2exp(reg1, reg1, ECL_LONG_BITS);
+      _ecl_big_add_ui(reg1, reg1, limb);
+    }
+    shift = exponent-iterator;
+    /* reg1 = mantissa (int), dval = reg1 * 2^shift  */
+    /* Now that we have mantissa and exponent in integer space, we can compare
+       the float with the ratio. Note that shift may be either negative or
+       positive; we want to avoid division because that would lose precision.
+       Depending on its sign we either treat it as part of xnum or xden. */
+    if (shift>0) {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      _ecl_big_mul_2exp(reg1, reg1, +shift);
+      /* ynum*xden (xden=1) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+    } else {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      /* ynum*xden (xden=2^-shift) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+      if(shift) _ecl_big_mul_2exp(reg2, reg2, -shift);
+    }
+    /* ~ */
+    if (xsig<0) _ecl_big_neg(reg2, reg2);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return (xsig>0) ? result : -result;
+  }
 }
 
 static int
 compare_lfloat_ratio(long double dval, cl_object yval)
 {
-  int xsig, ysig;
-  cl_object xval;
+  int xsig, ysig, exponent;
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
   /* Cheap tests: */
 #ifdef ECL_IEEE_FP
   if (isinf(dval))
     return (dval<0) ? -1 : +1;
 #endif
   if (dval==0)
-    return ecl_minusp(yval) ? +1 : (ecl_zerop(yval) ? 0 : -1);
-  xsig = signbit(dval) ? -1 : +1;
-  ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
   if (xsig!=ysig) return xsig<ysig ? -1 : +1;
-  /* 1. compare magnitudes */
-  /* 2. dyadic comparison in a register */
-  /* Unoptimized version: */
-  xval = ecl_make_long_float(dval);
-  return ecl_number_compare(cl_rational(xval), yval);
+    /* 1. Compare magnitudes. */
+  {
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = magnitude_length(yden);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    cl_fixnum xleft, xright;
+    /* Floats are unnormalized ratios in disguise. There is a difference:
+       ratio: [2^(e-1), 2^(e+1))
+       float: [2^(e-1), 2^(e+0)) */
+    frexpl(dval, &exponent);
+    xleft  = exponent-1;
+    xright = exponent;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. Slow path in bignum registers. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    /* (mantissa*yden < ynum*exponent) */
+    int result, iterator, shift;
+    unsigned long int limb;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    long double frac = (xsig<0) ? frexpl(-dval,&exponent) : frexpl(+dval,&exponent);
+    _ecl_big_set_ui(reg1, 0);
+    for (iterator=0; iterator<LDBL_MANT_DIG && frac; iterator+=ECL_LONG_BITS) {
+      frac=ldexpl(frac, ECL_LONG_BITS);
+      limb=(unsigned long int)frac;
+      frac-=limb;
+      _ecl_big_mul_2exp(reg1, reg1, ECL_LONG_BITS);
+      _ecl_big_add_ui(reg1, reg1, limb);
+    }
+    shift = exponent-iterator;
+    /* reg1 = mantissa (int), dval = reg1 * 2^shift  */
+    /* Now that we have mantissa and exponent in integer space, we can compare
+       the float with the ratio. Note that shift may be either negative or
+       positive; we want to avoid division because that would lose precision.
+       Depending on its sign we either treat it as part of xnum or xden. */
+    if (shift>0) {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      _ecl_big_mul_2exp(reg1, reg1, +shift);
+      /* ynum*xden (xden=1) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+    } else {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      /* ynum*xden (xden=2^-shift) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+      if(shift) _ecl_big_mul_2exp(reg2, reg2, -shift);
+    }
+    /* ~ */
+    if (xsig<0) _ecl_big_neg(reg2, reg2);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return (xsig>0) ? result : -result;
+  }
 }
 
 /* Fallbacks. */
