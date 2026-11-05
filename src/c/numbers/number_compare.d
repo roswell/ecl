@@ -14,6 +14,7 @@
 
 
 #include <ecl/ecl.h>
+#include <ecl/bithacks.h>
 #include <ecl/impl/math_dispatch2.h>
 
 /* Helpers */
@@ -64,6 +65,20 @@ compare_lfloat_fixnum(long double d, cl_object nval)
   return (d < (long double)n) ? -1 : +1;
 }
 
+/* integer length of |n| without consing (abs n) */
+static inline cl_fixnum
+magnitude_length(cl_object num)
+{
+  if (!ECL_FIXNUMP(num))
+    return _ecl_big_integer_length(num); /* already magnitude */
+  {
+    cl_fixnum val = ecl_fixnum(num);
+    cl_fixnum len = ecl_fixnum_bit_length(val);
+    if (val<0 && ecl_ctz(val) == len) len++;
+    return len;
+  }
+}
+
 static int
 compare_ratio_integer(cl_object xval, cl_object yval)
 {
@@ -74,12 +89,31 @@ compare_ratio_integer(cl_object xval, cl_object yval)
   int xsig = ecl_minusp(xnum) ? -1 : +1;
   int ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
   if(xsig!=ysig) return xsig<ysig ? -1 : +1;
-  /* 1. compare magnitudes */
-  /* 2. fast path for fixnums ifdef (__SIZEOF_INT128__) */
-  /* 3. slow path for bignums (in the scratch register) */
-  /* Unoptimized version: */
-  return ecl_number_compare(xnum,
-                            ecl_times(yval, xden));
+  /* 1. Compare magnitudes. */
+  {
+    /* Note that the description below holds for positive integers. When numbers
+       are negative, then the comparison direction is swapped. */
+    /* ln=maglen(yval) -> yval in [2^(ln-1);2^ln). */
+    /* la=maglen(xnum) -> xnum in [2^(la-1);2^la)  */
+    /* lb=maglen(xden) -> xden in [2^(lb-1);2^lb)  */
+    /* xnum/xden -> [2^(la-1-lb), 2^(la-lb+1)) -> [2^(la-lb-1), 2^(la-lb+1)) */
+    /* --- */
+    /* ln   <= (la-lb-1) -> xnum/xden > ynum */
+    /* ln-1 >= (la-lb+1) -> xnum/xden < ynum */
+    cl_fixnum alen = magnitude_length(xnum);
+    cl_fixnum blen = ecl_integer_length(xden);
+    cl_fixnum nlen = magnitude_length(yval);
+    cl_fixnum xleft  = (alen-blen-1);
+    cl_fixnum xright = (alen-blen+1);
+    cl_fixnum yleft  = (nlen-1);
+    cl_fixnum yright = nlen;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+  /* 3. slow path using a bignum register. */
+  /* Unoptimized version (never reached): */
+  return ecl_number_compare(xnum, ecl_times(yval, xden));
 }
 
 static int
@@ -94,12 +128,26 @@ compare_ratio_ratio(cl_object xval, cl_object yval)
   int ysig = ecl_minusp(ynum) ? -1 : +1;
   if (xsig!=ysig) return xsig<ysig ? -1 : +1;
   /* Integer comparison is cheap. */
-  if (ecl_number_equalp(xden, yden))
-    return ecl_number_compare(xnum, ynum);
-  /* 1. compare magnitudes */
-  /* 2. fast path for fixnums ifdef (__SIZEOF_INT128__) */
-  /* 3. slow path for bignums (in the scratch register) */
-  /* Unoptimized version: */
+  if (ecl_number_equalp(xden, yden)) {
+    if (xnum==ynum) return 0;
+    else return ecl_number_compare(xnum, ynum);
+  }
+  /* 1. Compare magnitudes (c.f compare_ratio_integer) */
+  {
+    cl_fixnum alen = magnitude_length(xnum);
+    cl_fixnum blen = ecl_integer_length(xden);
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = ecl_integer_length(yden);
+    cl_fixnum xleft  = (alen-blen-1);
+    cl_fixnum xright = (alen-blen+1);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+  /* 3. slow path using a bignum register. */
+  /* Unoptimized version (never reached): */
   return ecl_number_compare(ecl_times(xnum, yden),
                             ecl_times(ynum, xden));
 }
