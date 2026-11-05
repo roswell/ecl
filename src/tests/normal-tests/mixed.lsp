@@ -751,3 +751,18 @@
   (is-equal 6 (handler-case (values 1 2 3)
                 (error ())
                 (:no-error (a b c) (+ a b c)))))
+
+;;; Created 2026-11-03
+;;; Description
+;;;
+;;;     #'= did not return a correct value for some complex combinations.
+(deftest mix.0039.complex= ()
+  (let ((r1 536870943)
+        (c1 536870879)
+        (r2 5.36870943d8)
+        (c2 5.36870879d8))
+    ;; Sanity tests
+    (is (= r1 r2))
+    (is (= c1 c2))
+    ;; The regression test.
+    (is (= (complex r1 c1) (complex r2 c2)))))

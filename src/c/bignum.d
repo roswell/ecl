@@ -61,7 +61,10 @@
  *      skipped if particularly inconvenient).
  */
 
-#define ECL_BIG_REGISTER_SIZE     32
+/* The big register maximal size before reallocation is 256 limbs (2KB on 64bit)
+   so that it can store the biggest long float. It is beneficial for coercing
+   numbers without allocations. */
+#define ECL_BIG_REGISTER_SIZE     256
 
 #define _ecl_big_init2(x,size)    mpz_init2(ecl_bignum(x),(size)*GMP_LIMB_BITS)
 #define _ecl_big_realloc2(x,size) mpz_realloc2(ecl_bignum(x),(size)*GMP_LIMB_BITS)

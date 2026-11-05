@@ -40,6 +40,8 @@ extern "C" {
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
+#define _ecl_big_set(z, x) mpz_set(ecl_bignum(z),ecl_bignum(x))
+
 /* Type conversion (setters mutate the bignum structure). */
 #if ECL_LONG_BITS >= ECL_FIXNUM_BITS
 # define _ecl_big_set_idx(x, f) mpz_set_ui(ecl_bignum(x),(f))
@@ -92,6 +94,7 @@ _ecl_big_count_bits(cl_object x) {
 }
 
 #define _ecl_big_tstbit(x,n)        mpz_tstbit(ecl_bignum(x),n)
+#define _ecl_big_ctz(x)             mpz_scan1(ecl_bignum(x),0)
 #define _ecl_big_integer_length(x)  mpz_sizeinbase(ecl_bignum(x),2)
 #define _ecl_big_sizeinbase(x,n)    mpz_sizeinbase(ecl_bignum(x),n)
 
@@ -127,22 +130,22 @@ _ecl_big_count_bits(cl_object x) {
 typedef void (*_ecl_big_binary_op)(cl_object out, cl_object o1, cl_object o2);
 extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 
+#define _ecl_big_set(z,x) (ecl_bignum(z)=ecl_bignum(x))
+
 /* Type conversion (setters mutate the bignum structure). */
-#define _ecl_big_set(x, f) (ecl_bignum(x) = f)
-#define _ecl_big_get(x)    (ecl_bignum(x))
+#define _ecl_big_set_idx(x, i)      (ecl_bignum(x)=(cl_index)i)
+#define _ecl_big_set_fix(x, i)      (ecl_bignum(x)=(cl_fixnum)i)
+#define _ecl_big_set_ui(x, i)       (ecl_bignum(x)=(unsigned long int)i)
+#define _ecl_big_set_si(x, i)       (ecl_bignum(x)=(long int)i)
+#define _ecl_big_set_d(x, d)        (ecl_bignum(x)=(double)d)
 
-#define _ecl_big_set_idx(x, i)      _ecl_big_set(x, (cl_index)i)
-#define _ecl_big_set_fix(x, i)      _ecl_big_set(x, (cl_fixnum)i)
-#define _ecl_big_set_ui(x, i)       _ecl_big_set(x, (unsigned long int)i)
-#define _ecl_big_set_si(x, i)       _ecl_big_set(x, (long int)i)
-#define _ecl_big_set_d(x, d)        _ecl_big_set(x, (double)d)
+#define _ecl_big_get_idx(x)         (cl_index)ecl_bignum(x)
+#define _ecl_big_get_fix(x)         (cl_fixnum)ecl_bignum(x)
+#define _ecl_big_get_ui(x)          (unsigned long int)ecl_bignum(x)
+#define _ecl_big_get_si(x)          (long int) ecl_bignum(x)
+#define _ecl_big_get_d(x)           (double)ecl_bignum(x)
+#define _ecl_big_get_lf(x)          (long double)ecl_bignum(x)
 
-#define _ecl_big_get_idx(x)         (cl_index)_ecl_big_get(x)
-#define _ecl_big_get_fix(x)         (cl_fixnum)_ecl_big_get(x)
-#define _ecl_big_get_ui(x)          (unsigned long int)_ecl_big_get(x)
-#define _ecl_big_get_si(x)          (long int) _ecl_big_get(x)
-#define _ecl_big_get_d(x)           (double)_ecl_big_get(x)
-#define _ecl_big_get_lf(x)          (long double)_ecl_big_get(x)
 extern ECL_API void _ecl_big_get_str(char *buf, cl_index n, cl_object x, int base);
 
 #define _ecl_big_odd_p(x)           ((ecl_bignum(x) & 1) != 0)
@@ -163,6 +166,7 @@ extern ECL_API void _ecl_big_add(cl_object z, cl_object x, cl_object y);
 extern ECL_API void _ecl_big_add_ui(cl_object z, cl_object x, unsigned long int ynum);
 
 extern ECL_API bool _ecl_big_tstbit(cl_object x, cl_index n);
+extern ECL_API cl_fixnum _ecl_big_ctz(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_count_bits(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_integer_length(cl_object x);
 extern ECL_API cl_fixnum _ecl_big_sizeinbase(cl_object x, int base);

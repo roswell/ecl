@@ -26,6 +26,7 @@
                          (:file "ieee-fp" :if-feature :ieee-floating-point)
                          (:file "packages")
 			 (:file "hash-tables")
+			 (:file "sxhash")
                          (:file "external-formats" :if-feature :unicode)
                          (:file "unicode" :if-feature :unicode)
                          (:file "complex")
