@@ -215,8 +215,7 @@ compare_lfloat_fixnum(long double d, cl_object nval)
 static int
 compare_dfloat_bignum(double dval, cl_object yval)
 {
-  int xsig, ysig;
-  cl_object xval;
+  int xsig, ysig, exponent;
   /* Cheap tests: */
 #ifdef ECL_IEEE_FP
   if (isinf(dval))
@@ -227,11 +226,25 @@ compare_dfloat_bignum(double dval, cl_object yval)
   xsig = signbit(dval) ? -1 : +1;
   ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
   if (xsig!=ysig) return xsig<ysig ? -1 : +1;
-  /* 1. compare magnitudes */
-  /* 2. dyadic comparison in a register */
-  /* Unoptimized version: */
-  xval = ecl_make_double_float(dval);
-  return ecl_number_compare(cl_rational(xval), yval);
+  /* 1. Compare magnitudes. */
+  {
+    cl_fixnum length = _ecl_big_integer_length(yval);
+    frexp(dval, &exponent);
+    if (exponent<length) return -xsig;
+    if (exponent>length) return +xsig;
+  }
+  /* 2. Compare in a register. */
+  {
+    cl_object reg = _ecl_big_register2();
+    int result;
+    double dval_i = trunc(dval);
+    _ecl_big_set_d(reg, dval_i);
+    result = _ecl_big_compare(reg, yval);
+    _ecl_big_register_free(reg);
+    if (result != 0) return result;
+    if (dval_i == dval) return 0;
+    return xsig;
+  }
 }
 
 static int
