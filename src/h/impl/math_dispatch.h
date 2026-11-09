@@ -1,5 +1,5 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=4 shiftwidth=4 expandtab: */
 
 /*
  * Copyright (c) 2010, Juan Jose Garcia Ripoll.

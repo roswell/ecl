@@ -718,7 +718,7 @@ ratio_to_float(cl_object num, cl_object den)
 {
   cl_fixnum exponent;
   cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, FLT_MANT_DIG, &exponent);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= FLT_MANT_DIG
+#if (FIXNUM_BITS-ECL_FTAG_BITS) >= FLT_MANT_DIG
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
@@ -734,7 +734,7 @@ ratio_to_double(cl_object num, cl_object den)
 {
   cl_fixnum exponent;
   cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, DBL_MANT_DIG, &exponent);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= DBL_MANT_DIG
+#if (FIXNUM_BITS-ECL_FTAG_BITS) >= DBL_MANT_DIG
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   double output = ecl_fixnum(mantissa);
 #else
@@ -750,7 +750,7 @@ ratio_to_long_double(cl_object num, cl_object den)
 {
   cl_fixnum exponent;
   cl_object mantissa = mantissa_and_exponent_from_ratio(num, den, LDBL_MANT_DIG, &exponent);
-#if (FIXNUM_BITS-ECL_TAG_BITS) >= LDBL_MANT_DIG
+#if (FIXNUM_BITS-ECL_FTAG_BITS) >= LDBL_MANT_DIG
   /* The output of mantissa_and_exponent_from_ratio will always fit an integer */
   long double output = ecl_fixnum(mantissa);
 #else
@@ -941,9 +941,9 @@ cl_rational(cl_object x)
   @(return x);
 }
 
-#define FIXNUM_LIMIT_L (ldexpl(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1))
-#define FIXNUM_LIMIT_D (ldexp (1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1))
-#define FIXNUM_LIMIT_F (ldexpf(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1))
+#define FIXNUM_LIMIT_L (ldexpl(1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1))
+#define FIXNUM_LIMIT_D (ldexp (1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1))
+#define FIXNUM_LIMIT_F (ldexpf(1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1))
 
 /* Validate input to avoid a situation when we are handled infinities and NaNs.
    IEEE catches only invalid ops and does not guard against existing values.
@@ -978,7 +978,7 @@ _ecl_long_double_to_integer(long double d0)
     long double d1 = ldexpl(d, LDBL_MANT_DIG);
     return ecl_ash(_ecl_long_double_to_integer(d1), e - LDBL_MANT_DIG);
   } else {
-    const int fb = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
+    const int fb = ECL_FIXNUM_BITS-ECL_FTAG_BITS-1;
     long double d1 = floorl(d = ldexpl(d, fb));
     int newe = e - fb;
     cl_object o = ecl_ash(_ecl_long_double_to_integer(d1), newe);

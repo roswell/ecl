@@ -243,7 +243,8 @@ cl_object_mark_proc(void *addr, struct GC_ms_entry *msp, struct GC_ms_entry *msl
     for (p = addr; d; p++, d<<=1) {
       if ((GC_signed_word)d < 0) {
         GC_word aux = *p;
-        if ((aux & 2) ||
+        /* All immediates that are not addresses are skipped. */
+        if (ECL_IMMEDIATE_VALUE_P(aux) ||
             aux <= (GC_word)GC_least_plausible_heap_addr ||
             aux >= (GC_word)GC_greatest_plausible_heap_addr)
           continue;

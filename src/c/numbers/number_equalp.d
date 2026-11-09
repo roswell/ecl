@@ -77,7 +77,7 @@ equalp_dfloat_bignum(double dval, cl_object nval)
 {
   if (isfinite(dval) && dval==trunc(dval)) {
     /* Cheap tests first (compare signs and ranges). */
-    const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1);
     int signum_d = signbit(dval)      ? -1 : +1;
     int signum_n = ecl_bigsgn(nval)<0 ? -1 : +1;
     if ((signum_d != signum_n) ||
@@ -100,7 +100,7 @@ equalp_lfloat_bignum(long double dval, cl_object nval)
 {
   if (isfinite(dval) && dval==truncl(dval)) {
     /* Cheap tests first (compare signs and ranges). */
-    const long double limit = ldexpl(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    const long double limit = ldexpl(1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1);
     int signum_d = signbit(dval)      ? -1 : +1;
     int signum_n = ecl_bigsgn(nval)<0 ? -1 : +1;
     if ((signum_d != signum_n) ||

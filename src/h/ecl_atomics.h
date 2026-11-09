@@ -80,14 +80,16 @@ ecl_atomic_incf(cl_object *slot, cl_object increment)
 {
   if (ecl_unlikely(!ECL_FIXNUMP(increment)))
     FEtype_error_fixnum(increment);
-  return (cl_object)ecl_atomic_fetch_and_add(slot, (cl_index)increment & ~(cl_index)ECL_IMMEDIATE_TAG);
+  return (cl_object)ecl_atomic_fetch_and_add
+    (slot, (cl_index)increment & ~(cl_index)ECL_FMMEDIATE_TAG);
 }
 
 static inline cl_object
 ecl_atomic_incf_by_fixnum(cl_object *slot, cl_fixnum increment)
 {
   /* INV: cl_index is an unsigned integer, hence shifts will always zero fill */
-  return (cl_object)ecl_atomic_fetch_and_add(slot, (cl_index)increment << ECL_TAG_BITS);
+  return (cl_object)ecl_atomic_fetch_and_add
+    (slot, (cl_index)increment << ECL_FTAG_BITS);
 }
 
 #else  /* ECL_THREADS */

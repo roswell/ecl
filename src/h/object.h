@@ -1,5 +1,5 @@
-/* -*- Mode: C; c-basic-offset: 8; indent-tabs-mode: nil -*- */
-/* vim: set filetype=c tabstop=8 shiftwidth=4 expandtab: */
+/* -*- Mode: C; c-basic-offset: 4; indent-tabs-mode: nil -*- */
+/* vim: set filetype=c tabstop=4 shiftwidth=4 expandtab: */
 
 /*
  * Copyright (c) 1984, Taiichi Yuasa and Masami Hagiya.
@@ -31,6 +31,7 @@ typedef unsigned char byte;
 typedef enum {
         t_start = 0,
         t_list = 1,
+        t_exttag = 2,           /* extended immediates */
         t_character = 2,        /* immediate character */
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
@@ -39,8 +40,10 @@ typedef enum {
         t_singlefloat,
         t_doublefloat,
         t_longfloat,
+        t_last_real = t_longfloat,
         t_complex,
 #ifdef ECL_COMPLEX_FLOAT
+        /* t_cmfloat, */
         t_csfloat,
         t_cdfloat,
         t_clfloat,
@@ -134,103 +137,155 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 */
 #define OBJNULL         ((cl_object)NULL)
 
+#define ecl_to_bool(x) ((x)!=ECL_NIL)
+#define ecl_make_bool(x) ((x)? ECL_T : ECL_NIL)
+
 /*
         Definition of each implementation type.
 */
 
-#define ECL_TAG_BITS            2
-#define ECL_IMMEDIATE(o)        ((cl_fixnum)(o) & 3)
-#define ECL_IMMEDIATE_TAG       3
+#if ECL_FIXNUM_BITS == 32
+# define ECL_TAG_BITS 2
+# define ECL_IMMEDIATE_TAG 0b11
 
-#define ecl_to_bool(x) ((x)!=ECL_NIL)
-#define ecl_make_bool(x) ((x)? ECL_T : ECL_NIL)
+# define ECL_FTAG_BITS 2
+# define ECL_FMMEDIATE_TAG 0b11
 
-/* Immediate fixnums:           */
+# define ECL_XTAG_BITS 4
+# define ECL_XMMEDIATE_TAG 0b1111
+#elif ECL_FIXNUM_BITS == 64
+# define ECL_TAG_BITS 3
+# define ECL_IMMEDIATE_TAG 0b111
+
+# define ECL_FTAG_BITS 2
+# define ECL_FMMEDIATE_TAG 0b11
+
+# define ECL_XTAG_BITS 5
+# define ECL_XMMEDIATE_TAG 0b11111
+#else
+# error "Unspecialized ECL tagging scheme."
+#endif
+
+#define ECL_IMMEDIATE(o) ((cl_fixnum)(o) & ECL_IMMEDIATE_TAG) /* ==0 for boxed */
+#define ECL_FMMEDIATE(o) ((cl_fixnum)(o) & ECL_FMMEDIATE_TAG) /* !=0 for 2bit tag */
+#define ECL_XMMEDIATE(o) ((cl_fixnum)(o) & ECL_XMMEDIATE_TAG) /* !=0 for extended */
+
+/* Tagged pointers may be either values or pointers to boxed objects. In the
+   latter case GC needs to scan them. Currently it is only t_list, but this set
+   may be extended in the future. Then this predicate needs to be updated. */
+#define ECL_IMMEDIATE_VALUE_P(o) ((o)&2)
+
+/* -- Immediate fixnums ----------------------------------------------------- */
 #define ECL_FIXNUM_TAG          t_fixnum
-#define ECL_FIXNUMP(o)          (ECL_IMMEDIATE(o) == t_fixnum)
-#define ecl_make_fixnum(n)      ((cl_object)(((cl_fixnum)(n) << 2) | t_fixnum))
+#define ECL_FIXNUMP(o)          (ECL_FMMEDIATE(o) == t_fixnum)
+#define ecl_make_fixnum(n)      ((cl_object)(((cl_fixnum)(n) << ECL_FTAG_BITS) \
+                                             | t_fixnum))
 #define ecl_fixnum_lower(a,b)   ((cl_fixnum)(a) < (cl_fixnum)(b))
 #define ecl_fixnum_greater(a,b) ((cl_fixnum)(a) > (cl_fixnum)(b))
 #define ecl_fixnum_leq(a,b)     ((cl_fixnum)(a) <= (cl_fixnum)(b))
 #define ecl_fixnum_geq(a,b)     ((cl_fixnum)(a) >= (cl_fixnum)(b))
 #define ecl_fixnum_plusp(a)     ((cl_fixnum)(a) > (cl_fixnum)ecl_make_fixnum(0))
 #define ecl_fixnum_minusp(a)    ((cl_fixnum)(a) < (cl_fixnum)(0))
-#define ecl_fixnum(a)           (((cl_fixnum)(a)) >> 2)
+#define ecl_fixnum(a)           (((cl_fixnum)(a)) >> ECL_FTAG_BITS)
 
-/* Immediate characters:        */
-#define ECL_CHARACTER_TAG       t_character
-#define ECL_CHARACTERP(o)       (ECL_IMMEDIATE(o) == t_character)
+/* -- Immediate extends ----------------------------------------------------- */
+#define ECL_EXTEND_TAG          t_exttag
+#define ECL_EXTENDP(o)          (ECL_IMMEDIATE(o) == t_exttag)
+#define ECL_EXTENDED_TAG(x)     (((x)<<ECL_TAG_BITS) | ECL_EXTEND_TAG)
+#define ECL_EXTENDED_SUB(x)     (((cl_fixnum)(o) & ECL_XMMEDIATE_TAG) >> ECL_TAG_BITS)
+
+/* -- Immediate characters -------------------------------------------------- */
+#define ECL_CHARACTER_TAG   ECL_EXTENDED_TAG(0b00)
+#define ECL_CHARACTERP(o)   (ECL_XMMEDIATE(o) == ECL_CHARACTER_TAG)
 #ifdef ECL_UNICODE
-#define ECL_BASE_CHAR_P(obje)   ((((cl_fixnum)(obje)) & 0xFFFFFC03) == ECL_CHARACTER_TAG)
-#define ECL_BASE_CHAR_CODE_P(x) ((x & ~((cl_fixnum)0xFF)) == 0)
-#define ECL_CODE_CHAR(c)        ((cl_object)(((cl_fixnum)(c << 2)|ECL_CHARACTER_TAG)))
-#define ECL_CHAR_CODE(obje)     (((cl_fixnum)(obje)) >> 2)
+#define ECL_BASE_CHAR_MASK  (0xFFFFFFFF & ~(0xFF << ECL_XTAG_BITS))
+#define ECL_BASE_CHAR_P(o)  ((((cl_fixnum)(o)) & ECL_BASE_CHAR_MASK)   \
+                             == ECL_CHARACTER_TAG)
+#define ECL_CODE_CHAR(c)    ((cl_object)(((cl_fixnum)((c) << ECL_XTAG_BITS) \
+                                          | ECL_CHARACTER_TAG)))
+#define ECL_CHAR_CODE(o)    (((cl_fixnum)(o)) >> ECL_XTAG_BITS)
 #else
-#define ECL_BASE_CHAR_P(o)      ECL_CHARACTERP(o)
-#define ECL_CODE_CHAR(c)        ((cl_object)(((cl_fixnum)((c & 0xff) << 2)|ECL_CHARACTER_TAG)))
-#define ECL_CHAR_CODE(obje)     ((((cl_fixnum)(obje)) >> 2) & 0xff)
+#define ECL_BASE_CHAR_P(o)  ECL_CHARACTERP(o)
+#define ECL_CODE_CHAR(c)    ((cl_object)(((cl_fixnum)(((c) & 0xff) << ECL_XTAG_BITS) \
+                                          | ECL_CHARACTER_TAG)))
+#define ECL_CHAR_CODE(o)    ((((cl_fixnum)(o)) >> ECL_XTAG_BITS) & 0xff)
 #endif
+#define ECL_BASE_CHAR_CODE_P(x) (((x) & ~((cl_fixnum)0xFF)) == 0)
 #define ECL_CHAR_CODE_RETURN    13
 #define ECL_CHAR_CODE_NEWLINE   10
 #define ECL_CHAR_CODE_LINEFEED  10
 
+/* -- Type predicates ------------------------------------------------------- */
 #define ECL_NUMBER_TYPE_P(t)    (t >= t_fixnum && t <= t_last_number)
-#define ECL_REAL_TYPE_P(t)      (t >= t_fixnum && t < t_complex)
-#define ECL_ARRAYP(x)           ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_array && (x)->d.t <= t_bitvector)
-#define ECL_VECTORP(x)          ((ECL_IMMEDIATE(x) == 0) && (x)->d.t >= t_vector && (x)->d.t <= t_bitvector)
-#define ECL_BIT_VECTOR_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_bitvector))
+#define ECL_REAL_TYPE_P(t)      (t >= t_fixnum && t <= t_last_real)
+
+/* -- Object type predicates ------------------------------------------------ */
+#define ECL_BOXED_TYPEP(x,t0) ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==(t0)))
+#define ECL_BOXED_TYPEP_RANGE(x,t1,t2) \
+        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t>=(t1)) && ((x)->d.t<=(t2)))
+
+#define ECL_ARRAYP(x)  ECL_BOXED_TYPEP_RANGE(x, t_array,  t_bitvector)
+#define ECL_VECTORP(x) ECL_BOXED_TYPEP_RANGE(x, t_vector, t_bitvector)
+#define ECL_BIT_VECTOR_P(x) ECL_BOXED_TYPEP(x, t_bitvector)
 #ifdef ECL_UNICODE
-#define ECL_STRINGP(x)          ((ECL_IMMEDIATE(x) == 0) && \
-                                 ((x)->d.t == t_base_string || (x)->d.t == t_string))
-#define ECL_EXTENDED_STRING_P(x) ((ECL_IMMEDIATE(x) == 0) && (x)->d.t == t_string)
+#define ECL_STRINGP(x) ECL_BOXED_TYPEP_RANGE(x, t_string, t_base_string)
+#define ECL_EXTENDED_STRING_P(x) ECL_BOXED_TYPEP(x,t_string)
 #else
-#define ECL_STRINGP(x)          ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
+#define ECL_STRINGP(x) ECL_BOXED_TYPEP(x,t_base_string)
 #define ECL_EXTENDED_STRING_P(x) 0
 #endif
-#define ECL_BASE_STRING_P(x)    ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_base_string))
-#define ECL_HASH_TABLE_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_hashtable))
-#define ECL_BIGNUMP(x)          ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_bignum))
+#define ECL_BASE_STRING_P(x) ECL_BOXED_TYPEP(x,t_base_string)
+#define ECL_HASH_TABLE_P(x)  ECL_BOXED_TYPEP(x,t_hashtable)
+#define ECL_BIGNUMP(x)       ECL_BOXED_TYPEP(x,t_bignum)
 #ifdef ECL_COMPLEX_FLOAT
-#define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t >= t_complex) && ((x)->d.t <= t_clfloat))
-#define ECL_COMPLEX_SINGLE_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_csfloat))
-#define ECL_COMPLEX_DOUBLE_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_cdfloat))
-#define ECL_COMPLEX_LONG_FLOAT_P(x) ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_clfloat))
+#define ECL_COMPLEXP(x) ECL_BOXED_TYPEP_RANGE(x, t_complex, t_clfloat)
+#define ECL_COMPLEX_SINGLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_csfloat)
+#define ECL_COMPLEX_DOUBLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_cdfloat)
+#define ECL_COMPLEX_LONG_FLOAT_P(x)   ECL_BOXED_TYPEP(x,t_clfloat)
 #else
-#define ECL_COMPLEXP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_complex))
+#define ECL_COMPLEXP(x)         ECL_BOXED_TYPEP(x,t_complex)
 #endif
-#define ECL_RANDOM_STATE_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_random))
-#define ECL_SINGLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_singlefloat))
-#define ECL_DOUBLE_FLOAT_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_doublefloat))
-#define ECL_LONG_FLOAT_P(x)     ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_longfloat))
-#define ECL_PACKAGEP(x)         ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_package))
-#define ECL_PATHNAMEP(x)        ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_pathname))
-#define ECL_READTABLEP(x)       ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_readtable))
-#define ECL_FOREIGN_DATA_P(x)   ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_foreign))
+#define ECL_RANDOM_STATE_P(x)   ECL_BOXED_TYPEP(x,t_random)
+#define ECL_PACKAGEP(x)         ECL_BOXED_TYPEP(x,t_package)
+#define ECL_PATHNAMEP(x)        ECL_BOXED_TYPEP(x,t_pathname)
+#define ECL_READTABLEP(x)       ECL_BOXED_TYPEP(x,t_readtable)
+#define ECL_FOREIGN_DATA_P(x)   ECL_BOXED_TYPEP(x,t_foreign)
 #ifdef ECL_SSE2
-#define ECL_SSE_PACK_P(x)       ((ECL_IMMEDIATE(x) == 0) && ((x)->d.t == t_sse_pack))
+#define ECL_SSE_PACK_P(x)       ECL_BOXED_TYPEP(x,t_sse_pack)
 #endif
 
 #define _ECL_HDR                        int8_t t, m, padding1, padding2
 #define _ECL_HDR1(field)                int8_t t, m, field, padding
 #define _ECL_HDR2(field1,field2)        int8_t t, m, field1, field2
 
+/* -- single float ---------------------------------------------------------- */
+
 struct ecl_singlefloat {
         _ECL_HDR;
         float SFVAL;    /*  singlefloat value  */
 };
+
+#define ECL_SINGLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_singlefloat)
 #define ecl_single_float(o) ((o)->SF.SFVAL)
+/* -- double float ---------------------------------------------------------- */
 
 struct ecl_doublefloat {
         _ECL_HDR;
         double DFVAL;   /*  doublefloat value  */
 };
+
+#define ECL_DOUBLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_doublefloat)
 #define ecl_double_float(o) ((o)->DF.DFVAL)
+/* -- long float ------------------------------------------------------------ */
 
 struct ecl_long_float {
         _ECL_HDR;
         long double value;
 };
+
+#define ECL_LONG_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_longfloat)
 #define ecl_long_float(o) ((o)->longfloat.value)
+
 
 /* ECL features two implementations of bignums. One (default) is based on GMP,
    and the other has no external dependencies. The latter is conforming but only
@@ -725,10 +780,9 @@ typedef int (*cl_eformat_encoder)(cl_object stream, unsigned char *buffer, ecl_c
 typedef cl_object (*cl_binary_decoder)(cl_object stream, unsigned char *buf);
 typedef void (*cl_binary_encoder)(cl_object stream, unsigned char *buf, cl_object byte);
 
-#define ECL_ANSI_STREAM_P(o) \
-        (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream))
+#define ECL_ANSI_STREAM_P(o) ECL_BOXED_TYPEP(o, t_stream)
 #define ECL_ANSI_STREAM_TYPE_P(o,m) \
-        (ECL_IMMEDIATE(o) == 0 && ((o)->d.t == t_stream) && ((o)->stream.mode == (m)))
+        (ECL_ANSI_STREAM_P(o) && ((o)->stream.mode == (m)))
 
 struct ecl_stream {
         _ECL_HDR2(mode,closed); /*  stream mode of enum smmode  */
@@ -1135,7 +1189,7 @@ struct ecl_condition_variable {
 };
 #endif /* ECL_THREADS */
 
-#define ECL_INSTANCEP(x)        ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==t_instance))
+#define ECL_INSTANCEP(x)        ECL_BOXED_TYPEP(x, t_instance)
 #define ECL_FUNCALLABLE_P(x)    (ECL_INSTANCEP(x) && (x)->instance.isgf)
 #define ECL_CLASS_OF(x)         (x)->instance.clas
 
@@ -1264,15 +1318,17 @@ union cl_lispunion {
 /*
         Type_of.
 */
-#if defined(__cplusplus) || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
 static inline cl_type ecl_t_of(cl_object o) {
         int i = ECL_IMMEDIATE(o);
-        return (i? (cl_type)i : (cl_type)(o->d.t));
+        if(!i) return (cl_type)(o->d.t);
+        switch(i) {
+        case 0b001: return (cl_type)t_list;
+        case 0b010: return (cl_type)t_character;
+        case 0b011:
+        case 0b111: return (cl_type)t_fixnum;
+        default:    return (cl_type)t_other;
+        }
 }
-#else
-#define ecl_t_of(o) \
-        ((cl_type)(ECL_IMMEDIATE(o) ? ECL_IMMEDIATE(o) : ((o)->d.t)))
-#endif
 
 /*
         This is used to retrieve optional arguments

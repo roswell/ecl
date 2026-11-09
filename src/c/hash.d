@@ -386,7 +386,7 @@ equalp_hash_dfloat(cl_hashstate *h, double value)
     _ecl_big_register_free(reg);
   }
 #else  /* Happens for binary64 float and 32bit fixnum (i.e i686). */
-  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
+  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_FTAG_BITS-1;
   int ctz=0, exponent, signum=1;
   cl_object mantissa = _ecl_big_register2();
   cl_fixnum helper, iterator;
@@ -437,7 +437,7 @@ equalp_hash_lfloat(cl_hashstate *h, long double value)
     _ecl_big_register_free(reg);
   }
 #else /* Happens for 128bit floats (i.e aarch64). */
-  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_TAG_BITS-1;
+  const int fixnum_bits = ECL_FIXNUM_BITS-ECL_FTAG_BITS-1;
   int ctz=0, exponent, signum=1;
   cl_object mantissa = _ecl_big_register2();
   cl_fixnum helper, iterator;
@@ -469,7 +469,7 @@ equalp_hash_lfloat(cl_hashstate *h, long double value)
 static void
 equalp_hash_double_float(cl_hashstate *h, double value) {
   if (isfinite(value) && (value==trunc(value))) {
-    const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    const double limit = ldexp(1.0, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1);
     if (value < limit && value >= -limit) {
       hash_word(h, (cl_fixnum)value);
       return;
@@ -493,7 +493,7 @@ equalp_hash_long_float(cl_hashstate *h, long double value) {
   }
   /* Hash as fixnum. */
   {
-    const long double limit = ldexpl(1.0L, ECL_FIXNUM_BITS-ECL_TAG_BITS-1);
+    const long double limit = ldexpl(1.0L, ECL_FIXNUM_BITS-ECL_FTAG_BITS-1);
     if ((value==truncl(value)) && (value < limit) && value >= -limit) {
       hash_word(h, (cl_fixnum)value);
       return;
