@@ -435,65 +435,6 @@ write_illegal(cl_object x, cl_object stream)
   _ecl_write_unreadable(x, "illegal pointer", ECL_NIL, stream);
 }
 
-typedef void (*printer)(cl_object x, cl_object stream);
-
-static printer dispatch[FREE+1] = {
-  0                         /* t_start = 0 */,
-  _ecl_write_list,              /* t_list = 1 */
-  write_character,              /* t_character = 2 */
-  write_integer,                /* t_fixnum = 3 */
-  write_integer,                /* t_bignum = 4 */
-  write_ratio,                  /* t_ratio */
-  /* write_float, */            /* t_shortfloat */
-  write_float,                  /* t_singlefloat */
-  write_float,                  /* t_doublefloat */
-  write_float,                  /* t_longfloat */
-  write_complex,                /* t_complex */
-#ifdef ECL_COMPLEX_FLOAT
-  write_complex_float,          /* t_csfloat */
-  write_complex_float,          /* t_cdfloat */
-  write_complex_float,          /* t_clfloat */
-#endif
-  _ecl_write_symbol,            /* t_symbol */
-  write_package,                /* t_package */
-  write_hashtable,              /* t_hashtable */
-  _ecl_write_array,             /* t_array */
-  _ecl_write_vector,            /* t_vector */
-#ifdef ECL_UNICODE
-  _ecl_write_string,            /* t_string */
-#endif
-  _ecl_write_base_string,       /* t_base_string */
-  _ecl_write_bitvector,         /* t_bitvector */
-  write_stream,                 /* t_stream */
-  write_random,                 /* t_random */
-  write_readtable,              /* t_readtable */
-  write_pathname,               /* t_pathname */
-  _ecl_write_bytecodes,         /* t_bytecodes */
-  _ecl_write_bclosure,          /* t_bclosure */
-  write_cfun,                   /* t_cfun */
-  write_cfun,                   /* t_cfunfixed */
-  write_cclosure,               /* t_cclosure */
-  write_instance,               /* t_instance */
-#ifdef ECL_THREADS
-  write_process,                /* t_process */
-  write_lock,                   /* t_lock */
-  write_rwlock,                 /* t_rwlock */
-  write_condition_variable,     /* t_condition_variable */
-  write_semaphore,              /* t_semaphore */
-  write_barrier,                /* t_barrier */
-  write_mailbox,                /* t_mailbox */
-#endif
-  write_codeblock,              /* t_codeblock */
-  write_foreign,                /* t_foreign */
-  write_frame,                  /* t_frame */
-  write_token,                  /* t_token */
-  write_weak_pointer,           /* t_weak_pointer */
-#ifdef ECL_SSE2
-  _ecl_write_sse,               /* t_sse_pack */
-#endif
-                            /* t_end */
-};
-
 cl_object
 si_write_ugly_object(cl_object x, cl_object stream)
 {
@@ -502,9 +443,62 @@ si_write_ugly_object(cl_object x, cl_object stream)
       FEprint_not_readable(x);
     writestr_stream("#<OBJNULL>", stream);
   } else {
-    int t = ecl_t_of(x);
-    printer f = (t >= t_end)? write_illegal : dispatch[t];
-    f(x, stream);
+    switch(ecl_t_of(x)) {
+    case t_list:               _ecl_write_list(x, stream);          break;
+    case t_character:          write_character(x, stream);          break;
+    case t_fixnum:             write_integer(x, stream);            break;
+    case t_bignum:             write_integer(x, stream);            break;
+    case t_ratio:              write_ratio(x, stream);              break;
+    /* case t_shortfloat: */
+    case t_singlefloat:        write_float(x, stream);              break;
+    case t_doublefloat:        write_float(x, stream);              break;
+    case t_longfloat:          write_float(x, stream);              break;
+    case t_complex:            write_complex(x, stream);            break;
+#ifdef ECL_COMPLEX_FLOAT
+    case t_csfloat:            write_complex_float(x, stream);      break;
+    case t_cdfloat:            write_complex_float(x, stream);      break;
+    case t_clfloat:            write_complex_float(x, stream);      break;
+#endif
+    case t_symbol:             _ecl_write_symbol(x, stream);        break;
+    case t_package:            write_package(x, stream);            break;
+    case t_hashtable:          write_hashtable(x, stream);          break;
+    case t_array:              _ecl_write_array(x, stream);         break;
+    case t_vector:             _ecl_write_vector(x, stream);        break;
+#ifdef ECL_UNICODE
+    case t_string:             _ecl_write_string(x, stream);        break;
+#endif
+    case t_base_string:        _ecl_write_base_string(x, stream);   break;
+    case t_bitvector:          _ecl_write_bitvector(x, stream);     break;
+    case t_stream:             write_stream(x, stream);             break;
+    case t_random:             write_random(x, stream);             break;
+    case t_readtable:          write_readtable(x, stream);          break;
+    case t_pathname:           write_pathname(x, stream);           break;
+    case t_bytecodes:          _ecl_write_bytecodes(x, stream);     break;
+    case t_bclosure:           _ecl_write_bclosure(x, stream);      break;
+    case t_cfun:               write_cfun(x, stream);               break;
+    case t_cfunfixed:          write_cfun(x, stream);               break;
+    case t_cclosure:           write_cclosure(x, stream);           break;
+    /* case t_structure: */
+    case t_instance:           write_instance(x, stream);           break;
+#ifdef ECL_THREADS
+    case t_process:            write_process(x, stream);            break;
+    case t_lock:               write_lock(x, stream);               break;
+    case t_rwlock:             write_rwlock(x, stream);             break;
+    case t_condition_variable: write_condition_variable(x, stream); break;
+    case t_semaphore:          write_semaphore(x, stream);          break;
+    case t_barrier:            write_barrier(x, stream);            break;
+    case t_mailbox:            write_mailbox(x, stream);            break;
+#endif
+    case t_codeblock:          write_codeblock(x, stream);          break;
+    case t_foreign:            write_foreign(x, stream);            break;
+    case t_frame:              write_frame(x, stream);              break;
+    case t_token:              write_token(x, stream);              break;
+    case t_weak_pointer:       write_weak_pointer(x, stream);       break;
+#ifdef ECL_SSE2
+    case t_sse_pack:           _ecl_write_sse(x, stream);           break;
+#endif
+    default:                   write_illegal(x, stream);            break;
+    }
   }
   @(return x);
 }
