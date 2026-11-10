@@ -41,9 +41,13 @@ ecl_atan2(cl_object y, cl_object x)
   cl_object output;
   ECL_MATHERR_CLEAR;
   {
-    int tx = ecl_t_of(x);
-    int ty = ecl_t_of(y);
-    if (tx < ty)
+    cl_type tx, ty;
+    int rx, ry;
+    tx = ecl_t_of(x);
+    ty = ecl_t_of(y);
+    rx = ecl_number_rank(tx);
+    ry = ecl_number_rank(ty);
+    if (rx < ry)
       tx = ty;
     if (tx == t_longfloat) {
       long double d = atan2l(ecl_to_long_double(y), ecl_to_long_double(x));

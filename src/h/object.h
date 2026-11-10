@@ -31,8 +31,6 @@ typedef unsigned char byte;
 typedef enum {
         t_start = 0,
         t_list = 1,
-        /* The most specific numeric types come first. Assumed by
-           some routines, like cl_expt. See ANSI 12.1.1.2. */
         t_character = 2,        /* immediate character */
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
@@ -94,6 +92,30 @@ typedef enum {
         FREE = 127              /*  free object  */
 } cl_type;
 
+/* The most specific numeric types have lower rank. Used by some routines,
+   notably by cl_expt, ecl_atan2 and ecl_make_complex. See ANSI 12.1.1.2. */
+
+static inline int
+ecl_number_rank(cl_type tx)
+{
+  switch(tx) {
+  case t_fixnum: return 1;
+  case t_bignum: return 2;
+  case t_ratio:  return 3;
+  /* case t_shortfloat:  return 4; */
+  case t_singlefloat: return 5;
+  case t_doublefloat: return 6;
+  case t_longfloat:   return 7;
+  case t_complex:     return 8;
+#ifdef ECL_COMPLEX_FLOAT
+  /* case t_cmfloat:     return 9; */
+  case t_csfloat:     return 10;
+  case t_cdfloat:     return 11;
+  case t_clfloat:     return 12;
+#endif
+  default: return -1;
+  }
+}
 
 /*
         Definition of the type of LISP objects.

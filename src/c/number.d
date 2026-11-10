@@ -550,15 +550,23 @@ cl_object
 ecl_make_complex(cl_object r, cl_object i)
 {
   cl_object c = ECL_NIL;
-  cl_type tr = ecl_t_of(r);
-  cl_type ti = ecl_t_of(i);
-  if (!ECL_REAL_TYPE_P(tr)) { ecl_type_error(@'complex', "real part", r, @'real'); }
-  if (!ECL_REAL_TYPE_P(ti)) { ecl_type_error(@'complex', "imaginary part", i, @'real'); }
-  switch((tr > ti) ? tr : ti) {
+  cl_type tx = ecl_t_of(r);
+  cl_type ty = ecl_t_of(i);
+  int rx, ry;
+  if (!ECL_REAL_TYPE_P(tx))
+    { ecl_type_error(@'complex', "real part", r, @'real'); }
+  if (!ECL_REAL_TYPE_P(ty))
+    { ecl_type_error(@'complex', "imaginary part", i, @'real'); }
+  rx = ecl_number_rank(tx);
+  ry = ecl_number_rank(ty);
+  switch((rx > ry) ? tx : ty) {
 #ifdef ECL_COMPLEX_FLOAT
-  case t_longfloat:   return ecl_make_clfloat(CMPLXL(ecl_to_long_double(r), ecl_to_long_double(i)));
-  case t_doublefloat: return ecl_make_cdfloat(CMPLX(ecl_to_double(r), ecl_to_double(i)));
-  case t_singlefloat: return ecl_make_csfloat(CMPLXF(ecl_to_float(r), ecl_to_float(i)));
+  case t_longfloat:
+    return ecl_make_clfloat(CMPLXL(ecl_to_long_double(r), ecl_to_long_double(i)));
+  case t_doublefloat:
+    return ecl_make_cdfloat(CMPLX(ecl_to_double(r), ecl_to_double(i)));
+  case t_singlefloat:
+    return ecl_make_csfloat(CMPLXF(ecl_to_float(r), ecl_to_float(i)));
 #else
   case t_singlefloat:
     c = ecl_alloc_object(t_complex);
@@ -609,22 +617,25 @@ cl_object si_complex_float_p(cl_object f) {
 cl_object
 si_complex_float(cl_object r, cl_object i)
 {
-  cl_type tr = ecl_t_of(r);
-  cl_type ti = ecl_t_of(i);
+  cl_type tx = ecl_t_of(r);
+  cl_type ty = ecl_t_of(i);
   cl_object result = OBJNULL;
-  switch (tr) {
+  switch (tx) {
   case t_singlefloat:
-    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
+    if (ty != tx)
+      { ecl_type_error(@'si::complex-float',"imag part", i, @'single-float'); }
     result = ecl_alloc_object(t_csfloat);
     ecl_csfloat(result) = CMPLXF(ecl_single_float(r), ecl_single_float(i));
     break;
   case t_doublefloat:
-    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
+    if (ty != tx)
+      { ecl_type_error(@'si::complex-float',"imag part", i, @'double-float'); }
     result = ecl_alloc_object(t_cdfloat);
     ecl_cdfloat(result) = CMPLX(ecl_double_float(r), ecl_double_float(i));
     break;
   case t_longfloat:
-    if (ti != tr) { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
+    if (ty != tx)
+      { ecl_type_error(@'si::complex-float',"imag part", i, @'long-float'); }
     result = ecl_alloc_object(t_clfloat);
     ecl_clfloat(result) = CMPLXL(ecl_long_float(r), ecl_long_float(i));
     break;

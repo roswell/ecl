@@ -59,13 +59,16 @@ expt_zero(cl_object x, cl_object y)
 {
   cl_type ty, tx;
   cl_object z;
+  int rx, ry;
   ty = ecl_t_of(y);
   tx = ecl_t_of(x);
   if (ecl_unlikely(!ECL_NUMBER_TYPE_P(tx))) {
     FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
   }
+  rx = ecl_number_rank(tx);
+  ry = ecl_number_rank(ty);
   /* INV: The most specific numeric types come first. */
-  switch ((ty > tx)? ty : tx) {
+  switch ((ry > rx)? ty : tx) {
   case t_fixnum:
   case t_bignum:
   case t_ratio:
@@ -96,7 +99,7 @@ expt_zero(cl_object x, cl_object y)
 #endif
   default:
     /* We will never reach this */
-    if (ty > tx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
+    if (ry > rx)  FEwrong_type_nth_arg(@[expt], 1, x, @[number]);
     else          FEwrong_type_nth_arg(@[expt], 2, y, @[number]);
   }
 }
@@ -124,13 +127,16 @@ ecl_expt_generic(cl_object x, cl_object y) {
 
 static cl_object
 ecl_expt_float(cl_object x, cl_object y) {
-  cl_type
-    tx = ecl_t_of(x),
-    ty = ecl_t_of(y);
+  cl_type tx, ty;
+  int rx, ry;
   cl_object ret;
+  tx = ecl_t_of(x);
+  ty = ecl_t_of(y);
+  rx = ecl_number_rank(tx);
+  ry = ecl_number_rank(ty);
 
   ECL_MATHERR_CLEAR;
-  switch((ty > tx) ? ty : tx) {
+  switch((ry > rx) ? ty : tx) {
   case t_longfloat:
     ret = ecl_make_long_float
       (powl(ecl_to_long_double(x), ecl_to_long_double(y)));
