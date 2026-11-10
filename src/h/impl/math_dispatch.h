@@ -15,39 +15,80 @@
 #include <ecl/internal.h> /* for unlikely_if */
 #include <ecl/impl/math_fenv.h>
 
-typedef cl_object (*math_one_arg_fn)(cl_object);
+#define MATH_DEF_DISPATCH_FAILED(ret,name,id,type)      \
+    static inline ret name##failed(cl_object x)         \
+    {                                                   \
+        FEwrong_type_only_arg(id, x, type);             \
+    }                                                   \
 
 #ifdef ECL_COMPLEX_FLOAT
-#define MATH_CFLOAT(c1,c2,c3) c1, c2, c3
-#else
-#define MATH_CFLOAT(c1,c2,c3)
-#endif
-
-#define MATH_DEF_DISPATCH1_NE(name,id,type,fix,big,ratio,               \
-                              single_float,double_float,long_float,     \
-                              complex,csfloat,cdfloat,clfloat)          \
-    static cl_object name##failed(cl_object x) {                        \
-        FEwrong_type_only_arg(id, x, type);                             \
-    }                                                                   \
-    static const math_one_arg_fn name##dispatch[t_last_number+1]= {     \
-        name##failed,                 /* t_start */                     \
-        name##failed,                 /* t_list */                      \
-        name##failed,                 /* t_character */                 \
-        fix, big, ratio,              /* t_fixnum, t_bignum, t_ratio */ \
-        single_float,                 /* t_singlefloat */               \
-        double_float,                 /* t_doublefloat */               \
-        long_float,                   /* t_longfloat */                 \
-        complex,                      /* t_complex */                   \
-        MATH_CFLOAT(csfloat,cdfloat,clfloat) /* t_c?float */ };         \
+#define MATH_DEF_DISPATCH1_NE(name,id,type,                             \
+                              fix,big,ratio, sfloat,dfloat,lfloat,      \
+                              complex,       csfloat,cdfloat,clfloat)   \
+    MATH_DEF_DISPATCH_FAILED(cl_object,name,id,type)                    \
     cl_object ecl_##name(cl_object arg)                                 \
-    {                                                                   \
-        int t = ECL_IMMEDIATE(arg);                                     \
-        if (t == 0) {                                                   \
-            t = arg->d.t;                                               \
-            unlikely_if (t > t_last_number) return name##failed(arg);   \
-        }                                                               \
-        return name##dispatch[t](arg);                                  \
-    }
+    { switch(ecl_t_of(arg)) {                                           \
+        case t_fixnum: return fix(arg);                                 \
+        case t_bignum: return big(arg);                                 \
+        case t_ratio: return ratio(arg);                                \
+        case t_singlefloat: return sfloat(arg);                         \
+        case t_doublefloat: return dfloat(arg);                         \
+        case t_longfloat: return lfloat(arg);                           \
+        case t_complex: return complex(arg);                            \
+        case t_csfloat: return csfloat(arg);                            \
+        case t_cdfloat: return cdfloat(arg);                            \
+        case t_clfloat: return clfloat(arg);                            \
+        default: return name##failed(arg); }}
+
+#define MATH_DEF_DISPATCH1_BOOL(name,id,type,                           \
+                                fix,big,ratio, sfloat,dfloat,lfloat,    \
+                                complex,       csfloat,cdfloat,clfloat) \
+    MATH_DEF_DISPATCH_FAILED(int,name,id,type)                          \
+    int ecl_##name(cl_object arg)                                       \
+    { switch(ecl_t_of(arg)) {                                           \
+        case t_fixnum: return fix(arg);                                 \
+        case t_bignum: return big(arg);                                 \
+        case t_ratio: return ratio(arg);                                \
+        case t_singlefloat: return sfloat(arg);                         \
+        case t_doublefloat: return dfloat(arg);                         \
+        case t_longfloat: return lfloat(arg);                           \
+        case t_complex: return complex(arg);                            \
+        case t_csfloat: return csfloat(arg);                            \
+        case t_cdfloat: return cdfloat(arg);                            \
+        case t_clfloat: return clfloat(arg);                            \
+        default: return name##failed(arg); }}
+
+#else
+#define MATH_DEF_DISPATCH1_NE(name,id,type,                             \
+                              fix,big,ratio, sfloat,dfloat,lfloat,      \
+                              complex,       csfloat,cdfloat,clfloat)   \
+    MATH_DEF_DISPATCH_FAILED(cl_object,name,id,type)                    \
+    cl_object ecl_##name(cl_object arg)                                 \
+    { switch(ecl_t_of(arg)) {                                           \
+        case t_fixnum: return fix(arg);                                 \
+        case t_bignum: return big(arg);                                 \
+        case t_ratio: return ratio(arg);                                \
+        case t_singlefloat: return sfloat(arg);                         \
+        case t_doublefloat: return dfloat(arg);                         \
+        case t_longfloat: return lfloat(arg);                           \
+        case t_complex: return complex(arg);                            \
+        default: return name##failed(arg); }}
+
+#define MATH_DEF_DISPATCH1_BOOL(name,id,type,                           \
+                                fix,big,ratio, sfloat,dfloat,lfloat,    \
+                                complex,       csfloat,cdfloat,clfloat) \
+    MATH_DEF_DISPATCH_FAILED(int,name,id,type)                          \
+    int ecl_##name(cl_object arg)                                       \
+    { switch(ecl_t_of(arg)) {                                           \
+        case t_fixnum: return fix(arg);                                 \
+        case t_bignum: return big(arg);                                 \
+        case t_ratio: return ratio(arg);                                \
+        case t_singlefloat: return sfloat(arg);                         \
+        case t_doublefloat: return dfloat(arg);                         \
+        case t_longfloat: return lfloat(arg);                           \
+        case t_complex: return complex(arg);                            \
+        default: return name##failed(arg); }}
+#endif
 
 #define MATH_DEF_DISPATCH1(name,id,type,fix,big,ratio,                  \
                            single_float,double_float,long_float,        \
@@ -64,30 +105,4 @@ typedef cl_object (*math_one_arg_fn)(cl_object);
         return out;                                                     \
     }
 
-typedef int (*math_one_arg_bool_fn)(cl_object);
-#define MATH_DEF_DISPATCH1_BOOL(name,id,type,fix,big,ratio,             \
-                                single_float,double_float,long_float,   \
-                                complex,csfloat,cdfloat,clfloat)        \
-    static int name##failed(cl_object x) {                              \
-        FEwrong_type_only_arg(id, x, type);                             \
-    }                                                                   \
-    static const math_one_arg_bool_fn name##dispatch[t_last_number+1]= {\
-        name##failed,                 /* t_start */                     \
-        name##failed,                 /* t_list */                      \
-        name##failed,                 /* t_character */                 \
-        fix, big, ratio,              /* t_fixnum, t_bignum, t_ratio */ \
-        single_float,                 /* t_singlefloat */               \
-        double_float,                 /* t_doublefloat */               \
-        long_float,                   /* t_longfloat */                 \
-        complex,                      /* t_complex */                   \
-        MATH_CFLOAT(csfloat,cdfloat,clfloat) /* t_c?float */ };         \
-    int ecl_##name(cl_object arg)                                       \
-    {                                                                   \
-        int t = ECL_IMMEDIATE(arg);                                     \
-        if (t == 0) {                                                   \
-            t = arg->d.t;                                               \
-            unlikely_if (t > t_last_number) return name##failed(arg);   \
-        }                                                               \
-        return name##dispatch[t](arg);                                  \
-    }
 #endif /* ECL_MATH_DISPATCH_H */
