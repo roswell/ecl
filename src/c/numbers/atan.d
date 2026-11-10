@@ -21,12 +21,17 @@
 
 #pragma STDC FENV_ACCESS ON
 
-ecl_def_ct_single_float(ecl_ct_flt_zero,0,static,const);
-ecl_def_ct_single_float(ecl_ct_flt_one,1,static,const);
-ecl_def_ct_single_float(ecl_ct_flt_two,2,static,const);
+#ifdef ECL_COMPLEX_FLOAT
+ecl_def_ct_csfloat(imag_one, 0.0f + 1.0fi,static,const);
+ecl_def_ct_csfloat(imag_two, 0.0f + 2.0fi,static,const);
+#else
+ecl_def_ct_single_float(flt_zero,0,static,const);
+ecl_def_ct_single_float(flt_one,1,static,const);
+ecl_def_ct_single_float(flt_two,2,static,const);
 
-ecl_def_ct_complex(ecl_ct_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_one,static,const);
-ecl_def_ct_complex(ecl_ct_twice_imag_unit,ecl_ct_flt_zero,ecl_ct_flt_two,static,const);
+ecl_def_ct_complex(imag_one, flt_zero, flt_one,static,const);
+ecl_def_ct_complex(imag_two, flt_zero, flt_two,static,const);
+#endif
 
 cl_object
 ecl_atan2(cl_object y, cl_object x)
@@ -107,10 +112,10 @@ ecl_atan1(cl_object y)
       y = ecl_negate(y);
       reflect = TRUE;
     }
-    cl_object z = ecl_times(ecl_ct_imag_unit, y);
+    cl_object z = ecl_times(imag_one, y);
     cl_object result = ecl_divide(ecl_log1p(ecl_divide(ecl_times(ecl_make_fixnum(2), z),
                                                        ecl_minus(ecl_make_fixnum(1), z))),
-                                  ecl_ct_twice_imag_unit);
+                                  imag_two);
     /* Branch cut handling */
     cl_object r = ecl_complex_real(y);
     cl_object i = ecl_complex_imag(y);

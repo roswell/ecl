@@ -337,7 +337,7 @@
 ;;;
 ;;; - using a symbol from the core :: ECL_SYM(\"*BREAK-ON-SIGNALS*\",27)
 ;;; - using a cvalue inline value  :: cl_core.single_float_zero, FLT_MAX
-;;; - using a static constructor   :: ecl_def_ct_single_float -> _ecl_static_7
+;;; - using a static constructor   :: ecl_def_ct_double_float -> _ecl_static_7
 ;;; - coercing an immediate value  :: ecl_make_fixnum(42)
 ;;;
 ;;; Otherwise the object is put in VV or VVtemp vector, and is created when the
