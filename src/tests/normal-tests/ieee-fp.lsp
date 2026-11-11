@@ -828,3 +828,9 @@ Common Lisp type contagion rules."
         (test-float*  +0.0 0.0   0 +1.0)
         (test-float*  +1.0 0.5   1 +1.0)
         (test-float* +10.0 0.625 4 +1.0)))
+
+(deftest ieee-fp.0035.nan-eql ()
+  (without-fpe-traps
+      (is (eql (+ ext:single-float-negative-infinity
+                  ext:single-float-positive-infinity)
+               (coerce (ext:nan) 'single-float)))))
