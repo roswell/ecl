@@ -1173,6 +1173,7 @@ extern ECL_API long double _Complex ecl_to_clfloat(cl_object x);
 #endif
 #ifdef ECL_IEEE_FP
 extern ECL_API cl_object si_nan();
+extern ECL_API cl_object si_nan_p(cl_object x);
 #endif /* ECL_IEEE_FP */
 
 /* num_co.c */

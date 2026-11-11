@@ -1006,8 +1006,31 @@ _ecl_float_to_integer(float d)
 #ifdef ECL_IEEE_FP
 cl_object
 si_nan() {
+  cl_env_ptr the_env = ecl_process_env();
   cl_object x = ecl_alloc_object(t_doublefloat);
   ecl_double_float(x) = NAN;
-  return x;
+  ecl_return1(the_env, x);
+}
+
+cl_object
+si_nan_p(cl_object x) {
+  cl_env_ptr the_env = ecl_process_env();
+  cl_object result = ECL_NIL;
+  switch(ecl_t_of(x)) {
+  /* case t_shortfloat: */
+  case t_singlefloat:
+    result = isnan(ecl_single_float(x)) ? ECL_T : ECL_NIL;
+    break;
+  case t_doublefloat:
+    result = isnan(ecl_double_float(x)) ? ECL_T : ECL_NIL;
+    break;
+  case t_longfloat:
+    result = isnan(ecl_long_float(x)) ? ECL_T : ECL_NIL;
+    break;
+  default:
+    FEwrong_type_only_arg(@[si::nan-p], x, @[float]);
+    break;
+  }
+  ecl_return1(the_env, result);
 }
 #endif /* ECL_IEEE_FP */
