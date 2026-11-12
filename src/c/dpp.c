@@ -70,14 +70,40 @@
  *
  *      @'name'
  *
- *      Expands into a C statement, whole value is the given symbol
- *      from symbols_list.h
+ *        Expands into a C statement, whole value is the given symbol from
+ *        symbols_list.h
  *
  *      @[name]
  *
- *      Expands into a C statement, whole value is a fixnum
- *      corresponding to the index in the builtin symbols table of the
- *      given symbol from symbols_list.h. Used for handling type errors.
+ *        Expands into a C statement, whole value is a fixnum corresponding to
+ *        the index in the builtin symbols table of the given symbol from
+ *        symbols_list.h. Used for handling type errors.
+ *
+ *      Other data types:
+ *
+ *      @"foobar"
+ *
+ *        Expands into C statement ecl_make_constant_base_string("foobar", -1).
+ *
+ *      @{type value}
+ *
+ *        Expands into C compound literal and returns cl_object. Normal C scope
+ *        rules apply. Supported types:
+ *
+ *        @{sfloat 0.5f} - single float
+ *        @{dfloat 0.5d} - double float
+ *        @{lfloat 0.5d} - long float
+ *
+ *        Wishlist (reasonably easy - see ecl-inl.h):
+ *
+ *        @{csfloat 0.0f 1.0f} - complex single float
+ *        @{cdfloat 0.0d 1.0d} - complex double float
+ *        @{clfloat 0.0l 1.0l} - complex long float
+ *
+ *        @{string "x"} - string
+ *        @{fixnum 142} - fixnum
+ *        @{ratnum 1 2} - ratio 1/2 (arguments must be fixnums)
+ *
  */
 
 #include <stdlib.h>
@@ -357,6 +383,42 @@ read_string()
 }
 
 char *
+read_struct(void)
+{
+  char c, *str = poolp;
+  char end = '}';
+  c = readc();
+  while(!isspace(c)) {
+    pushc(c);
+    c = readc();
+  }
+  pushc(0);
+  if (!strcmp(str, "sfloat")) {
+    poolp=str;
+    pushstr("(cl_object)&");
+    pushstr("(const struct ecl_singlefloat){(int8_t)t_singlefloat,0,0,0,(float)(");
+  } else if (!strcmp(str, "dfloat")) {
+    poolp=str;
+    pushstr("(cl_object)&");
+    pushstr("(const struct ecl_doublefloat){(int8_t)t_doublefloat,0,0,0,(double)(");
+  } else if (!strcmp(str, "lfloat")) {
+    poolp=str;
+    pushstr("(cl_object)&");
+    pushstr("(const struct ecl_long_float){(int8_t)t_longfloat,0,0,0,(long double)(");
+  } else {
+    error_symbol(str);
+  }
+  c = readc();
+  while(c!=end) {
+    pushc(c);
+    c = readc();
+  }
+  pushstr(")}");
+  pushc(0);
+  return str;
+}
+
+char *
 search_function(char *name)
 {
   int i;
@@ -448,6 +510,9 @@ read_token(void)
         pushc(c);
       } else if (c == '"') {
         read_string();
+        poolp--;
+      } else if (c == '{') {
+        read_struct();
         poolp--;
       } else {
         char *name;
@@ -942,6 +1007,13 @@ main_loop(void)
     char *p;
     char * tmp = poolp;
     p = read_string();
+    fprintf(out,"%s",p);
+    poolp = tmp;
+    goto LOOP;
+  } else if (c == '{') {
+    char *p;
+    char * tmp = poolp;
+    p = read_struct();
     fprintf(out,"%s",p);
     poolp = tmp;
     goto LOOP;
