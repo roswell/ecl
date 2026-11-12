@@ -31,8 +31,9 @@ typedef unsigned char byte;
 typedef enum {
         t_start = 0,
         t_list = 1,
-        t_exttag = 2,           /* extended immediates */
-        t_character = 2,        /* immediate character */
+        t_extend = 2,           /* extended immediates */
+        t_constant = 2,          /* constant values */
+        /* numbers */
         t_fixnum = 3,           /* immediate fixnum */
         t_bignum = 4,
         t_ratio,
@@ -51,6 +52,7 @@ typedef enum {
 #else
         t_last_number = t_complex,
 #endif
+        t_character = 18,       /* immediate character */
         t_symbol,
         t_package,
         t_hashtable,
@@ -153,6 +155,9 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 # define ECL_XTAG_BITS 4
 # define ECL_XMMEDIATE_TAG 0b1111
+
+# define ECL_STAG_BITS 6
+# define ECL_SMMEDIATE_TAG 0b111111
 #elif ECL_FIXNUM_BITS == 64
 # define ECL_TAG_BITS 3
 # define ECL_IMMEDIATE_TAG 0b111
@@ -162,6 +167,9 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 # define ECL_XTAG_BITS 5
 # define ECL_XMMEDIATE_TAG 0b11111
+
+# define ECL_STAG_BITS 7
+# define ECL_SMMEDIATE_TAG 0b1111111
 #else
 # error "Unspecialized ECL tagging scheme."
 #endif
@@ -169,6 +177,7 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 #define ECL_IMMEDIATE(o) ((cl_fixnum)(o) & ECL_IMMEDIATE_TAG) /* ==0 for boxed */
 #define ECL_FMMEDIATE(o) ((cl_fixnum)(o) & ECL_FMMEDIATE_TAG) /* !=0 for 2bit tag */
 #define ECL_XMMEDIATE(o) ((cl_fixnum)(o) & ECL_XMMEDIATE_TAG) /* !=0 for extended */
+#define ECL_SMMEDIATE(o) ((cl_fixnum)(o) & ECL_SMMEDIATE_TAG) /* !=0 for sub-tags */
 
 /* Tagged pointers may be either values or pointers to boxed objects. In the
    latter case GC needs to scan them. Currently it is only t_list, but this set
@@ -189,26 +198,48 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 #define ecl_fixnum(a)           (((cl_fixnum)(a)) >> ECL_FTAG_BITS)
 
 /* -- Immediate extends ----------------------------------------------------- */
-#define ECL_EXTEND_TAG          t_exttag
-#define ECL_EXTENDP(o)          (ECL_IMMEDIATE(o) == t_exttag)
+#define ECL_EXTEND_TAG          t_extend
+#define ECL_EXTENDP(o)          (ECL_IMMEDIATE(o) == t_extend)
 #define ECL_EXTENDED_TAG(x)     (((x)<<ECL_TAG_BITS) | ECL_EXTEND_TAG)
-#define ECL_EXTENDED_SUB(x)     (((cl_fixnum)(o) & ECL_XMMEDIATE_TAG) >> ECL_TAG_BITS)
+
+/* -- Immediate constant values --------------------------------------------- */
+
+/* Constant values are represented within the extended tag space. We reserve 8b
+   for the immediate tag, 8b to encoded the value type and the rest for its id.
+   For example on 32bit entries could look like this:
+
+   [  enumerated id] [t_type] [   tag] ; [ val] [    cl_type] [always b10]
+   00000000 00000000 00111000 00000010 ; #<hk!> t_hk          constant-tag
+   00000000 00000001 00001000 00000010 ; -0.0d0 t_doublefloat constant-tag
+   00000000 00000001 00001001 00000010 ; -0.0l0 t_longfloat   constant-tag
+
+   etc. This allows us to decode the type without derefencing the object. Each
+   downstream type is responsible for accounting for defined constant values.
+   ecl_t_of will return the type tag. Currently cl_type uses 7b, but we leave
+   spare space for future compatibility (16b is enough to store all sentinels).
+
+   -- jd 2026-11-12 */
+#define ECL_CONSTANT_TAG   ECL_EXTENDED_TAG(0b0000)
+#define ECL_CONSTANTP(o)   (ECL_SMMEDIATE(o) == ECL_CONSTANT_TAG)
+#define ECL_CONSTANT_TYPE(o) ((((cl_index)(o))>>8) & 0xff)
+#define ECL_CONST_TYPEP(o,t) (ECL_CONSTANTP(o) && (ECL_CONSTANT_TYPE(o) == (t)))
+#define ECL_ENUMERATE(v,t)   ((cl_object)((v<<16) | (t<<8) | ECL_CONSTANT_TAG))
 
 /* -- Immediate characters -------------------------------------------------- */
-#define ECL_CHARACTER_TAG   ECL_EXTENDED_TAG(0b00)
-#define ECL_CHARACTERP(o)   (ECL_XMMEDIATE(o) == ECL_CHARACTER_TAG)
+#define ECL_CHARACTER_TAG   ECL_EXTENDED_TAG(0b0100)
+#define ECL_CHARACTERP(o)   (ECL_SMMEDIATE(o) == ECL_CHARACTER_TAG)
+#define ECL_TAG_CHAR(x)     ((cl_object)((cl_index)((x)<<ECL_STAG_BITS) | ECL_CHARACTER_TAG))
+
 #ifdef ECL_UNICODE
-#define ECL_BASE_CHAR_MASK  (0xFFFFFFFF & ~(0xFF << ECL_XTAG_BITS))
+#define ECL_BASE_CHAR_MASK  (0xFFFFFFFF & ~(0xFF << ECL_STAG_BITS))
 #define ECL_BASE_CHAR_P(o)  ((((cl_fixnum)(o)) & ECL_BASE_CHAR_MASK)   \
                              == ECL_CHARACTER_TAG)
-#define ECL_CODE_CHAR(c)    ((cl_object)(((cl_fixnum)((c) << ECL_XTAG_BITS) \
-                                          | ECL_CHARACTER_TAG)))
-#define ECL_CHAR_CODE(o)    (((cl_fixnum)(o)) >> ECL_XTAG_BITS)
+#define ECL_CODE_CHAR(c)    ECL_TAG_CHAR(c)
+#define ECL_CHAR_CODE(o)    (((cl_fixnum)(o)) >> ECL_STAG_BITS)
 #else
 #define ECL_BASE_CHAR_P(o)  ECL_CHARACTERP(o)
-#define ECL_CODE_CHAR(c)    ((cl_object)(((cl_fixnum)(((c) & 0xff) << ECL_XTAG_BITS) \
-                                          | ECL_CHARACTER_TAG)))
-#define ECL_CHAR_CODE(o)    ((((cl_fixnum)(o)) >> ECL_XTAG_BITS) & 0xff)
+#define ECL_CODE_CHAR(c)    ECL_TAG_CHAR((c)&0xff)
+#define ECL_CHAR_CODE(o)    ((((cl_fixnum)(o)) >> ECL_STAG_BITS) & 0xff)
 #endif
 #define ECL_BASE_CHAR_CODE_P(x) (((x) & ~((cl_fixnum)0xFF)) == 0)
 #define ECL_CHAR_CODE_RETURN    13
@@ -221,6 +252,9 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 /* -- Object type predicates ------------------------------------------------ */
 #define ECL_BOXED_TYPEP(x,t0) ((ECL_IMMEDIATE(x)==0) && ((x)->d.t==(t0)))
+#define ECL_BOXED_TYPEP_CONST(x,t0) (ECL_IMMEDIATE(x)           \
+                                     ? ECL_CONST_TYPEP(x,t0)    \
+                                     : ((x)->d.t==(t0)))
 #define ECL_BOXED_TYPEP_RANGE(x,t1,t2) \
         ((ECL_IMMEDIATE(x)==0) && ((x)->d.t>=(t1)) && ((x)->d.t<=(t2)))
 
@@ -1320,14 +1354,11 @@ union cl_lispunion {
 */
 static inline cl_type ecl_t_of(cl_object o) {
         int i = ECL_IMMEDIATE(o);
-        if(!i) return (cl_type)(o->d.t);
-        switch(i) {
-        case 0b001: return (cl_type)t_list;
-        case 0b010: return (cl_type)t_character;
-        case 0b011:
-        case 0b111: return (cl_type)t_fixnum;
-        default:    return (cl_type)t_other;
-        }
+        if (!i)                return (cl_type)(o->d.t);
+        if (ECL_FIXNUMP(o))    return (cl_type)t_fixnum;
+        if (ECL_LISTP(o))      return (cl_type)t_list;
+        if (ECL_CHARACTERP(o)) return (cl_type)t_character;
+        return (cl_type)ECL_CONSTANT_TYPE(o);
 }
 
 /*
