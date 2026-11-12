@@ -17,7 +17,9 @@
 #include <ecl/internal.h>
 #include <ecl/impl/math_dispatch.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 cl_object
 cl_cosh(cl_object x)

@@ -19,7 +19,9 @@
 #include <ecl/internal.h>
 #include <ecl/impl/math_fenv.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 #ifdef ECL_COMPLEX_FLOAT
 ecl_def_ct_csfloat(imag_one, 0.0f + 1.0fi,static,const);

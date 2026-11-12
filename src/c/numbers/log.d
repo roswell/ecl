@@ -20,7 +20,9 @@
 #include <float.h>
 #include <ecl/impl/math_dispatch.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 #ifndef ECL_COMPLEX_FLOAT
 static cl_object

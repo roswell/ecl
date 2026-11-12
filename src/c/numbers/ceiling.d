@@ -18,7 +18,9 @@
 #endif
 #include <ecl/internal.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 @(defun ceiling (x &optional (y OBJNULL))
   @

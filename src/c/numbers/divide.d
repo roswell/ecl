@@ -16,7 +16,9 @@
 #include <ecl/ecl.h>
 #include <ecl/impl/math_dispatch2.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 @(defun / (num &rest nums)
   @
