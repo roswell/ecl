@@ -27,7 +27,6 @@ typedef struct {
         int narg;
 } cl_symbol_initializer;
 #else
-#include "ecl_constants.h"
 #define CLOS_
 #define EXT_
 #define SYS_

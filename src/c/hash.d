@@ -53,12 +53,16 @@ _hash_eql(cl_hashstate *state, cl_object x)
     _hash_eql(state, ecl_ratio_num(x));
     _hash_eql(state, ecl_ratio_den(x));
     return;
-  case t_singlefloat:
-    hash_data(state, &ecl_single_float(x), sizeof(ecl_single_float(x)));
+  case t_singlefloat: {
+    float f = ecl_single_float(x);
+    hash_data(state, &f, sizeof(f));
     return;
-  case t_doublefloat:
-    hash_data(state, &ecl_double_float(x), sizeof(ecl_double_float(x)));
+  }
+  case t_doublefloat: {
+    double f = ecl_double_float(x);
+    hash_data(state, &f, sizeof(f));
     return;
+  }
   case t_longfloat: {
     /* We coerce to double because long double has extra bits that
      * give rise to different hash key and are not meaningful. */
@@ -1573,8 +1577,6 @@ do_clrhash(cl_object ht)
   }
 }
 
-ecl_def_ct_single_float(min_threshold, 0.1, static, const);
-
 cl_object
 cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
                     cl_object rehash_threshold)
@@ -1674,7 +1676,7 @@ cl__make_hash_table(cl_object test, cl_object size, cl_object rehash_size,
   h->hash.entries = 0;
   h->hash.rehash_size = rehash_size;
   h->hash.threshold = rehash_threshold;
-  rehash_threshold = cl_max(2, min_threshold, rehash_threshold);
+  rehash_threshold = cl_max(2, ECL_MINIMUM_REHASH_THRESHOLD, rehash_threshold);
   h->hash.factor = ecl_to_double(rehash_threshold);
   h->hash.limit = h->hash.size * h->hash.factor;
   if (h->hash.limit >= hsize) {

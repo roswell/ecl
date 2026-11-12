@@ -865,11 +865,6 @@ cl_object ecl_encode_filename(cl_object x, cl_object len);
 
 /* unixint.d */
 
-#define ECL_PI_D 3.14159265358979323846264338327950288
-#define ECL_PI_L 3.14159265358979323846264338327950288l
-#define ECL_PI2_D 1.57079632679489661923132169163975144
-#define ECL_PI2_L 1.57079632679489661923132169163975144l
-
 extern void ecl_interrupt_process(cl_object process, cl_object function);
 
 /* disabling interrupts on the lisp side */

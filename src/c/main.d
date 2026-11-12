@@ -107,16 +107,16 @@ ecl_boot(void)
 
 ecl_def_ct_base_string(ecl_ct_null_string,"",0,,const);
 
-ecl_def_ct_single_float(ecl_ct_default_rehash_size,1.5f,,const);
-ecl_def_ct_single_float(ecl_ct_default_rehash_threshold,0.75f,,const);
+const cl_object ecl_ct_default_rehash_size = ECL_DEFAULT_REHASH_SIZE;
+const cl_object ecl_ct_default_rehash_threshold = ECL_DEFAULT_REHASH_THRESHOLD;
 
-ecl_def_ct_single_float(ecl_ct_singlefloat_zero,0,,const);
-ecl_def_ct_double_float(ecl_ct_doublefloat_zero,0,,const);
-ecl_def_ct_long_float(ecl_ct_longfloat_zero,0,,const);
+const cl_object ecl_ct_singlefloat_zero = ECL_SFLOAT_POSITIVE_ZERO;
+const cl_object ecl_ct_doublefloat_zero = ECL_DFLOAT_POSITIVE_ZERO;
+const cl_object ecl_ct_longfloat_zero   = ECL_LFLOAT_POSITIVE_ZERO;
 
-ecl_def_ct_single_float(ecl_ct_singlefloat_minus_zero,-0.0,,const);
-ecl_def_ct_double_float(ecl_ct_doublefloat_minus_zero,-0.0,,const);
-ecl_def_ct_long_float(ecl_ct_longfloat_minus_zero,-0.0l,,const);
+const cl_object ecl_ct_singlefloat_minus_zero = ECL_SFLOAT_NEGATIVE_ZERO;
+const cl_object ecl_ct_doublefloat_minus_zero = ECL_DFLOAT_NEGATIVE_ZERO;
+const cl_object ecl_ct_longfloat_minus_zero   = ECL_LFLOAT_NEGATIVE_ZERO;
 
 ecl_def_ct_ratio(ecl_ct_plus_half,ecl_make_fixnum(1),ecl_make_fixnum(2),,const);
 ecl_def_ct_ratio(ecl_ct_minus_half,ecl_make_fixnum(-1),ecl_make_fixnum(2),,const);

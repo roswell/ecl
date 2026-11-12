@@ -45,9 +45,10 @@ cl_expt(cl_object x, cl_object y)
   @(return ecl_expt(x, y));
 }
 
-ecl_def_ct_single_float(singlefloat_one,1,static,const);
-ecl_def_ct_double_float(doublefloat_one,1,static,const);
-ecl_def_ct_long_float(longfloat_one,1,static,const);
+static const cl_object singlefloat_one = ECL_SFLOAT_ONE;
+static const cl_object doublefloat_one = ECL_DFLOAT_ONE;
+static const cl_object longfloat_one   = ECL_LFLOAT_ONE;
+
 #ifdef ECL_COMPLEX_FLOAT
 ecl_def_ct_csfloat(csfloat_one,1,static,const);
 ecl_def_ct_cdfloat(cdfloat_one,1,static,const);

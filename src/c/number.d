@@ -506,7 +506,7 @@ ecl_make_single_float(float f)
     return ecl_ct_singlefloat_zero;
   }
   x = ecl_alloc_object(t_singlefloat);
-  ecl_single_float(x) = f;
+  ecl_set_single_float(x,f);
   return(x);
 }
 
@@ -524,7 +524,7 @@ ecl_make_double_float(double f)
     return ecl_ct_doublefloat_zero;
   }
   x = ecl_alloc_object(t_doublefloat);
-  ecl_double_float(x) = f;
+  ecl_set_double_float(x,f);
   return(x);
 }
 
@@ -542,7 +542,7 @@ ecl_make_long_float(long double f)
     return ecl_ct_longfloat_zero;
   }
   x = ecl_alloc_object(t_longfloat);
-  ecl_long_float(x) = f;
+  ecl_set_long_float(x,f);
   return x;
 }
 
@@ -1019,7 +1019,7 @@ cl_object
 si_nan() {
   cl_env_ptr the_env = ecl_process_env();
   cl_object x = ecl_alloc_object(t_doublefloat);
-  ecl_double_float(x) = NAN;
+  ecl_set_double_float(x, NAN);
   ecl_return1(the_env, x);
 }
 

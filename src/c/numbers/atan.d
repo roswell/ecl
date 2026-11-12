@@ -27,12 +27,8 @@
 ecl_def_ct_csfloat(imag_one, 0.0f + 1.0fi,static,const);
 ecl_def_ct_csfloat(imag_two, 0.0f + 2.0fi,static,const);
 #else
-ecl_def_ct_single_float(flt_zero,0,static,const);
-ecl_def_ct_single_float(flt_one,1,static,const);
-ecl_def_ct_single_float(flt_two,2,static,const);
-
-ecl_def_ct_complex(imag_one, flt_zero, flt_one,static,const);
-ecl_def_ct_complex(imag_two, flt_zero, flt_two,static,const);
+ecl_def_ct_complex(imag_one, ECL_SFLOAT_POSITIVE_ZERO, ECL_SFLOAT_ONE,static,const);
+ecl_def_ct_complex(imag_two, ECL_SFLOAT_POSITIVE_ZERO, ECL_SFLOAT_TWO,static,const);
 #endif
 
 cl_object

@@ -11,6 +11,7 @@
  */
 
 /* object.h  -- Data structure definitions. */
+#include <float.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -292,34 +293,175 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 #define _ECL_HDR1(field)                int8_t t, m, field, padding
 #define _ECL_HDR2(field1,field2)        int8_t t, m, field1, field2
 
+/* -- float common ---------------------------------------------------------- */
+
+#define ECL_PI_D 3.14159265358979323846264338327950288
+#define ECL_PI_L 3.14159265358979323846264338327950288l
+#define ECL_PI2_D 1.57079632679489661923132169163975144
+#define ECL_PI2_L 1.57079632679489661923132169163975144l
+
 /* -- single float ---------------------------------------------------------- */
+
+/* FIXME dpp should preprocess these to skip constant and use directly the
+   immediate single float instead of hopping through constants dispatch.
+
+   Also define enum instead of going with raw hex numbers. */
+
+#define ECL_LEAST_POSITIVE_SINGLE_FLOAT ECL_ENUMERATE(0x11, t_singlefloat)
+#define ECL_LEAST_NEGATIVE_SINGLE_FLOAT ECL_ENUMERATE(0x12, t_singlefloat)
+#define ECL_LEAST_POSITIVE_NORMALIZED_SINGLE_FLOAT ECL_ENUMERATE(0x13, t_singlefloat)
+#define ECL_LEAST_NEGATIVE_NORMALIZED_SINGLE_FLOAT ECL_ENUMERATE(0x14, t_singlefloat)
+#define ECL_MOST_POSITIVE_SINGLE_FLOAT ECL_ENUMERATE(0x15, t_singlefloat)
+#define ECL_MOST_NEGATIVE_SINGLE_FLOAT ECL_ENUMERATE(0x16, t_singlefloat)
+
+#define ECL_SFLOAT_NEGATIVE_ZERO ECL_ENUMERATE(0x17, t_singlefloat)
+#define ECL_SFLOAT_POSITIVE_ZERO ECL_ENUMERATE(0x18, t_singlefloat)
+#define ECL_SFLOAT_ONE ECL_ENUMERATE(0x19, t_singlefloat)
+#define ECL_SFLOAT_TWO ECL_ENUMERATE(0x1a, t_singlefloat)
+
+#define ECL_DEFAULT_REHASH_SIZE ECL_ENUMERATE(0x20, t_singlefloat)
+#define ECL_DEFAULT_REHASH_THRESHOLD ECL_ENUMERATE(0x21, t_singlefloat)
+#define ECL_MINIMUM_REHASH_THRESHOLD ECL_ENUMERATE(0x22, t_singlefloat)
+
+static inline float
+decode_const_single_float(cl_object o) {
+    switch((cl_index)o) {
+    case (cl_index)ECL_LEAST_NEGATIVE_SINGLE_FLOAT: return -FLT_TRUE_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_SINGLE_FLOAT: return +FLT_TRUE_MIN;
+    case (cl_index)ECL_LEAST_NEGATIVE_NORMALIZED_SINGLE_FLOAT: return -FLT_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_NORMALIZED_SINGLE_FLOAT: return +FLT_MIN;
+    case (cl_index)ECL_MOST_NEGATIVE_SINGLE_FLOAT: return -FLT_MAX;
+    case (cl_index)ECL_MOST_POSITIVE_SINGLE_FLOAT: return +FLT_MAX;
+    case (cl_index)ECL_SFLOAT_POSITIVE_ZERO: return +0.0f;
+    case (cl_index)ECL_SFLOAT_NEGATIVE_ZERO: return -0.0f;
+    case (cl_index)ECL_SFLOAT_TWO: return 2.0f;
+    case (cl_index)ECL_SFLOAT_ONE: return 1.0f;
+    /*  parameters  */
+    case (cl_index)ECL_DEFAULT_REHASH_SIZE:      return 1.5f;
+    case (cl_index)ECL_DEFAULT_REHASH_THRESHOLD: return 0.75f;
+    case (cl_index)ECL_MINIMUM_REHASH_THRESHOLD: return 0.1f;
+    default: return NAN;
+    }
+}
 
 struct ecl_singlefloat {
         _ECL_HDR;
         float SFVAL;    /*  singlefloat value  */
 };
 
-#define ECL_SINGLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_singlefloat)
-#define ecl_single_float(o) ((o)->SF.SFVAL)
+#define ECL_SINGLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_singlefloat)
+#define ecl_single_float(o)   (ECL_IMMEDIATE(o)                   \
+                               ? decode_const_single_float(o)     \
+                               : (o)->SF.SFVAL)
+
+#define ecl_set_single_float(o,v) ((o)->SF.SFVAL=(v))
+
+/* -- short float ----------------------------------------------------------- */
+/* Currently short floats are just single floats. */
+
+#define ECL_LEAST_POSITIVE_SHORT_FLOAT ECL_ENUMERATE(0x11, t_singlefloat)
+#define ECL_LEAST_NEGATIVE_SHORT_FLOAT ECL_ENUMERATE(0x12, t_singlefloat)
+#define ECL_LEAST_POSITIVE_NORMALIZED_SHORT_FLOAT ECL_ENUMERATE(0x13, t_singlefloat)
+#define ECL_LEAST_NEGATIVE_NORMALIZED_SHORT_FLOAT ECL_ENUMERATE(0x14, t_singlefloat)
+#define ECL_MOST_POSITIVE_SHORT_FLOAT ECL_ENUMERATE(0x15, t_singlefloat)
+#define ECL_MOST_NEGATIVE_SHORT_FLOAT ECL_ENUMERATE(0x16, t_singlefloat)
+
+#define ECL_NEGATIVE_ZERO_SHORT_FLOAT ECL_ENUMERATE(0x17, t_singlefloat)
+#define ECL_POSITIVE_ZERO_SHORT_FLOAT ECL_ENUMERATE(0x18, t_singlefloat)
+
+#define ECL_SHORT_FLOAT_P(o) ECL_SINGLE_FLOAT_P(o)
+#define ecl_short_float(o) ecl_single_float(o)
+
+#define ecl_set_short_float(o,v) ecl_set_single_float(o,v)
+
 /* -- double float ---------------------------------------------------------- */
+
+#define ECL_LEAST_POSITIVE_DOUBLE_FLOAT ECL_ENUMERATE(0x11, t_doublefloat)
+#define ECL_LEAST_NEGATIVE_DOUBLE_FLOAT ECL_ENUMERATE(0x12, t_doublefloat)
+#define ECL_LEAST_POSITIVE_NORMALIZED_DOUBLE_FLOAT ECL_ENUMERATE(0x13, t_doublefloat)
+#define ECL_LEAST_NEGATIVE_NORMALIZED_DOUBLE_FLOAT ECL_ENUMERATE(0x14, t_doublefloat)
+#define ECL_MOST_POSITIVE_DOUBLE_FLOAT ECL_ENUMERATE(0x15, t_doublefloat)
+#define ECL_MOST_NEGATIVE_DOUBLE_FLOAT ECL_ENUMERATE(0x16, t_doublefloat)
+
+#define ECL_DFLOAT_NEGATIVE_ZERO ECL_ENUMERATE(0x17, t_doublefloat)
+#define ECL_DFLOAT_POSITIVE_ZERO ECL_ENUMERATE(0x18, t_doublefloat)
+#define ECL_DFLOAT_ONE ECL_ENUMERATE(0x19, t_doublefloat)
+#define ECL_DFLOAT_TWO ECL_ENUMERATE(0x1a, t_doublefloat)
+
+static inline double
+decode_const_double_float(cl_object o) {
+    switch((cl_index)o) {
+    case (cl_index)ECL_LEAST_NEGATIVE_DOUBLE_FLOAT: return -DBL_TRUE_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_DOUBLE_FLOAT: return +DBL_TRUE_MIN;
+    case (cl_index)ECL_LEAST_NEGATIVE_NORMALIZED_DOUBLE_FLOAT: return -DBL_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_NORMALIZED_DOUBLE_FLOAT: return +DBL_MIN;
+    case (cl_index)ECL_MOST_NEGATIVE_DOUBLE_FLOAT: return -DBL_MAX;
+    case (cl_index)ECL_MOST_POSITIVE_DOUBLE_FLOAT: return +DBL_MAX;
+    case (cl_index)ECL_DFLOAT_NEGATIVE_ZERO: return -0.0;
+    case (cl_index)ECL_DFLOAT_POSITIVE_ZERO: return +0.0;
+    case (cl_index)ECL_DFLOAT_ONE: return 1.0;
+    case (cl_index)ECL_DFLOAT_TWO: return 2.0;
+    default: return NAN;
+    }
+}
 
 struct ecl_doublefloat {
         _ECL_HDR;
         double DFVAL;   /*  doublefloat value  */
 };
 
-#define ECL_DOUBLE_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_doublefloat)
-#define ecl_double_float(o) ((o)->DF.DFVAL)
+#define ECL_DOUBLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_doublefloat)
+#define ecl_double_float(o)   (ECL_IMMEDIATE(o)                   \
+                               ? decode_const_double_float(o)     \
+                               : (o)->DF.DFVAL)
+
+#define ecl_set_double_float(o,v) ((o)->DF.DFVAL=(v))
+
 /* -- long float ------------------------------------------------------------ */
+
+#define ECL_LEAST_POSITIVE_LONG_FLOAT ECL_ENUMERATE(0x11, t_longfloat)
+#define ECL_LEAST_NEGATIVE_LONG_FLOAT ECL_ENUMERATE(0x12, t_longfloat)
+#define ECL_LEAST_POSITIVE_NORMALIZED_LONG_FLOAT ECL_ENUMERATE(0x13, t_longfloat)
+#define ECL_LEAST_NEGATIVE_NORMALIZED_LONG_FLOAT ECL_ENUMERATE(0x14, t_longfloat)
+#define ECL_MOST_POSITIVE_LONG_FLOAT ECL_ENUMERATE(0x15, t_longfloat)
+#define ECL_MOST_NEGATIVE_LONG_FLOAT ECL_ENUMERATE(0x16, t_longfloat)
+
+#define ECL_LFLOAT_NEGATIVE_ZERO ECL_ENUMERATE(0x17, t_longfloat)
+#define ECL_LFLOAT_POSITIVE_ZERO ECL_ENUMERATE(0x18, t_longfloat)
+#define ECL_LFLOAT_ONE ECL_ENUMERATE(0x19, t_longfloat)
+#define ECL_LFLOAT_TWO ECL_ENUMERATE(0x1a, t_longfloat)
+
+#define ECL_PI ECL_ENUMERATE(0x20, t_longfloat)
+
+static inline long double
+decode_const_long_float(cl_object o) {
+    switch((cl_index)o) {
+    case (cl_index)ECL_LEAST_NEGATIVE_LONG_FLOAT: return -LDBL_TRUE_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_LONG_FLOAT: return +LDBL_TRUE_MIN;
+    case (cl_index)ECL_LEAST_NEGATIVE_NORMALIZED_LONG_FLOAT: return -LDBL_MIN;
+    case (cl_index)ECL_LEAST_POSITIVE_NORMALIZED_LONG_FLOAT: return +LDBL_MIN;
+    case (cl_index)ECL_MOST_NEGATIVE_LONG_FLOAT: return -LDBL_MAX;
+    case (cl_index)ECL_MOST_POSITIVE_LONG_FLOAT: return +LDBL_MAX;
+    case (cl_index)ECL_LFLOAT_NEGATIVE_ZERO: return -0.0l;
+    case (cl_index)ECL_LFLOAT_POSITIVE_ZERO: return +0.0l;
+    case (cl_index)ECL_LFLOAT_ONE: return 1.0l;
+    case (cl_index)ECL_LFLOAT_TWO: return 2.0l;
+    case (cl_index)ECL_PI: return ECL_PI_L;
+    default: return NAN;
+    }
+}
 
 struct ecl_long_float {
         _ECL_HDR;
         long double value;
 };
 
-#define ECL_LONG_FLOAT_P(x) ECL_BOXED_TYPEP(x,t_longfloat)
-#define ecl_long_float(o) ((o)->longfloat.value)
+#define ECL_LONG_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_longfloat)
+#define ecl_long_float(o)   (ECL_IMMEDIATE(o)                   \
+                             ? decode_const_long_float(o)       \
+                             : (o)->longfloat.value)
 
+#define ecl_set_long_float(o,v) ((o)->longfloat.value=(v))
 
 /* ECL features two implementations of bignums. One (default) is based on GMP,
    and the other has no external dependencies. The latter is conforming but only
