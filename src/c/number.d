@@ -496,17 +496,20 @@ cl_object
 ecl_make_single_float(float f)
 {
   cl_object x;
-
   DO_DETECT_FPE(f);
+#ifdef ECL_IMMEDIATE_SFLOAT
+  x = ecl_encode_sfloat(f);
+#else
   if (f == (float)0.0) {
-#if defined(ECL_SIGNED_ZERO)
+# ifdef(ECL_SIGNED_ZERO)
     if (signbit(f))
       return ecl_ct_singlefloat_minus_zero;
-#endif
+# endif
     return ecl_ct_singlefloat_zero;
   }
   x = ecl_alloc_object(t_singlefloat);
   ecl_set_single_float(x,f);
+#endif
   return(x);
 }
 

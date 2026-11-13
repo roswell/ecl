@@ -513,7 +513,11 @@ void init_type_info (void)
   init_tm(t_list, "CONS", sizeof(struct ecl_cons), 2);
   init_tm(t_bignum, "BIGNUM", sizeof(struct ecl_bignum), 2);
   init_tm(t_ratio, "RATIO", sizeof(struct ecl_ratio), 2);
+/* #ifdef ECL_IMMEDIATE_SFLOAT */
+/*   init_tm(t_singlefloat, "SINGLE-FLOAT", 0, 0); */
+/* #else */
   init_tm(t_singlefloat, "SINGLE-FLOAT", sizeof(struct ecl_singlefloat), 0);
+/* #endif */
   init_tm(t_doublefloat, "DOUBLE-FLOAT", sizeof(struct ecl_doublefloat), 0);
   init_tm(t_longfloat, "LONG-FLOAT", sizeof(struct ecl_long_float), 0);
   init_tm(t_complex, "COMPLEX", sizeof(struct ecl_complex), 2);

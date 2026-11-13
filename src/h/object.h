@@ -185,6 +185,10 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
    may be extended in the future. Then this predicate needs to be updated. */
 #define ECL_IMMEDIATE_VALUE_P(o) ((o)&2)
 
+#if ECL_FIXNUM_BITS == 64
+# define ECL_IMMEDIATE_SFLOAT
+#endif
+
 /* -- Immediate fixnums ----------------------------------------------------- */
 #define ECL_FIXNUM_TAG          t_fixnum
 #define ECL_FIXNUMP(o)          (ECL_FMMEDIATE(o) == t_fixnum)
@@ -344,15 +348,45 @@ decode_const_single_float(cl_object o) {
     }
 }
 
+#ifdef ECL_IMMEDIATE_SFLOAT
+#endif
+
 struct ecl_singlefloat {
         _ECL_HDR;
         float SFVAL;    /*  singlefloat value  */
 };
 
-#define ECL_SINGLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_singlefloat)
-#define ecl_single_float(o)   (ECL_IMMEDIATE(o)                   \
-                               ? decode_const_single_float(o)     \
-                               : (o)->SF.SFVAL)
+#ifdef ECL_IMMEDIATE_SFLOAT
+# define ECL_SINGLE_FLOAT_TAG ECL_EXTENDED_TAG(0b01)
+# define ECL_SINGLE_FLOAT_P(o) ((ECL_XMMEDIATE(o) == ECL_SINGLE_FLOAT_TAG) \
+                                || ECL_BOXED_TYPEP_CONST((o),t_singlefloat))
+# define ecl_single_float(o) ((ECL_XMMEDIATE(o) == ECL_SINGLE_FLOAT_TAG) \
+                              ? ecl_decode_sfloat(o)                    \
+                              : (ECL_IMMEDIATE(o)                       \
+                                 ? decode_const_single_float(o)         \
+                                 : (o)->SF.SFVAL))
+
+static inline cl_object
+ecl_encode_sfloat(float f)
+{
+    union {float f; uint32_t i;} u;
+    u.f = f;
+    return (cl_object)((((cl_index)(u.i)) << ECL_XTAG_BITS) | ECL_SINGLE_FLOAT_TAG);
+}
+
+static inline float
+ecl_decode_sfloat(cl_object o)
+{
+    union {float f; uint32_t i;} u;
+    u.i = ((cl_index)(o)) >> ECL_XTAG_BITS;
+    return u.f;
+}
+#else
+# define ECL_SINGLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_singlefloat)
+# define ecl_single_float(o) (ECL_IMMEDIATE(o)                  \
+                              ? decode_const_single_float(o)    \
+                              : (o)->SF.SFVAL)
+#endif
 
 #define ecl_set_single_float(o,v) ((o)->SF.SFVAL=(v))
 
@@ -1443,7 +1477,9 @@ union cl_lispunion {
 #endif
         struct ecl_bignum       big;            /*  bignum  */
         struct ecl_ratio        ratio;          /*  ratio  */
+/* #ifndef ECL_IMMEDIATE_SFLOAT */
         struct ecl_singlefloat  SF;             /*  single floating-point number  */
+/* #endif */
         struct ecl_doublefloat  DF;             /*  double floating-point number  */
         struct ecl_long_float   longfloat;      /*  long-float */
         struct ecl_complex      gencomplex;     /*  generic complex number  */
@@ -1494,12 +1530,15 @@ union cl_lispunion {
 /*
         Type_of.
 */
+
 static inline cl_type ecl_t_of(cl_object o) {
-        int i = ECL_IMMEDIATE(o);
-        if (!i)                return (cl_type)(o->d.t);
+        if (!ECL_IMMEDIATE(o)) return (cl_type)(o->d.t);
         if (ECL_FIXNUMP(o))    return (cl_type)t_fixnum;
         if (ECL_LISTP(o))      return (cl_type)t_list;
         if (ECL_CHARACTERP(o)) return (cl_type)t_character;
+#ifdef ECL_IMMEDIATE_SFLOAT
+        if (ECL_XMMEDIATE(o) == ECL_SINGLE_FLOAT_TAG) return (cl_type)t_singlefloat;
+#endif
         return (cl_type)ECL_CONSTANT_TYPE(o);
 }
 

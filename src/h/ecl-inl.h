@@ -165,11 +165,15 @@
                 (ecl_base_char*)(chars) };                          \
         static const cl_object name = (cl_object)(& name ## _data)
 
-#define ecl_def_ct_single_float(name,f,static,const)                    \
+/* #ifdef ECL_IMMEDIATE_SFLOAT */
+/* # define ecl_def_ct_single_float ecl_def_ct_double_float */
+/* #else */
+# define ecl_def_ct_single_float(name,f,static,const)                   \
         static const struct ecl_singlefloat name ## _data = {           \
                 (int8_t)t_singlefloat, 0, 0, 0,                         \
                 (float)(f) };                                           \
         static const cl_object name = (cl_object)(& name ## _data)
+/* #endif */
 
 #define ecl_def_ct_double_float(name,f,static,const)                    \
         static const struct ecl_doublefloat name ## _data = {           \
