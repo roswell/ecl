@@ -495,30 +495,40 @@ ecl_deliver_fpe(int status)
 cl_object
 ecl_make_single_float(float f)
 {
-  cl_object x;
   DO_DETECT_FPE(f);
 #ifdef ECL_IMMEDIATE_SFLOAT
-  x = ecl_encode_sfloat(f);
+  return ecl_encode_sfloat(f);
 #else
-  if (f == (float)0.0) {
+  {
+    cl_object x;
+    if (f == (float)0.0) {
 # ifdef(ECL_SIGNED_ZERO)
-    if (signbit(f))
-      return ecl_ct_singlefloat_minus_zero;
+      if (signbit(f))
+        return ecl_ct_singlefloat_minus_zero;
 # endif
-    return ecl_ct_singlefloat_zero;
+      return ecl_ct_singlefloat_zero;
+    }
+    x = ecl_alloc_object(t_singlefloat);
+    ecl_set_single_float(x,f);
+    return x;
   }
-  x = ecl_alloc_object(t_singlefloat);
-  ecl_set_single_float(x,f);
 #endif
-  return(x);
 }
 
 cl_object
 ecl_make_double_float(double f)
 {
   cl_object x;
-
   DO_DETECT_FPE(f);
+#ifdef ECL_IMMEDIATE_DFLOAT
+  {
+    union {double f; uint64_t i;} u;
+    u.f = f;
+    if ((u.i>>60 & 0b111) == 0b100
+        || (u.i>>60 & 0b111) == 0b011)
+      return ecl_encode_dfloat(f);
+  }
+#endif
   if (f == (double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
     if (signbit(f))

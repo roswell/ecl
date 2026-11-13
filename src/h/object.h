@@ -187,6 +187,7 @@ typedef cl_object (*cl_objectfn_parse)(cl_object,cl_object,int);
 
 #if ECL_FIXNUM_BITS == 64
 # define ECL_IMMEDIATE_SFLOAT
+# define ECL_IMMEDIATE_DFLOAT
 #endif
 
 /* -- Immediate fixnums ----------------------------------------------------- */
@@ -443,13 +444,65 @@ struct ecl_doublefloat {
         _ECL_HDR;
         double DFVAL;   /*  doublefloat value  */
 };
+#define ecl_set_double_float(o,v) ((o)->DF.DFVAL=(v))
 
-#define ECL_DOUBLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_doublefloat)
-#define ecl_double_float(o)   (ECL_IMMEDIATE(o)                   \
+#ifdef ECL_IMMEDIATE_DFLOAT
+
+# define ECL_DOUBLE_FLOAT_TAG0 0b100
+# define ECL_DOUBLE_FLOAT_TAG1 0b101
+
+/* The exponent high bits are either 011 or 100 to match biased exponent
+   [-255,0] and [1,256]. We encode the double as d[0:59] | sign | tag:
+
+     ((d<<4) | d>>59&(2^4-1) | tag)
+
+   where tag depends on the exponent high bits. */
+static inline cl_object
+ecl_encode_dfloat(double f)
+{
+    union {double f; uint64_t i;} u;
+    uint64_t tag;
+    u.f=f;
+    tag = ((u.i>>60 & 0b111) == 0b100)
+        ? ECL_DOUBLE_FLOAT_TAG0
+        : ECL_DOUBLE_FLOAT_TAG1;
+    return (cl_object)(u.i<<4 | (u.i>>60 & 0b1000) | tag);
+}
+
+static inline double
+ecl_decode_dfloat(cl_object o)
+{
+    union {double f; uint64_t i;} u;
+    cl_index bits = (cl_index)o;
+    u.i = !(bits&1)
+        ? ((bits<<60)                     | bits>>4)
+        : ((bits & 0b1000) | 0b011) << 60 | bits>>4;
+    return u.f;
+}
+
+# define ECL_DOUBLE_FLOAT_P(o) ((ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG0) \
+                                || (ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG1) \
+                                || ECL_BOXED_TYPEP_CONST((o),t_doublefloat))
+# define ecl_double_float(o)   (((ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG0) \
+                                 || (ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG1)) \
+                                ? ecl_decode_dfloat(o)                  \
+                                : ((ECL_IMMEDIATE(o)                    \
+                                    ? decode_const_double_float(o)      \
+                                    : (o)->DF.DFVAL)))
+#else
+
+struct ecl_doublefloat {
+        _ECL_HDR;
+        double DFVAL;   /*  doublefloat value  */
+};
+
+# define ECL_DOUBLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_doublefloat)
+# define ecl_double_float(o)   (ECL_IMMEDIATE(o)                   \
                                ? decode_const_double_float(o)     \
                                : (o)->DF.DFVAL)
+#endif
 
-#define ecl_set_double_float(o,v) ((o)->DF.DFVAL=(v))
+
 
 /* -- long float ------------------------------------------------------------ */
 
@@ -1532,14 +1585,20 @@ union cl_lispunion {
 */
 
 static inline cl_type ecl_t_of(cl_object o) {
-        if (!ECL_IMMEDIATE(o)) return (cl_type)(o->d.t);
-        if (ECL_FIXNUMP(o))    return (cl_type)t_fixnum;
-        if (ECL_LISTP(o))      return (cl_type)t_list;
-        if (ECL_CHARACTERP(o)) return (cl_type)t_character;
-#ifdef ECL_IMMEDIATE_SFLOAT
-        if (ECL_XMMEDIATE(o) == ECL_SINGLE_FLOAT_TAG) return (cl_type)t_singlefloat;
+    int i = ECL_IMMEDIATE(o);
+    if (!i) return (cl_type)(o->d.t);
+    if (ECL_FIXNUMP(o))    return (cl_type)t_fixnum;
+    if (ECL_LISTP(o))      return (cl_type)t_list;
+    if (ECL_CHARACTERP(o)) return (cl_type)t_character;
+#ifdef ECL_IMMEDIATE_DFLOAT
+    if (i & 0b100)
+        return (cl_type)t_doublefloat;
 #endif
-        return (cl_type)ECL_CONSTANT_TYPE(o);
+#ifdef ECL_IMMEDIATE_SFLOAT
+    if (ECL_XMMEDIATE(o) == ECL_SINGLE_FLOAT_TAG)
+        return (cl_type)t_singlefloat;
+#endif
+    return (cl_type)ECL_CONSTANT_TYPE(o);
 }
 
 /*
