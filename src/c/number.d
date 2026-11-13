@@ -497,7 +497,11 @@ ecl_make_single_float(float f)
 {
   DO_DETECT_FPE(f);
 #ifdef ECL_IMMEDIATE_SFLOAT
-  return ecl_encode_sfloat(f);
+  {
+    union {float f; uint32_t i;} u;
+    u.f = f;
+    return ecl_encode_sfloat(u.i);
+  }
 #else
   {
     cl_object x;
@@ -526,7 +530,7 @@ ecl_make_double_float(double f)
     u.f = f;
     if ((u.i>>60 & 0b111) == 0b100
         || (u.i>>60 & 0b111) == 0b011)
-      return ecl_encode_dfloat(f);
+      return ecl_encode_dfloat(u.i);
   }
 #endif
   if (f == (double)0.0) {

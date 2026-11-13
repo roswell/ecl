@@ -368,11 +368,9 @@ struct ecl_singlefloat {
                                  : (o)->SF.SFVAL))
 
 static inline cl_object
-ecl_encode_sfloat(float f)
+ecl_encode_sfloat(uint32_t bits)
 {
-    union {float f; uint32_t i;} u;
-    u.f = f;
-    return (cl_object)((((cl_index)(u.i)) << ECL_XTAG_BITS) | ECL_SINGLE_FLOAT_TAG);
+    return (cl_object)((((cl_index)bits) << ECL_XTAG_BITS) | ECL_SINGLE_FLOAT_TAG);
 }
 
 static inline float
@@ -452,39 +450,38 @@ struct ecl_doublefloat {
 # define ECL_DOUBLE_FLOAT_TAG1 0b101
 
 /* The exponent high bits are either 011 or 100 to match biased exponent
-   [-255,0] and [1,256]. We encode the double as d[0:59] | sign | tag:
+   [-255,0] and [1,256]. We encode the double as d[0:59] | sign | tag.
+   Available tags are 100 and 101. The key observation is:
 
-     ((d<<4) | d>>59&(2^4-1) | tag)
+     0b100 + 1 == 0b101
+     0b011 + 1 == 0b100
 
-   where tag depends on the exponent high bits. */
+   So the encoder and decoder are:
+
+     (f     << 4) | ((f    >> 60)) + 1 ; encode
+     ((p-1) >> 4) | ((p-1) << 60)      ; decode */
+
 static inline cl_object
-ecl_encode_dfloat(double f)
+ecl_encode_dfloat(uint64_t bits)
 {
-    union {double f; uint64_t i;} u;
-    uint64_t tag;
-    u.f=f;
-    tag = ((u.i>>60 & 0b111) == 0b100)
-        ? ECL_DOUBLE_FLOAT_TAG0
-        : ECL_DOUBLE_FLOAT_TAG1;
-    return (cl_object)(u.i<<4 | (u.i>>60 & 0b1000) | tag);
+    cl_index ptr;
+    ptr = (bits << 4) | (bits>>60);
+    return (cl_object)(ptr+1);
 }
 
 static inline double
 ecl_decode_dfloat(cl_object o)
 {
     union {double f; uint64_t i;} u;
-    cl_index bits = (cl_index)o;
-    u.i = !(bits&1)
-        ? ((bits<<60)                     | bits>>4)
-        : ((bits & 0b1000) | 0b011) << 60 | bits>>4;
+    cl_index ptr = (cl_index)o - 1;
+    u.i = (ptr >> 4) | (ptr << 60);
     return u.f;
 }
 
-# define ECL_DOUBLE_FLOAT_P(o) ((ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG0) \
-                                || (ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG1) \
+#define ECL_DMMEDIATE(o) (((cl_index)(o)&0b110) == 0b100)
+# define ECL_DOUBLE_FLOAT_P(o) (ECL_DMMEDIATE(o)                        \
                                 || ECL_BOXED_TYPEP_CONST((o),t_doublefloat))
-# define ecl_double_float(o)   (((ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG0) \
-                                 || (ECL_IMMEDIATE(o) == ECL_DOUBLE_FLOAT_TAG1)) \
+# define ecl_double_float(o)   (ECL_DMMEDIATE(o)                        \
                                 ? ecl_decode_dfloat(o)                  \
                                 : ((ECL_IMMEDIATE(o)                    \
                                     ? decode_const_double_float(o)      \
