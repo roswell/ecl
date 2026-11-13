@@ -273,11 +273,14 @@ ecl_eql(cl_object x, cl_object y)
 {
   if (x == y)
     return TRUE;
-  if (ECL_IMMEDIATE(x) || ECL_IMMEDIATE(y))
+  /* XXX */
+  cl_type tx = ecl_t_of(x);
+  cl_type ty = ecl_t_of(y);
+  /* if (ECL_IMMEDIATE(x) || ECL_IMMEDIATE(y)) */
+  /*   return FALSE; */
+  if (tx != ty)
     return FALSE;
-  if (x->d.t != y->d.t)
-    return FALSE;
-  switch (x->d.t) {
+  switch (tx) {
   case t_bignum:
     return (_ecl_big_compare(x, y) == 0);
   case t_ratio:
