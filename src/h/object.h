@@ -380,6 +380,23 @@ ecl_decode_sfloat(cl_object o)
     u.i = ((cl_index)(o)) >> ECL_XTAG_BITS;
     return u.f;
 }
+
+extern ECL_API cl_object ecl_make_single_float_slow(float f);
+
+static inline cl_object
+ecl_make_single_float_fast(float f)
+{
+    union {float f; uint32_t i;} u;
+    u.f = f;
+    /* Fast check for NaN / infinity ranges. */
+    if (ecl_unlikely(((u.i >> 23) & 0b11111111) == 0b11111111))
+        return ecl_make_single_float_slow(f);
+    else
+        return ecl_encode_sfloat(u.i);
+}
+
+#define ecl_make_single_float ecl_make_single_float_fast
+
 #else
 # define ECL_SINGLE_FLOAT_P(o) ECL_BOXED_TYPEP_CONST((o),t_singlefloat)
 # define ecl_single_float(o) (ECL_IMMEDIATE(o)                  \
@@ -477,6 +494,23 @@ ecl_decode_dfloat(cl_object o)
     u.i = (ptr >> 4) | (ptr << 60);
     return u.f;
 }
+
+extern ECL_API cl_object ecl_make_double_float_slow(double f);
+
+static inline cl_object
+ecl_make_double_float_fast(double f)
+{
+    /* This fuses double window check and ecl_encode_dfloat. */
+    union {double f; uint64_t i;} u;
+    cl_index ptr;
+    u.f = f;
+    ptr = ((u.i<<4) | (u.i>>60))+1;
+    if (ecl_likely((ptr&6)==4))
+        return (cl_object)ptr;
+    return ecl_make_double_float_slow(f);
+}
+
+#define ecl_make_double_float ecl_make_double_float_fast
 
 #define ECL_DMMEDIATE(o) (((cl_index)(o)&0b110) == 0b100)
 # define ECL_DOUBLE_FLOAT_P(o) (ECL_DMMEDIATE(o)                        \

@@ -493,7 +493,7 @@ ecl_deliver_fpe(int status)
 }
 
 cl_object
-ecl_make_single_float(float f)
+ecl_make_single_float_slow(float f)
 {
   DO_DETECT_FPE(f);
 #ifdef ECL_IMMEDIATE_SFLOAT
@@ -520,7 +520,7 @@ ecl_make_single_float(float f)
 }
 
 cl_object
-ecl_make_double_float(double f)
+ecl_make_double_float_slow(double f)
 {
   cl_object x;
 #ifdef ECL_IMMEDIATE_DFLOAT
