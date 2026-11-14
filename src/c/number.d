@@ -523,16 +523,18 @@ cl_object
 ecl_make_double_float(double f)
 {
   cl_object x;
-  DO_DETECT_FPE(f);
 #ifdef ECL_IMMEDIATE_DFLOAT
   {
+    /* This fuses double window check and ecl_encode_dfloat. */
     union {double f; uint64_t i;} u;
+    cl_index ptr;
     u.f = f;
-    if ((u.i>>60 & 0b111) == 0b100
-        || (u.i>>60 & 0b111) == 0b011)
-      return ecl_encode_dfloat(u.i);
+    ptr = ((u.i<<4) | (u.i>>60))+1;
+    if (ecl_likely((ptr&6)==4))
+      return (cl_object)ptr;
   }
 #endif
+  DO_DETECT_FPE(f);
   if (f == (double)0.0) {
 #if defined(ECL_SIGNED_ZERO)
     if (signbit(f))
