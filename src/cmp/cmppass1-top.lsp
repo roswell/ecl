@@ -12,7 +12,7 @@
 (defun t1expr (form)
   (let* ((*current-toplevel-form* nil)
          (*cmp-env* (cmp-env-copy *cmp-env*)))
-    (push (t1expr* form) *top-level-forms*)))
+    (push-top-level-node (t1expr* form))))
 
 (defvar *toplevel-forms-to-print*
   '(defun defmacro defvar defparameter defclass defmethod defgeneric))
@@ -100,13 +100,8 @@
 ;;; top-level forms. This allows the programmer to define a constant with value
 ;;; being an instance of the class defined in the same compilation unit.
 (defun add-load-time-values (form)
-  (let ((previous (append (and (consp *load-time-values*)
-                               (nreverse *load-time-values*))
-                          (nreverse *make-forms*))))
-    (when previous
-      (setf *load-time-values* nil
-            *make-forms* nil)
-      (setf form (make-c1form* 'PROGN :args (nconc previous (list form))))))
+  (ext:when-let ((previous (flush-load-nodes)))
+    (setf form (make-c1form* 'PROGN :args (nconc previous (list form)))))
   form)
 
 (defun t1defmacro (args)
@@ -131,8 +126,8 @@
              (c1constant-value (cmp-eval form))))
           ((typep form '(or list symbol))
            (setf loc (data-empty-loc))
-           (push (make-c1form* 'LOAD-TIME-VALUE :args loc (c1expr form))
-                 *load-time-values*))
+           (push-load-time-node
+            (make-c1form* 'LOAD-TIME-VALUE :args loc (c1expr form))))
           (t
            (setf loc (add-object (cmp-eval form)))))
     (make-c1form* 'LOCATION :type t :args loc)))

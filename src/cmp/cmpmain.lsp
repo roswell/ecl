@@ -336,16 +336,13 @@ from the C language code.  NIL means \"do not create the file\"."
           (setf (cdr ext:*source-location*)
                 (+ source-offset *compile-file-position*))
           (t1expr form)))
-      (t1expr object))
-  (setq *top-level-forms* (nreverse *top-level-forms*))
-  (setq *make-forms* (nreverse *make-forms*)))
+      (t1expr object)))
 
 (defun compiler-pass/propagate-types ()
   ;; Type propagation phase
   (when *do-type-propagation*
     (setq *compiler-phase* 'p1propagate)
-    (dolist (form *top-level-forms*)
-      (p1propagate form))))
+    (map-top-level-nodes #'p1propagate)))
 
 (defun print-compiler-info ()
   (cmpprogress "~&;;; OPTIMIZE levels: Safety=~d, Space=~d, Speed=~d, Debug=~d~%;;;~%"

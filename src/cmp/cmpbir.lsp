@@ -11,11 +11,54 @@
 ;;; Module represents a compilation unit. Each compilation unit maintains
 ;;; constants, a set of functions, and a special block of code "top-level" that
 ;;; is executed when the module is loaded.
-#+not-yet
 (defclass module ()
-  ((constants :reader constants :initform (make-array 0 :adjustable t :fill-pointer t))
-   (top-level :accessor top-level :initarg :top-level)
-   (functions :accessor functions :initarg :functions)))
+  (;; AST is represented by a tree of C1FORM instances (called nodes here).
+   ;; TOP-LEVEL-NODES and MAKE-LOAD-NODES are later compiled into a top block.
+   ;; The parser merges eagerly LOAD-TIME-NODES into TOP-LEVEL-NODES.
+   (top-level-nodes :accessor top-level-nodes :initarg :top-level-nodes)
+   (make-load-nodes :accessor make-load-nodes :initarg :make-load-nodes)
+   (load-time-nodes :accessor load-time-nodes :initarg :load-time-nodes)
+   #+ (or) (top-level :accessor top-level :initarg :top-level)
+   #+ (or) (functions :accessor functions :initarg :functions)
+   #+ (or) (constants :accessor constants :initarg :constants))
+  (:default-initargs
+   :top-level-nodes (make-array 0 :adjustable t :fill-pointer t)
+   :make-load-nodes (make-array 0 :adjustable t :fill-pointer t)
+   :load-time-nodes (make-array 0 :adjustable t :fill-pointer t)))
+
+(defun make-module ()
+  (make-instance 'module))
+
+(defun push-top-level-node (node)
+  (vector-push-extend node (top-level-nodes *module*)))
+
+(defun map-top-level-nodes (fun)
+  (map nil fun (top-level-nodes *module*)))
+
+(defun push-make-load-node (node)
+  (vector-push-extend node (make-load-nodes *module*)))
+
+(defun map-make-load-nodes (fun)
+  (map nil fun (make-load-nodes *module*)))
+
+;;; Note that there is no MAP-LOAD-TIME-NODES. This is because LOAD-TIME-VALUE
+;;; nodes are part of an AST of another top-level form and they are immediately
+;;; flushed after parsing it (by ADD-LOAD-TIME-VALUES). That's why load time
+;;; values don't need to be explicitly emitted as top-level forms.
+(defun push-load-time-node (node)
+  (vector-push-extend node (load-time-nodes *module*)))
+
+;;; This function is invoked by ADD-LOAD-TIME-VALUES that is responsible for
+;;; placing MAKE-LOAD-FORMs and LOAD-TIME-FORMs before the next top-level form.
+;;; Thanks to that i.e DEFCLASS can reference a constant defined earlier.
+(defun flush-load-nodes ()
+  (ext:if-let ((nodes (append (coerce (load-time-nodes *module*) 'list)
+                              (coerce (make-load-nodes *module*) 'list))))
+    (progn
+      (setf (fill-pointer (make-load-nodes *module*)) 0)
+      (setf (fill-pointer (load-time-nodes *module*)) 0)
+      nodes)
+    nil))
 
 ;;; BIR represents a control flow graph. It maintains four pointers to iblocks:
 ;;; - bir-enter - the entry point to the program

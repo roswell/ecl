@@ -24,11 +24,11 @@
       (when make-form
         (let ((*objects-init-deferred* nil)
               (*objects-being-created* (list* object *objects-being-created*)))
-          (push (make-c1form* 'MAKE-FORM :args location (c1expr make-form)) *make-forms*)
+          (push-make-load-node (make-c1form* 'MAKE-FORM :args location (c1expr make-form)))
           (setf deferred (nreverse *objects-init-deferred*))))
       (flet ((maybe-init (loc init)
                (handler-case
-                   (push (make-c1form* 'INIT-FORM :args loc (c1expr init)) *make-forms*)
+                   (push-make-load-node (make-c1form* 'INIT-FORM :args loc (c1expr init)))
                  (circular-dependency (c)
                    (if *objects-being-created*
                        (push (cons location init-form) *objects-init-deferred*)
