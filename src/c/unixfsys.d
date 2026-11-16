@@ -1082,6 +1082,63 @@ dir_recursive(cl_object base_dir, cl_object directory, cl_object filemask, int f
   @(return output);
   @)
 
+#if defined(ECL_MS_WINDOWS_HOST) && defined(ECL_BINDIR)
+static bool
+path_separator_p(int c)
+{
+  return c == '/' || c == '\\';
+}
+
+/* ecl.dll is installed in BINDIR and the modules in ECLDIR. With the default
+ * flat installation on Windows both are the same directory; otherwise (e.g.
+ * configure --disable-flatinstall) ECLDIR is typically BINDIR/../lib/ecl-x.y.z.
+ * Both are only known at build time, so we apply the path from BINDIR to ECLDIR
+ * to the directory where ecl.dll actually is: this keeps the installation
+ * relocatable. BUFFER holds that directory with a trailing separator and LEN
+ * characters; the new length is returned, or LEN when nothing has to change
+ * or the two directories have no common prefix (e.g. different drives). */
+static cl_index
+relocate_library_directory(ecl_filename_char *buffer, cl_index len, cl_index max)
+{
+  const char *bin = ECL_BINDIR, *dir = ECLDIR;
+  cl_index common = 0, i, ups = 0, new_len = len;
+  if (len == 0)
+    return len;
+  for (i = 0; bin[i] && bin[i] == dir[i]; i++) {
+    if (path_separator_p(bin[i]))
+      common = i + 1;
+  }
+  if ((bin[i] == 0 && (dir[i] == 0 || path_separator_p(dir[i]))) ||
+      (dir[i] == 0 && path_separator_p(bin[i])))
+    common = i;
+  if (common == 0)
+    return len;
+  /* Each component of BINDIR after the common prefix is one level up. */
+  for (i = common; bin[i]; i++) {
+    if (!path_separator_p(bin[i]) && (i == common || path_separator_p(bin[i-1])))
+      ups++;
+  }
+  for (; ups > 0; ups--) {
+    if (new_len < 2)
+      return len;
+    for (new_len--; new_len > 0 && !path_separator_p(buffer[new_len-1]); new_len--);
+    if (new_len == 0)
+      return len;
+  }
+  for (i = common; dir[i]; i++) {
+    if (path_separator_p(dir[i]) && (new_len == 0 || path_separator_p(buffer[new_len-1])))
+      continue;
+    if (new_len + 2 >= max)
+      return len;
+    buffer[new_len++] = path_separator_p(dir[i]) ? '\\' : dir[i];
+  }
+  if (!path_separator_p(buffer[new_len-1]))
+    buffer[new_len++] = '\\';
+  buffer[new_len] = 0;
+  return new_len;
+}
+#endif
+
 cl_object
 si_get_library_pathname(void)
 {
@@ -1114,6 +1171,9 @@ si_get_library_pathname(void)
      * the directory component. */
     for (; len > 0 && buffer[len-1] != '\\'; len--);
     buffer[len] = '\0';
+#if defined(ECL_BINDIR)
+    len = relocate_library_directory(buffer, len, ecl_core.path_max-1);
+#endif
     s->base_string.fillp = len;
   }
 #else

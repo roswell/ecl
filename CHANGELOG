@@ -29,6 +29,11 @@
 
 * Pending changes since 26.5.5
 
+- build: the new configure option --enable-flatinstall (yes|no|auto) selects
+  the installation layout; --disable-flatinstall gives MinGW a standard
+  bin/lib/include layout, the modules being located relative to ecl.dll
+  (#808)
+
 - added a new file CONTRIBUTING that outlines expected practices
 
 - build: support for Microsoft Visual Studio Compiler has been dropped

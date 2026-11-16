@@ -111,9 +111,9 @@ $(HDIR)/%.h: $(top_srcdir)/h/%.h
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@ ; else $(DPP) $< $@ ; fi
 %.o: %.d $(DPP) $(HFILES)
 	if test -f ../CROSS-DPP ; then ../CROSS-DPP $< $@.c ; else $(DPP) $< $@.c ; fi
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $@.c
+	$(CC) -DECLDIR="\"@ecldir@\"" -DECL_BINDIR="\"@bindir@\"" $(CFLAGS) -o $@ $@.c
 %.o: %.c $(HFILES)
-	$(CC) -DECLDIR="\"@ecldir@\"" $(CFLAGS) -o $@ $<
+	$(CC) -DECLDIR="\"@ecldir@\"" -DECL_BINDIR="\"@bindir@\"" $(CFLAGS) -o $@ $<
 
 ../libeclmin.a: $(OBJS) all_symbols.o all_symbols2.o
 	$(RM) $@
