@@ -566,6 +566,13 @@ case "${host}" in
                 ;;
 esac
 
+case "${enable_flatinstall}" in
+  yes) INSTALL_TARGET='flatinstall' ;;
+  no) INSTALL_TARGET='install' ;;
+  auto) ;;
+  *) AC_MSG_ERROR([Invalid value for --enable-flatinstall: ${enable_flatinstall}]) ;;
+esac
+
 if test "${INSTALL_TARGET}" = "flatinstall"; then
 exec_prefix=""
 bindir="${exec_prefix}"

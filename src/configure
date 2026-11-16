@@ -843,6 +843,7 @@ with_profile_cflags
 with_extra_files
 with_init_form
 enable_manual
+enable_flatinstall
 with_x
 '
       ac_precious_vars='build_alias
@@ -1515,6 +1516,9 @@ Optional Features:
   --enable-debug          enable various debugging features (default=NO)
   --enable-manual={auto|html|info|no}
                           Enable building of the manual (default=AUTO)
+  --enable-flatinstall    install all files directly in PREFIX instead of the
+                          bin, lib and include subdirectories (yes|no|auto,
+                          default=auto: yes on MinGW and Emscripten)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3758,6 +3762,16 @@ then :
   enableval=$enable_manual; enable_manual=${enableval}
 else case e in #(
   e) enable_manual=auto ;;
+esac
+fi
+
+
+# Check whether --enable-flatinstall was given.
+if test ${enable_flatinstall+y}
+then :
+  enableval=$enable_flatinstall;
+else case e in #(
+  e) enable_flatinstall=auto ;;
 esac
 fi
 
@@ -6557,6 +6571,13 @@ LSP_FEATURES="${LSP_FEATURES} :c-compatible-variadic-dispatch"
 LSP_FEATURES="${LSP_FEATURES} :emscripten"
 
                 ;;
+esac
+
+case "${enable_flatinstall}" in
+  yes) INSTALL_TARGET='flatinstall' ;;
+  no) INSTALL_TARGET='install' ;;
+  auto) ;;
+  *) as_fn_error $? "Invalid value for --enable-flatinstall: ${enable_flatinstall}" "$LINENO" 5 ;;
 esac
 
 if test "${INSTALL_TARGET}" = "flatinstall"; then

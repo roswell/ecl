@@ -294,6 +294,13 @@ AC_ARG_ENABLE(manual,
   [enable_manual=${enableval}],
   [enable_manual=auto])
 
+AC_ARG_ENABLE(flatinstall,
+  AS_HELP_STRING( [--enable-flatinstall],
+                  [install all files directly in PREFIX instead of the]
+                  [bin, lib and include subdirectories]
+                  [(yes|no|auto, default=auto: yes on MinGW and Emscripten)]),
+  [], [enable_flatinstall=auto])
+
 dnl -----------------------------------------------------------------------
 dnl Installation directories
 AC_ARG_VAR([ecldir], [the directory where *.fas files are installed])
