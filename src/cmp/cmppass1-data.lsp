@@ -19,7 +19,7 @@
 
 (defun add-load-form (object location)
   (multiple-value-bind (make-form init-form) (make-load-form object)
-    (setf (gethash object *load-objects*) location)
+    (push-object-location object location)
     (let (deferred)
       (when make-form
         (let ((*objects-init-deferred* nil)
@@ -42,21 +42,23 @@
   (add-object *empty-loc* :duplicate t :permanent t))
 
 (defun find-vv (object &key permanent (errorp t))
-  (let* ((test (if si:*compiler-constants* 'eq 'equal-with-circularity))
-         (item (find object *referenced-objects* :test test :key #'vv-value)))
-    (if (null item)
-        (when errorp
-          (cmperr "Unable to find object ~s." object))
-        (when permanent
-          ;; Objects are put in the appropriate storage in the second pass and
-          ;; we still can move them. If we look for a permanent object that was
-          ;; allocated as a temporary one, then change it to permanent.
-          (setf (vv-permanent-p item) t)))
-    item))
+  (let ((test (if si:*compiler-constants* 'eq 'equal-with-circularity)))
+    (flet ((find-object (item)
+             (when (funcall test object (vv-value item))
+               (when permanent
+                 ;; Objects are put in the appropriate storage in the second
+                 ;; pass and we still can move them. If we look for a permanent
+                 ;; object that is a temporary one, then promote it to.
+                 (setf (vv-permanent-p item) t))
+               (return-from find-vv item))))
+      (map-referenced-objects #'find-object))
+    (when errorp
+      (cmperr "Unable to find object ~s." object))
+    nil))
 
 (defun push-vv (&rest args &key permanent-p value)
   (let ((vv (apply #'make-vv args)))
-    (vector-push-extend vv *referenced-objects*)
+    (push-referenced-object vv)
     vv))
 
 (defun add-object (object &key
