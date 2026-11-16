@@ -176,10 +176,10 @@
   (with-stack-frame (frame)
     (let ((*destination* 'VALUEZ))
       (c2expr* form))
-    (wt-nl "ecl_stack_frame_push_values(" frame ");")
+    (push-instruction :frame-push-values frame)
     (let ((*destination* 'TRASH))
       (mapc #'c2expr* body))
-    (wt-nl "ecl_stack_frame_pop_values(" frame ");")
+    (push-instruction :frame-pop-values frame)
     (unwind-exit 'VALUEZ)))
 
 (defun c2values (c1form forms)
@@ -196,15 +196,10 @@
     ;; actually used) and set only NVALUES when the value is the output of a
     ;; function.
     ((endp forms)
+     (push-instruction :clear-values)
      (case *destination*
-       (VALUEZ
-        (wt-nl "cl_env_copy->values[0] = ECL_NIL;")
-        (wt-nl "cl_env_copy->nvalues = 0;")
-        (unwind-exit 'VALUEZ))
-       (LEAVE
-        (wt-nl "value0 = ECL_NIL;")
-        (wt-nl "cl_env_copy->nvalues = 0;")
-        (unwind-exit 'LEAVE))
+       (VALUEZ    (unwind-exit 'VALUEZ))
+       (LEAVE     (unwind-exit 'LEAVE))
        (otherwise (unwind-exit *vv-nil*))))
     ;; For a single form, we must simply ensure that we only take a single
     ;; value of those that the function may output.
@@ -221,14 +216,6 @@
     ;; and force the compiler to retrieve anything out of it.
     (t
      (with-inline-blocks ()
-       (let* ((nv (length forms))
-              (forms (nreverse (coerce-args (inline-args forms)))))
-         ;; By inlining arguments we make sure that VL has no call to funct.
-         ;; Reverse args to avoid clobbering VALUES(0)
-         (wt-nl "cl_env_copy->nvalues = " nv ";")
-         (do ((vl forms (rest vl))
-              (i (1- (length forms)) (1- i)))
-             ((null vl))
-           (declare (fixnum i))
-           (wt-nl "cl_env_copy->values[" i "] = " (first vl) ";"))
+       (let ((forms (coerce-args (inline-args forms))))
+         (apply #'push-instruction :store-values forms)
          (unwind-exit 'VALUEZ))))))
