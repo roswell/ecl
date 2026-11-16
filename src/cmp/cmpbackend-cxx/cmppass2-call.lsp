@@ -55,8 +55,8 @@
         (dolist (arg args)
           (c2expr* arg)
           (if values-p
-              (wt-nl "ecl_stack_frame_push_values(" frame ");")
-              (wt-nl "ecl_stack_frame_push(" frame ",value0);"))))
+              (push-instruction :frame-push-values frame)
+              (push-instruction :frame-push frame "value0"))))
       (unwind-exit (call-global-stack-loc nil loc)))))
 
 ;;;
@@ -69,12 +69,13 @@
 (defun c2call-local-stack (c1form fun args)
   (declare (type fun fun))
   (with-stack-frame (frame)
-    (let ((evaluated-args (mapcar #'(lambda (arg)
-                                      (let ((*destination* (make-temp-var t)))
-                                        (c2expr* arg)
-                                        (wt-nl "ecl_stack_frame_push(" frame "," *destination* ");")
-                                        *destination*))
-                                  args)))
+    (let ((evaluated-args
+            (mapcar #'(lambda (arg)
+                        (let ((*destination* (make-temp-var t)))
+                          (c2expr* arg)
+                          (push-instruction :frame-push frame *destination*)
+                          *destination*))
+                    args)))
       (unwind-exit (call-local-stack-loc fun
                                          evaluated-args
                                          (c1form-primary-type c1form))))))
@@ -255,23 +256,7 @@
 (defun call-exported-function-loc (fname args fun-c-name minarg maxarg in-core type)
   (unless in-core
     ;; We only write declarations for functions which are not in lisp_external.h
-    (multiple-value-bind (val declared)
-        (gethash fun-c-name *compiler-declared-globals*)
-      (declare (ignore val))
-      (unless declared
-        (if (= maxarg minarg)
-            (progn
-              (wt-nl-h "extern cl_object " fun-c-name "(")
-              (dotimes (i maxarg)
-                (when (> i 0) (wt-h1 ","))
-                (wt-h1 "cl_object"))
-              (wt-h1 ");"))
-            (progn
-              (wt-nl-h "extern cl_object " fun-c-name "(cl_narg")
-              (dotimes (i (min minarg si:c-arguments-limit))
-                (wt-h1 ",cl_object"))
-              (wt-h1 ",...);")))
-        (setf (gethash fun-c-name *compiler-declared-globals*) 1))))
+    (push-instruction :declare-c-fun fun-c-name minarg maxarg))
   (let ((fun (make-fun :name fname :global t :cfun fun-c-name :lambda 'NIL
                        :minarg minarg :maxarg maxarg)))
     (call-loc fname fun args type)))
