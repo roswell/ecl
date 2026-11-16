@@ -27,7 +27,7 @@
   (loop for array in (list *permanent-objects* *temporary-objects*)
         nconc (loop for vv-record across array
                     for object = (vv-value vv-record)
-                    collect (cond ((gethash object *load-objects*)
+                    collect (cond ((find-object-location object)
                                    0)
                                   ((eq object *empty-loc*)
                                    0)
@@ -344,7 +344,7 @@
 ;;;
 ;;; TODO we could further optimize immediate values by duplicating some entries
 ;;; depending on the expected host-type, to avoid unnecessary coercions.
-(defun optimize-cxx-data (objects)
+(defun optimize-cxx-data ()
   (flet ((optimize-vv (object)
            (let ((value (vv-value object)))
              (ext:if-let ((vv (and (not (vv-always object))
@@ -354,7 +354,7 @@
                                        (try-immediate-value value)))))
                (update-vv object vv)
                (insert-vv object)))))
-    (map nil #'optimize-vv objects)))
+    (map-referenced-objects #'optimize-vv)))
 
 (defun add-keywords (keywords)
   ;; We have to build, in the vector VV[], a sequence with all the keywords

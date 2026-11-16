@@ -187,9 +187,6 @@ lines are inserted, but the order is preserved")
 
 ;;; Determines whether the object may be released after the initialization
 (defvar *permanent-data* nil)
-(defvar *referenced-objects* nil)       ; holds { vv-record }*
-
-(defvar *load-objects* nil)             ; hash with association object -> vv-location
 
 (defvar si:*compiler-constants* nil)    ; a vector with all constants only used
                                         ; in COMPILE
@@ -222,8 +219,6 @@ be deleted if they have been opened with LoadLibrary.")
     (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* *cmp-env-root*)
-    (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))
     (*global-vars* nil)
     (*global-funs* nil)
     (*undefined-vars* nil)

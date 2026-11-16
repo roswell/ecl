@@ -311,7 +311,7 @@ from the C language code.  NIL means \"do not create the file\"."
                            (apply t3function args))))
                (compiler-pass1 disassembled-form)
                (compiler-pass/propagate-types)
-               (optimize-cxx-data *referenced-objects*)
+               (optimize-cxx-data)
                (ctop-write (compute-init-name "foo" :kind :fasl)
                            (if h-file h-file "")
                            (if data-file data-file ""))

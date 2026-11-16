@@ -18,7 +18,7 @@
     (with-cxx-env ()
       ;; After this step we still can add new objects, but objects that are
       ;; already stored in VV or VVtemp must not change the location.
-      (optimize-cxx-data *referenced-objects*)
+      (optimize-cxx-data)
       (setq *compiler-phase* 't2)
       (wt-print-header source)
       (wt-nl1 "#include " *cmpinclude*)

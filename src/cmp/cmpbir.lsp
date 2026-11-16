@@ -18,13 +18,21 @@
    (top-level-nodes :accessor top-level-nodes :initarg :top-level-nodes)
    (make-load-nodes :accessor make-load-nodes :initarg :make-load-nodes)
    (load-time-nodes :accessor load-time-nodes :initarg :load-time-nodes)
+   ;; REFERENCED-OBJECTS are collected during the first pass and represented as
+   ;; VV instances. They are later inlined or exported in the data section.
+   ;; OBJECT-TO-LOCATION is a hash table mapping lisp objects to VV instances.
+   ;; Not all VV instances have a corresponding object.
+   (referenced-objects :accessor referenced-objects :initarg :referenced-objects)
+   (object-to-location :accessor object-to-location :initarg :object-to-location)
    #+ (or) (top-level :accessor top-level :initarg :top-level)
    #+ (or) (functions :accessor functions :initarg :functions)
    #+ (or) (constants :accessor constants :initarg :constants))
   (:default-initargs
    :top-level-nodes (make-array 0 :adjustable t :fill-pointer t)
    :make-load-nodes (make-array 0 :adjustable t :fill-pointer t)
-   :load-time-nodes (make-array 0 :adjustable t :fill-pointer t)))
+   :load-time-nodes (make-array 0 :adjustable t :fill-pointer t)
+   :referenced-objects (make-array 256 :adjustable t :fill-pointer 0)
+   :object-to-location (make-hash-table :size 128 :test #'equal)))
 
 (defun make-module ()
   (make-instance 'module))
@@ -59,6 +67,20 @@
       (setf (fill-pointer (load-time-nodes *module*)) 0)
       nodes)
     nil))
+
+;;; Referenced objects (VV records).
+
+(defun push-referenced-object (vv)
+  (vector-push-extend vv (referenced-objects *module*)))
+
+(defun map-referenced-objects (fun)
+  (map nil fun (referenced-objects *module*)))
+
+(defun push-object-location (object location)
+  (setf (gethash object (object-to-location *module*)) location))
+
+(defun find-object-location (object)
+  (gethash object (object-to-location *module*)))
 
 ;;; BIR represents a control flow graph. It maintains four pointers to iblocks:
 ;;; - bir-enter - the entry point to the program
