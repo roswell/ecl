@@ -188,9 +188,7 @@ lines are inserted, but the order is preserved")
 (defvar *referenced-objects* nil)       ; holds { vv-record }*
 
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
-(defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
-;;;  where each vv-index should be given an object before
-;;;  defining the current function during loading process.
+(defvar *load-time-values* nil)         ; holds { c1form }* or 'VALUES
 
 (defvar si:*compiler-constants* nil)    ; a vector with all constants only used
                                         ; in COMPILE

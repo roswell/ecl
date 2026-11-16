@@ -24,11 +24,14 @@
   (setq form (chk-symbol-macrolet form))
   (unless (consp form)
     (return-from t1expr* (t1ordinary 'NIL)))
-  (let ((fun (car form)) (args (cdr form)) fd)
+  (let ((fun (car form))
+        (args (cdr form))
+        fd)
     (when (member fun *toplevel-forms-to-print*)
       (print-current-form))
     (cond
-      ((consp fun) (t1ordinary form))
+      ((consp fun)
+       (t1ordinary form))
       ((not (symbolp fun))
        (cmperr "~s is illegal function." fun))
       ((eq fun 'QUOTE)
@@ -93,6 +96,9 @@
         (*compile-time-too* nil))
     (add-load-time-values (make-c1form* 'ORDINARY :args (c1expr form)))))
 
+;;; Include load forms accumulated between this and the last top level form as
+;;; top-level forms. This allows the programmer to define a constant with value
+;;; being an instance of the class defined in the same compilation unit.
 (defun add-load-time-values (form)
   (let ((previous (append (and (consp *load-time-values*)
                                (nreverse *load-time-values*))
