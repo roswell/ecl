@@ -124,10 +124,9 @@
   (check-args-number 'LOAD-TIME-VALUE args 1 2)
   (let ((form (first args))
         loc)
-    (cond ((not (listp *load-time-values*))
-           ;; When using COMPILE, we set *load-time-values* to 'VALUES and
-           ;; thus signal that we do not want to compile these forms, but
-           ;; just to retain their value.
+    (cond ((not *compile-file-p*)
+           ;; When using COMPILE we do not want to compile these forms, but just
+           ;; to retain their value.
            (return-from c1load-time-value
              (c1constant-value (cmp-eval form))))
           ((typep form '(or list symbol))

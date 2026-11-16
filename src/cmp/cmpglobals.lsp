@@ -182,6 +182,8 @@ lines are inserted, but the order is preserved")
 
 (defvar *compile-time-too* nil)
 (defvar *not-compile-time* nil)
+(defvar *compile-file-p*)
+
 
 ;;; Determines whether the object may be released after the initialization
 (defvar *permanent-data* nil)
@@ -229,6 +231,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-funs* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
+    (*load-time-values* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)

@@ -108,7 +108,7 @@ compiled successfully, returns the pathname of the compiled file."
   (let* ((input-file (truename *compile-file-pathname*))
          (*compile-file-truename* input-file)
          (*compiler-in-use* *compiler-in-use*)
-         (*load-time-values* nil)       ; Load time values are compiled.
+         (*compile-file-p* t)
          (output-file (apply #'compile-file-pathname input-file :output-file output-file args))
          (true-output-file nil)         ; Will be set at the end.
          (compiler-conditions nil))
@@ -211,7 +211,7 @@ after compilation."
         (t
          (setq form `(setf (fdefinition ',name) #',form))))
 
-  (let* ((*load-time-values* 'values) ;; Only the value is kept
+  (let* ((*compile-file-p* nil)
          (tmp-names (safe-mkstemp (format nil "TMP:ECL~3,'0x" (incf *gazonk-counter*))))
          (so-pathname (compile-file-pathname (first tmp-names)))
          (compiler-conditions nil)
