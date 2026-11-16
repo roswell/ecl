@@ -190,7 +190,6 @@ lines are inserted, but the order is preserved")
 (defvar *referenced-objects* nil)       ; holds { vv-record }*
 
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
-(defvar *load-time-values* nil)         ; holds { c1form }* or 'VALUES
 
 (defvar si:*compiler-constants* nil)    ; a vector with all constants only used
                                         ; in COMPILE
@@ -198,8 +197,7 @@ lines are inserted, but the order is preserved")
 (defvar *global-vars* nil)              ; variables declared special
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
-(defvar *top-level-forms* nil)          ; holds { top-level-form }*
-(defvar *make-forms* nil)               ; holds { top-level-form }*
+(defvar *module*)                       ; top-level IR container
 
 (defvar *objects-being-created* nil)    ; helps detecting circular references
 (defvar *objects-init-deferred* nil)    ; helps avoiding circularity
@@ -225,15 +223,13 @@ be deleted if they have been opened with LoadLibrary.")
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* *cmp-env-root*)
     (*load-objects* (make-hash-table :size 128 :test #'equal))
-    (*make-forms* nil)
     (*referenced-objects* (make-array 256 :adjustable t :fill-pointer 0))
     (*global-vars* nil)
     (*global-funs* nil)
     (*undefined-vars* nil)
-    (*top-level-forms* nil)
-    (*load-time-values* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)
-    (*machine* (or *machine* *default-machine*))))
+    (*machine* (or *machine* *default-machine*))
+    (*module* (make-module))))
 
