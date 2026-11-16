@@ -202,16 +202,6 @@ lines are inserted, but the order is preserved")
 (defvar *objects-being-created* nil)    ; helps detecting circular references
 (defvar *objects-init-deferred* nil)    ; helps avoiding circularity
 
-;;;
-;;;     top-level-form:
-;;;       ( 'DEFUN'     fun-name cfun lambda-expr doc-vv sp )
-;;;     | ( 'DEFMACRO'  macro-name cfun lambda-expr doc-vv sp )
-;;;     | ( 'ORDINARY'  expr )
-;;;     | ( 'DECLARE'   var-name-vv )
-;;;     | ( 'DEFVAR'    var-name-vv expr doc-vv )
-;;;     | ( 'CLINES'    string* )
-;;;     | ( 'LOAD-TIME-VALUE' vv )
-
 (defvar *self-destructing-fasl* '()
 "A value T means that, when a FASL module is being unloaded (for
 instance during garbage collection), the associated file will be
