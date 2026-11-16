@@ -247,7 +247,7 @@
        ,@body
        (unless ,reuse
          (bir-rewind *bir* (exit-iblock ,var))
-         (wt-label ,var)))))
+         (push-instruction :label ,var)))))
 
 ;;; This macro estabilishes a frame to handle dynamic escapes like GO, THROW and
 ;;; RETURN-FROM to intercept the control and eval UNWIND-PROTECT cleanup forms.
