@@ -766,3 +766,16 @@
     (is (= c1 c2))
     ;; The regression test.
     (is (= (complex r1 c1) (complex r2 c2)))))
+
+;;; Reported by: Gábor Melis
+;;; Created: 2026-11-18
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/820
+;;; Description
+(deftest mix.0040.trace-lambda-list ()
+  (ext:with-clean-symbols (foo)
+    (defun foo (x))
+    (trace foo)
+    (let ((result (ext:function-lambda-list #'foo)))
+      (is (eq (car result) 'x))
+      (is (not (eq (car result) '&REST)))
+      (is (not (eq (cadr result) 'SI::ARGS))))))
