@@ -796,6 +796,10 @@ Use special code 0 to cancel this operation.")
     (values args (and args t))))
 
 (defun function-lambda-list (function)
+  (when (and (boundp 'si:*trace-list*) si:*trace-list*)
+    (setq function (or (third (find function
+                                    si:*trace-list* :key #'second :test #'eq))
+                       function)))
   (cond
     ((symbolp function)
      (cond ((or (special-operator-p function)

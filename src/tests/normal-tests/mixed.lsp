@@ -771,6 +771,9 @@
 ;;; Created: 2026-11-18
 ;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/820
 ;;; Description
+;;;
+;;;     Because `defun` was being evaluated during the `trace`, the
+;;;     lambda-list was overwritten with `&REST` and `SI::ARGS`.
 (deftest mix.0040.trace-lambda-list ()
   (ext:with-clean-symbols (foo)
     (defun foo (x))
