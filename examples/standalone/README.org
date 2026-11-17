@@ -1,0 +1,48 @@
+#+TITLE: Build a standalone binary
+#+AUTHOR: Thomas Fitzsimmons <fitzsim@fitzsim.org>
+
+This directory provides an example of how to build a standalone
+executable that bundles (statically links) the ECL runtime.
+
+~Containerfile~ demonstrates how to build an application as a
+standalone executable that statically links the ECL runtime, but
+dynamically links to libraries that are widely available.
+
+Features:
+
+- Dynamically link to an older glibc version, 2.34, so that the binary
+  is compatible with any newer glibc version
+
+- Dynamically link to gmp and libffi which are expected to be
+  pre-installed
+
+- Support dynamically loading shared libraries to allow CFFI foreign
+  module loading
+
+- Do not look for ~help.doc~ in the file system
+
+- Work around https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/848
+
+Build the binary with:
+
+#+BEGIN_SRC bash
+podman build --output . .
+#+END_SRC
+
+Run it with:
+
+#+BEGIN_SRC bash
+./my-application
+#+END_SRC
+
+Confirm it does not need libecl.so with:
+
+#+BEGIN_SRC bash
+$ ldd ./my-application
+	linux-vdso64.so.1 (0x00003fff8b072000)
+	libffi.so.8 => /lib/powerpc64le-linux-gnu/libffi.so.8 (0x00003fff8b010000)
+	libgmp.so.10 => /lib/powerpc64le-linux-gnu/libgmp.so.10 (0x00003fff8af40000)
+	libm.so.6 => /lib/powerpc64le-linux-gnu/libm.so.6 (0x00003fff8adf0000)
+	libc.so.6 => /lib/powerpc64le-linux-gnu/libc.so.6 (0x00003fff8ab80000)
+	/lib64/ld64.so.2 (0x00003fff8b080000)
+#+END_SRC

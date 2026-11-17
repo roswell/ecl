@@ -1,0 +1,64 @@
+# Containerfile -- Build a standalone binary with ECL
+#
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Copyright (c) 2026, Thomas Fitzsimmons <fitzsim@fitzsim.org>
+
+# Build for CentOS 9, glibc 2.34.
+FROM centos:9 AS build
+
+ARG ECL_VERSION=26.5.5
+ARG ECL_FOR_BUILD_PREFIX=/ecl-for-build-installation
+ARG ECL_PREFIX=/ecl-installation
+
+# Install build dependencies.
+RUN dnf --assumeyes install gcc diffutils gmp-devel libffi-devel
+
+# Build and install dynamic ECL used for building libmy-application.a.
+RUN curl --location --remote-name\
+ https://ecl.common-lisp.dev/static/files/release/ecl-"${ECL_VERSION}".tgz\
+ && mkdir --parents /ecl-build-dynamic\
+ && cd /ecl-build-dynamic\
+ && tar --extract --file /ecl-"${ECL_VERSION}".tgz\
+ && cd ecl-"${ECL_VERSION}"\
+ && ./configure --prefix="${ECL_FOR_BUILD_PREFIX}" --enable-boehm=included\
+ && make --jobs && make install
+
+# Build and install static ECL to link my-application binary against.
+#
+# sed lines:
+#
+# 1. Enable dlopen in ffi sources so that foreign libraries are loadable.
+#
+# 2. Prevent binary from looking in install prefix for help.doc file.
+#
+# 3. Work around https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/848.
+RUN mkdir --parents /ecl-build-static\
+ && cd /ecl-build-static\
+ && tar --extract --file /ecl-"${ECL_VERSION}".tgz\
+ && cd ecl-"${ECL_VERSION}"\
+ && sed --in-place '/^#include <ecl\/ecl.h>$/a #define ENABLE_DLOPEN 1'\
+ src/c/ffi.d src/c/ffi/libraries.d\
+ && sed --in-place 's/"SYS:help.doc"//' src/lsp/helpfile.lsp\
+ && sed --in-place\
+ --expression 's/if (the_env->frs_stack.org <= the_env->frs_stack.top)//g'\
+ --expression 's/ecl_unwind(the_env, the_env->frs_stack.org);//g'\
+ src/c/main.d\
+ && ./configure --prefix="${ECL_PREFIX}" --enable-boehm=included\
+ --disable-shared\
+ && make --jobs && make install
+
+COPY ./build-binary.lisp   /my-application/build-binary.lisp
+COPY ./my-application.asd  /my-application/my-application.asd
+COPY ./my-application.c    /my-application/my-application.c
+COPY ./my-application.lisp /my-application/my-application.lisp
+# COPY ./other-asdf-dependency /my-application/other-asdf-dependency
+
+# Build my-application binary.
+RUN cd /my-application\
+ && "${ECL_FOR_BUILD_PREFIX}"/bin/ecl --load build-binary.lisp\
+ && ./my-application
+
+FROM scratch
+
+COPY --from=build /my-application/my-application /my-application
