@@ -90,19 +90,15 @@
 
 (defun emit-functions (*compiler-output1*)
   (declare (si::c-local))
-  ;; Local functions and closure functions
-  (do ((*compile-time-too* nil)
-       (*compile-toplevel* nil)
-       (*emitted-functions* nil))
-      ;; repeat until t3function generates no more
-      ((eq *emitted-functions* *functions*))
-    ;; scan *functions* backwards
-    (do ((lfs *functions* (cdr lfs)))
-        ((eq (cdr lfs) *emitted-functions*)
-         (setq *emitted-functions* lfs)
-         (locally (declare (notinline t3function))
-           ;; so disassemble can redefine it
-           (t3function (first lfs)))))))
+  ;; Defined functions, local functions and closure functions.
+  (let ((*compile-time-too* nil)
+        (*compile-toplevel* nil)
+        (functions (functions *module*)))
+    (loop for i from 0
+          ;; Emitting the function can extend the vector.
+          until (= i (length functions))
+          do (locally (declare (notinline t3function))
+               (t3function (aref functions i))))))
 
 (defun ctop-write (init-name h-pathname data-pathname &aux top-output-string)
   (wt-nl "#include \"" (brief-namestring h-pathname) "\"")
@@ -158,10 +154,9 @@
   (setq *compiler-phase* 't3)
 
   ;;; Callbacks
-  (when *callbacks*
+  (ext:when-let ((callbacks (callbacks *module*)))
     (wt-nl-h "#include <ecl/internal.h>")
-    (dolist (x *callbacks*)
-      (t3callback x)))
+    (map nil #'t3callback callbacks))
 
   (wt-nl "#include \"" (brief-namestring data-pathname) "\"")
   (wt-nl "#ifdef __cplusplus")
@@ -206,6 +201,7 @@
 
 (defun t3entry-fun (name *compiler-output1*)
   (with-bir-env (:env 0 :level 0 :volatile "volatile ")
+    (setf (entry-bir *module*) *bir*)
     (wt-nl "ECL_DLLEXPORT void " name "(cl_object flag)")
     (wt-nl-open-brace)
     (wt-nl "const cl_env_ptr cl_env_copy = ecl_process_env();")
@@ -260,6 +256,7 @@
 
 (defun t3callback (cbk)
   (with-bir-env (:env 0 :level 0 :volatile "volatile ")
+    (setf (cbk-bir cbk) *bir*)
     (let ((lisp-name (cbk-name cbk))
           (c-name (cbk-c-name cbk))
           (c-name-constant (cbk-c-name-constant cbk))
@@ -322,6 +319,7 @@
       (with-bir-env (:env (fun-env fun)
                      :level (fun-lexical-levels fun)
                      :volatile (c1form-volatile* lambda-expr))
+        (setf (fun-bir fun) *bir*)
         (t3function-declaration fun)
         (wt-nl-open-brace)
         (let ((body (t3function-body fun)))

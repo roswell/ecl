@@ -141,7 +141,8 @@
   required-lcls            ;;; Names of the function arguments
   (optional-type-check-forms nil) ;;; Type check forms for optional arguments
   (keyword-type-check-forms nil)  ;;; Type check forms for keyword arguments
-  )
+  (bir nil)             ;;; During Pass2 CFG is constructed and stored in this slot.
+)
 
 (defstruct (blk (:include ref))
 #|
@@ -184,7 +185,9 @@
   return-type-code
   arg-types
   arg-type-constants
-  call-type)
+  call-type
+  (bir nil)             ;;; During Pass2 CFG is constructed and stored in this slot.
+  )
 
 (defun print-cbk (self stream)
   (format stream "#<a callback: ~A>" (cbk-name self)))

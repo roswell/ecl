@@ -10,7 +10,7 @@
 (in-package #:compiler)
 
 (defun register-function (fun)
-  (push fun *functions*))
+  (vector-push-extend fun (functions *module*)))
 
 (defun child-function-p (presumed-parent fun)
   (declare (optimize speed))

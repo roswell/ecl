@@ -9,7 +9,6 @@
 (defvar *inline-blocks* 0)
 (defvar *opened-c-braces* 0)
 
-(defvar *emitted-functions* nil)
 (defvar *inline-information* nil)
 
 (defconfig *c-compatible-variadic-dispatch*

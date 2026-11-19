@@ -58,13 +58,6 @@ running the compiler. It may be updated by running ")
 (defvar *compiler-output1*)
 (defvar *compiler-output2*)
 
-;;; --cmpcbk.lsp--
-;;;
-;;; List of callbacks to be generated
-;;;
-(defvar *callbacks* nil)
-(defvar *functions* nil)
-
 ;;; --cmpc-machine.lsp, cmpffi.lsp ---
 (defconfig *machine* nil)
 
@@ -215,8 +208,6 @@ be deleted if they have been opened with LoadLibrary.")
   '((*gensym-counter* 0)
     (*compiler-in-use* t)
     (*compiler-phase* 't1)
-    (*callbacks* nil)
-    (*functions* nil)
     (*cmp-env-root* (copy-tree *cmp-env-root*))
     (*cmp-env* *cmp-env-root*)
     (*global-vars* nil)

@@ -24,15 +24,25 @@
    ;; Not all VV instances have a corresponding object.
    (referenced-objects :accessor referenced-objects :initarg :referenced-objects)
    (object-to-location :accessor object-to-location :initarg :object-to-location)
-   #+ (or) (top-level :accessor top-level :initarg :top-level)
-   #+ (or) (functions :accessor functions :initarg :functions)
+   ;; Slots beyond this point belong to pass where we transform AST->BIR.
+   ;; T3ENTRY-FUN processes TOP-LEVEL-NODES and constructs ENTRY-BIR and
+   ;; pushes defined functions to FUNCTIONS.
+   (entry-bir :accessor entry-bir :initarg :entry-bir)
+   ;; Then EMIT-FUNCTIONS consumes FUNCTIONS and constructs BIR for them.
+   ;; During constructions new entries can be added to the slot.
+   (functions :accessor functions :initarg :functions)
+   ;; Callbacks are defined with a sepacial operator DEFCALLBACK.
+   (callbacks :accessor callbacks :initarg :callbacks)
    #+ (or) (constants :accessor constants :initarg :constants))
   (:default-initargs
    :top-level-nodes (make-array 0 :adjustable t :fill-pointer t)
    :make-load-nodes (make-array 0 :adjustable t :fill-pointer t)
    :load-time-nodes (make-array 0 :adjustable t :fill-pointer t)
    :referenced-objects (make-array 256 :adjustable t :fill-pointer 0)
-   :object-to-location (make-hash-table :size 128 :test #'equal)))
+   :object-to-location (make-hash-table :size 128 :test #'equal)
+   ;;
+   :functions (make-array 0 :adjustable t :fill-pointer t)
+   :callbacks (make-array 0 :adjustable t :fill-pointer t)))
 
 (defun make-module ()
   (make-instance 'module))
