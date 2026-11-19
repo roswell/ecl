@@ -160,12 +160,14 @@
         (let ((type (second i)))
           (push type arg-types)
           (push (foreign-elt-type-code type) arg-type-constants)))
-      (push (list name c-name (add-object name)
-                  return-type
-                  (foreign-elt-type-code return-type)
-                  (reverse arg-types)
-                  (reverse arg-type-constants)
-                  call-type)
+      (push (make-cbk :name name
+                      :c-name c-name
+                      :c-name-constant (add-object name)
+                      :return-type return-type
+                      :return-type-code (foreign-elt-type-code return-type)
+                      :arg-types (reverse arg-types)
+                      :arg-type-constants (reverse arg-type-constants)
+                      :call-type call-type)
             *callbacks*)
       (c1expr
        `(progn
