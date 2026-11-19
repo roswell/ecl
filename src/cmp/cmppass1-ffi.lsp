@@ -150,7 +150,7 @@
     (let ((arg-types '())
           (arg-type-constants '())
           (arg-variables '())
-          (c-name (format nil "ecl_callback_~d" (length *callbacks*)))
+          (c-name (format nil "ecl_callback_~d" (length (callbacks *module*))))
           (name (if (consp name) (first name) name))
           (call-type (if (consp name) (second name) :cdecl)))
       (dolist (i arg-list)
@@ -160,15 +160,15 @@
         (let ((type (second i)))
           (push type arg-types)
           (push (foreign-elt-type-code type) arg-type-constants)))
-      (push (make-cbk :name name
-                      :c-name c-name
-                      :c-name-constant (add-object name)
-                      :return-type return-type
-                      :return-type-code (foreign-elt-type-code return-type)
-                      :arg-types (reverse arg-types)
-                      :arg-type-constants (reverse arg-type-constants)
-                      :call-type call-type)
-            *callbacks*)
+      (vector-push-extend (make-cbk :name name
+                                    :c-name c-name
+                                    :c-name-constant (add-object name)
+                                    :return-type return-type
+                                    :return-type-code (foreign-elt-type-code return-type)
+                                    :arg-types (reverse arg-types)
+                                    :arg-type-constants (reverse arg-type-constants)
+                                    :call-type call-type)
+                          (callbacks *module*))
       (c1expr
        `(progn
           (defun ,name ,(reverse arg-variables) ,@body)
