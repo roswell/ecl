@@ -782,3 +782,15 @@
       (is (eq (car result) 'x))
       (is (not (eq (car result) '&REST)))
       (is (not (eq (cadr result) 'SI::ARGS))))))
+
+;;; Created: 2026-11-19
+;;; Issue: https://gitlab.com/embeddable-common-lisp/ecl/-/work_items/820
+;;; Description
+;;;
+;;;     Passing `'(setf foo)` to `function-lambda-list` signaled an error.
+;;;     Please see here for background:
+;;;     https://gitlab.com/embeddable-common-lisp/ecl/-/merge_requests/403
+(deftest mix.0041.function-lambda-list ()
+  (ext:with-clean-symbols (foo)
+    (defun (setf foo) (x))
+    (finishes (ext:function-lambda-list '(setf foo)))))
