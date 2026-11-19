@@ -233,8 +233,7 @@
   (unless (or si:*compiler-constants*
               (and (not *use-static-constants-p*)
                    #+sse2
-                   (not (typep object 'ext:sse-pack *cmp-env*)))
-              (not (listp *static-constants*)))
+                   (not (typep object 'ext:sse-pack *cmp-env*))))
     (ext:if-let ((record (find object *static-constants* :key #'first :test #'equal)))
       (second record)
       (ext:when-let ((builder (static-constant-expression object)))
