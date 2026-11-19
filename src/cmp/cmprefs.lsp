@@ -169,3 +169,22 @@
   var                   ;;; Variable containing frame ID.
   index                 ;;; An integer denoting the label.
   )
+
+;;;
+;;; CALLBACK OBJECT
+;;;
+;;; The object that represents callbacks defined with FFI:DEFCALLBACK.
+;;;
+
+(defstruct (cbk (:print-object print-cbk))
+  name
+  c-name
+  c-name-constant
+  return-type
+  return-type-code
+  arg-types
+  arg-type-constants
+  call-type)
+
+(defun print-cbk (self stream)
+  (format stream "#<a callback: ~A>" (cbk-name self)))
