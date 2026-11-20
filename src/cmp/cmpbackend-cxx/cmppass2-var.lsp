@@ -126,7 +126,8 @@
   ;; Optionally register the variables with the IHS frame for debugging
   (if (policy-debug-variable-bindings)
       (let ((*unwind-exit* *unwind-exit*))
-        (with-lexical-scope ()
+        (with-inline-blocks ()
+          (open-inline-block)
           (ext:if-let ((env (build-debug-lexical-env vars)))
             (progn
               (push 'IHS-ENV *unwind-exit*)
@@ -203,7 +204,8 @@
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
          (val-loc (make-lcl-var)))
-    (with-lexical-scope ()
+    (with-inline-blocks ()
+      (open-inline-block)
       (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")
       (let ((*destination* sym-loc)) (c2expr* symbols))
       (let ((*destination* val-loc)) (c2expr* values))
@@ -345,7 +347,8 @@
     (let* ((*lcl* *lcl*)
            (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
            (nr (make-lcl-var :type :int)))
-      (with-lexical-scope ()
+      (with-inline-blocks ()
+        (open-inline-block)
         (when useful-extra-vars
           ;; Make a copy of env->nvalues before assigning to any variables
           (wt-nl "const int " nr " = cl_env_copy->nvalues;"))

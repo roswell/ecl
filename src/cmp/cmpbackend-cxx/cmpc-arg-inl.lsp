@@ -19,6 +19,10 @@
   (wt-nl-open-brace)
   (incf *inline-blocks*))
 
+(defun close-inline-block ()
+  (wt-nl-close-brace)
+  (decf *inline-blocks*))
+
 (defun close-inline-blocks ()
   (loop for i of-type fixnum from 0 below *inline-blocks*
         do (wt-nl-close-brace)))
