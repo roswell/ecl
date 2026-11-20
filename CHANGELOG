@@ -94,6 +94,9 @@
   was cast to (complex single-float) instead of (complex /y-float-type/)
   leading to inconsistent results
 
+- performance: comparing = < <= >= > numbers doesn't cons memory and is
+  optimized for faster execution
+
 - bugfix: because `defun` was being evaluated during the `trace`, the lambda-list
   was overwritten with `&REST` and `SI::ARGS`. `EXT:FUNCTION-LAMBDA-LIST` now
   references the original definition present in `SI:*TRACE-LIST*` if it exists.

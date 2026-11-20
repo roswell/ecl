@@ -67,6 +67,7 @@ extern ECL_API void _ecl_big_set_fix(cl_object x, cl_fixnum y);
 #define _ecl_big_get_d(x)           mpz_get_d(ecl_bignum(x))
 #define _ecl_big_get_str(buf,n,x,b) mpz_get_str(buf,-b,ecl_bignum(x))
 
+extern ECL_API void _ecl_big_set_lf(cl_object x, long double d);
 extern ECL_API long double _ecl_big_get_lf(cl_object x);
 
 /* Type conversion predicates */
@@ -103,7 +104,7 @@ _ecl_big_count_bits(cl_object x) {
 #define _ecl_big_fdiv_q_2exp(z,x,i) mpz_fdiv_q_2exp(ecl_bignum(z), ecl_bignum(x), i);
 #define _ecl_big_fdiv_r_2exp(z,x,i) mpz_fdiv_r_2exp(ecl_bignum(z), ecl_bignum(x), i);
 
-/* Arithmetic operations that are used for parsing numbers and bignums) */
+/* Arithmetic operations that are used for parsing numbers and bignums */
 #define _ecl_big_mul(z, x, y)       mpz_mul(ecl_bignum(z),ecl_bignum(x),ecl_bignum(y))
 #define _ecl_big_mul_ui(z, x, y)    mpz_mul_ui(ecl_bignum(z),ecl_bignum(x),(y))
 #define _ecl_big_add_ui(z, x, i)    mpz_add_ui(ecl_bignum(z),ecl_bignum(x),(i))
@@ -138,6 +139,7 @@ extern ECL_API _ecl_big_binary_op _ecl_big_boole_operator(int op);
 #define _ecl_big_set_ui(x, i)       (ecl_bignum(x)=(unsigned long int)i)
 #define _ecl_big_set_si(x, i)       (ecl_bignum(x)=(long int)i)
 #define _ecl_big_set_d(x, d)        (ecl_bignum(x)=(double)d)
+#define _ecl_big_set_lf(x, d)       (ecl_bignum(x)=(long double)d)
 
 #define _ecl_big_get_idx(x)         (cl_index)ecl_bignum(x)
 #define _ecl_big_get_fix(x)         (cl_fixnum)ecl_bignum(x)

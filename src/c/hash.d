@@ -722,7 +722,6 @@ _ecl_hash_eql(cl_object key) {
 static inline cl_hashkey
 _ecl_hash_equal(cl_object key) {
   /* Some types that may be hashed in one-shot are optimized here. */
- AGAIN:
   switch(ecl_t_of(key)) {
 #ifdef ECL_UNICODE
   case t_string:
