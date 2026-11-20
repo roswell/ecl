@@ -23,7 +23,9 @@
 #endif
 #include <ecl/internal.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 @(defun round (x &optional (y OBJNULL))
   @

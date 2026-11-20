@@ -182,15 +182,15 @@ lines are inserted, but the order is preserved")
 
 (defvar *compile-time-too* nil)
 (defvar *not-compile-time* nil)
+(defvar *compile-file-p*)
+
 
 ;;; Determines whether the object may be released after the initialization
 (defvar *permanent-data* nil)
 (defvar *referenced-objects* nil)       ; holds { vv-record }*
 
 (defvar *load-objects* nil)             ; hash with association object -> vv-location
-(defvar *load-time-values* nil)         ; holds { ( vv-index form ) }*,
-;;;  where each vv-index should be given an object before
-;;;  defining the current function during loading process.
+(defvar *load-time-values* nil)         ; holds { c1form }* or 'VALUES
 
 (defvar si:*compiler-constants* nil)    ; a vector with all constants only used
                                         ; in COMPILE
@@ -203,16 +203,6 @@ lines are inserted, but the order is preserved")
 
 (defvar *objects-being-created* nil)    ; helps detecting circular references
 (defvar *objects-init-deferred* nil)    ; helps avoiding circularity
-
-;;;
-;;;     top-level-form:
-;;;       ( 'DEFUN'     fun-name cfun lambda-expr doc-vv sp )
-;;;     | ( 'DEFMACRO'  macro-name cfun lambda-expr doc-vv sp )
-;;;     | ( 'ORDINARY'  expr )
-;;;     | ( 'DECLARE'   var-name-vv )
-;;;     | ( 'DEFVAR'    var-name-vv expr doc-vv )
-;;;     | ( 'CLINES'    string* )
-;;;     | ( 'LOAD-TIME-VALUE' vv )
 
 (defvar *self-destructing-fasl* '()
 "A value T means that, when a FASL module is being unloaded (for
@@ -241,6 +231,7 @@ be deleted if they have been opened with LoadLibrary.")
     (*global-funs* nil)
     (*undefined-vars* nil)
     (*top-level-forms* nil)
+    (*load-time-values* nil)
     (*compile-time-too* nil)
     (*clines-string-list* '())
     (si::*defun-inline-hook* 'maybe-install-inline-function)

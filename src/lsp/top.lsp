@@ -796,13 +796,16 @@ Use special code 0 to cancel this operation.")
     (values args (and args t))))
 
 (defun function-lambda-list (function)
+  (setq function (or (third (find function
+                                  si:*trace-list* :key #'second :test #'eq))
+                     function))
   (cond
-    ((symbolp function)
-     (cond ((or (special-operator-p function)
-                (macro-function function))
-            (lambda-list-from-annotations function))
-           (t
-            (function-lambda-list (fdefinition function)))))
+    ((si:valid-function-name-p function)
+     (if (and (symbolp function)
+              (or (special-operator-p function)
+                  (macro-function function)))
+         (lambda-list-from-annotations function)
+         (function-lambda-list (fdefinition function))))
     ((typep function 'generic-function)
      (if (slot-boundp function 'clos::lambda-list)
          (values (clos:generic-function-lambda-list function) t)

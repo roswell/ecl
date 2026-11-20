@@ -21,7 +21,9 @@
 #include <ecl/impl/math_dispatch2.h>
 #include <ecl/internal.h>
 
-#pragma STDC FENV_ACCESS ON
+#ifdef __clang__
+# pragma STDC FENV_ACCESS ON
+#endif
 
 @(defun floor (x &optional (y OBJNULL))
   @

@@ -97,6 +97,10 @@
 - performance: comparing = < <= >= > numbers doesn't cons memory and is
   optimized for faster execution
 
+- bugfix: because `defun` was being evaluated during the `trace`, the lambda-list
+  was overwritten with `&REST` and `SI::ARGS`. `EXT:FUNCTION-LAMBDA-LIST` now
+  references the original definition present in `SI:*TRACE-LIST*` if it exists.
+
 * 26.5.5 changes since 26.3.27
 
 - bugfix: MAKE-PACKAGE destructively modified defining form's cons cells of
