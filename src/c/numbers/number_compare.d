@@ -12,27 +12,461 @@
  *
  */
 
-
+#include <float.h>
 #include <ecl/ecl.h>
+#include <ecl/bithacks.h>
 #include <ecl/impl/math_dispatch2.h>
-#include "numbers/float_fix_compare.d"
+
+/* Helpers */
+
+/* integer length of |n| without consing (abs n) */
+static inline cl_fixnum
+magnitude_length(cl_object num)
+{
+  if (!ECL_FIXNUMP(num))
+    return _ecl_big_integer_length(num); /* already magnitude */
+  {
+    cl_fixnum val = ecl_fixnum(num);
+    cl_fixnum len = ecl_fixnum_bit_length(val);
+    if (val<0 && ecl_ctz(val) == len) len++;
+    return len;
+  }
+}
+
+static int
+compare_ratio_integer(cl_object xval, cl_object yval)
+{
+  cl_object xnum = ecl_ratio_num(xval);
+  cl_object xden = ecl_ratio_den(xval);
+  /* Ratio and integer are never equal and ratio is never 0. */
+  /* 0. Cheap test (sign). */
+  int xsig = ecl_minusp(xnum) ? -1 : +1;
+  int ysig = ecl_minusp(yval) ? -1 : (ecl_zerop(yval) ? 0 : +1);
+  if(xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. Compare magnitudes. */
+  {
+    /* Note that the description below holds for positive integers. When numbers
+       are negative, then the comparison direction is swapped. */
+    /* ln=maglen(yval) -> yval in [2^(ln-1);2^ln). */
+    /* la=maglen(xnum) -> xnum in [2^(la-1);2^la)  */
+    /* lb=maglen(xden) -> xden in [2^(lb-1);2^lb)  */
+    /* xnum/xden -> [2^(la-1-lb), 2^(la-lb+1)) -> [2^(la-lb-1), 2^(la-lb+1)) */
+    /* --- */
+    /* ln   <= (la-lb-1) -> xnum/xden > ynum */
+    /* ln-1 >= (la-lb+1) -> xnum/xden < ynum */
+    cl_fixnum alen = magnitude_length(xnum);
+    cl_fixnum blen = magnitude_length(xden);
+    cl_fixnum nlen = magnitude_length(yval);
+    cl_fixnum xleft  = (alen-blen-1);
+    cl_fixnum xright = (alen-blen+1);
+    cl_fixnum yleft  = (nlen-1);
+    cl_fixnum yright = nlen;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+#if defined(__SIZEOF_INT128__) && ECL_FIXNUM_BITS<=64
+  if (ECL_FIXNUMP(xnum) && ECL_FIXNUMP(xden) && ECL_FIXNUMP(yval)) {
+    cl_fixnum a = ecl_fixnum(xnum);
+    cl_fixnum b = ecl_fixnum(xden);
+    cl_fixnum c = ecl_fixnum(yval);
+    __int128 result = (__int128)b * c;
+    return ((__int128)a < result) ? -1 : +1;
+  }
+#endif
+  /* 3. Slow path using a bignum register. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    int result;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    /* Initialize registers. */
+    if (ECL_FIXNUMP(xnum)) _ecl_big_set_fix(reg1, ecl_fixnum(xnum));
+    else                   _ecl_big_set(reg1, xnum);
+    if (ECL_FIXNUMP(yval)) _ecl_big_set_fix(reg2, ecl_fixnum(yval));
+    else                   _ecl_big_set(reg2, yval);
+    /* INV denominator is always positive. */
+    if (ECL_FIXNUMP(xden)) _ecl_big_mul_ui(reg2, reg2, ecl_fixnum(xden));
+    else                   _ecl_big_mul(reg2, reg2, xden);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return result;
+  }
+  /* Unoptimized version (never reached): */
+  /* return ecl_number_compare(xnum, ecl_times(yval, xden)); */
+}
+
+static int
+compare_ratio_ratio(cl_object xval, cl_object yval)
+{
+  cl_object xnum = ecl_ratio_num(xval);
+  cl_object xden = ecl_ratio_den(xval);
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
+  /* Cheap tests: */
+  int xsig = ecl_minusp(xnum) ? -1 : +1;
+  int ysig = ecl_minusp(ynum) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* Integer comparison is cheap. */
+  if (ecl_number_equalp(xden, yden)) {
+    if (xnum==ynum) return 0;
+    else return ecl_number_compare(xnum, ynum);
+  }
+  /* 1. Compare magnitudes (c.f compare_ratio_integer) */
+  {
+    cl_fixnum alen = magnitude_length(xnum);
+    cl_fixnum blen = magnitude_length(xden);
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = magnitude_length(yden);
+    cl_fixnum xleft  = (alen-blen-1);
+    cl_fixnum xright = (alen-blen+1);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. fast path for fixnums (when __SIZEOF_INT128__ is defined). */
+#if defined(__SIZEOF_INT128__) && ECL_FIXNUM_BITS<=64
+  if (ECL_FIXNUMP(xnum) && ECL_FIXNUMP(xden) && ECL_FIXNUMP(ynum) && ECL_FIXNUMP(yden)) {
+    cl_fixnum a = ecl_fixnum(xnum);
+    cl_fixnum b = ecl_fixnum(xden);
+    cl_fixnum c = ecl_fixnum(ynum);
+    cl_fixnum d = ecl_fixnum(yden);
+    __int128 r1 = (__int128)a * d;
+    __int128 r2 = (__int128)c * b;
+    return (r1 < r2) ? -1 : +1;
+  }
+#endif
+  /* 3. Slow path using bignum registers. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    int result;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    /* xnum*yden */
+    if (ECL_FIXNUMP(xnum)) _ecl_big_set_fix(reg1, ecl_fixnum(xnum));
+    else                   _ecl_big_set(reg1, xnum);
+    if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+    else                   _ecl_big_mul(reg1, reg1, yden);
+    /* ynum*xden */
+    if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+    else                   _ecl_big_set(reg2, ynum);
+    if (ECL_FIXNUMP(xden)) _ecl_big_mul_ui(reg2, reg2, ecl_fixnum(xden));
+    else                   _ecl_big_mul(reg2, reg2, xden);
+    /* ~ */
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return result;
+  }
+  /* Unoptimized version (never reached): */
+  /* return ecl_number_compare(ecl_times(xnum, yden), */
+  /*                           ecl_times(ynum, xden)); */
+}
+
+/* In Common Lisp, comparisons between floats and integers are performed via an
+ * intermediate rationalization of the floating point number. In C, on the other
+ * hand, the comparison is performed by converting the integer into a floating
+ * point number. However, if the double type is too small this may lead to a
+ * loss of precision and two numbers being told equal when, by Common Lisp
+ * standards, would not. */
+static int
+compare_dfloat_fixnum(double d, cl_object nval)
+{
+  cl_fixnum n = ecl_fixnum(nval);
+  if (d == (double)n) {
+#if DBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 0;
+#else
+    /* When we reach here, the double type has no significant decimal
+     * part. However, as explained above, the double type is too small and
+     * integers may coerce to the same double number giving a false
+     * positive. Hence we perform the comparison in integer space. */
+    cl_fixnum m = (cl_fixnum)d;
+    if (n == m) {
+      return 0;
+    }
+    return (m < n) ? -1 : +1;
+#endif
+  }
+  return (d < (double)n) ? -1 : +1;
+}
+
+static int
+compare_lfloat_fixnum(long double d, cl_object nval)
+{
+  cl_fixnum n = ecl_fixnum(nval);
+  if (d == (long double)n) {
+#if LDBL_MANT_DIG >= ECL_FIXNUM_BITS
+    return 0;
+#else
+    cl_fixnum m = (cl_fixnum)d;
+    if (n == m) {
+      return 0;
+    }
+    return (m < n) ? -1 : +1;
+#endif
+  }
+  return (d < (long double)n) ? -1 : +1;
+}
+
+static int
+compare_dfloat_bignum(double dval, cl_object yval)
+{
+  int xsig, ysig, exponent;
+  /* Cheap tests: */
+#ifdef ECL_IEEE_FP
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
+#endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. Compare magnitudes. */
+  {
+    cl_fixnum length = _ecl_big_integer_length(yval);
+    frexp(dval, &exponent);
+    if (exponent<length) return -xsig;
+    if (exponent>length) return +xsig;
+  }
+  /* 2. Compare in a register. */
+  {
+    cl_object reg = _ecl_big_register2();
+    int result;
+    double dval_i = trunc(dval);
+    _ecl_big_set_d(reg, dval_i);
+    result = _ecl_big_compare(reg, yval);
+    _ecl_big_register_free(reg);
+    if (result != 0) return result;
+    if (dval_i == dval) return 0;
+    return xsig;
+  }
+}
+
+static int
+compare_lfloat_bignum(long double dval, cl_object yval)
+{
+  int xsig, ysig, exponent;
+  /* Cheap tests: */
+#ifdef ECL_IEEE_FP
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
+#endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+    /* 1. Compare magnitudes. */
+  {
+    cl_fixnum length = _ecl_big_integer_length(yval);
+    frexpl(dval, &exponent);
+    if (exponent<length) return -xsig;
+    if (exponent>length) return +xsig;
+  }
+  /* 2. Compare in a register. */
+  {
+    cl_object reg = _ecl_big_register2();
+    int result;
+    long double dval_i = truncl(dval);
+    _ecl_big_set_lf(reg, dval_i);
+    result = _ecl_big_compare(reg, yval);
+    _ecl_big_register_free(reg);
+    if (result != 0) return result;
+    if (dval_i == dval) return 0;
+    return xsig;
+  }
+}
+
+static int
+compare_dfloat_ratio(double dval, cl_object yval)
+{
+  int xsig, ysig, exponent;
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
+  /* Cheap tests: */
+#ifdef ECL_IEEE_FP
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
+#endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+  /* 1. Compare magnitudes. */
+  {
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = magnitude_length(yden);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    cl_fixnum xleft, xright;
+    /* Floats are unnormalized ratios in disguise. There is a difference:
+       ratio: [2^(e-1), 2^(e+1))
+       float: [2^(e-1), 2^(e+0)) */
+    frexp(dval, &exponent);
+    xleft  = exponent-1;
+    xright = exponent;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. Slow path in bignum registers. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    /* (mantissa*yden < ynum*exponent) */
+    int result, iterator, shift;
+    unsigned long int limb;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    double frac = (xsig<0) ? frexp(-dval,&exponent) : frexp(+dval,&exponent);
+    _ecl_big_set_ui(reg1, 0);
+    for (iterator=0; iterator<DBL_MANT_DIG && frac; iterator+=ECL_LONG_BITS) {
+      frac=ldexp(frac, ECL_LONG_BITS);
+      limb=(unsigned long int)frac;
+      frac-=limb;
+      _ecl_big_mul_2exp(reg1, reg1, ECL_LONG_BITS);
+      _ecl_big_add_ui(reg1, reg1, limb);
+    }
+    shift = exponent-iterator;
+    /* reg1 = mantissa (int), dval = reg1 * 2^shift  */
+    /* Now that we have mantissa and exponent in integer space, we can compare
+       the float with the ratio. Note that shift may be either negative or
+       positive; we want to avoid division because that would lose precision.
+       Depending on its sign we either treat it as part of xnum or xden. */
+    if (shift>0) {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      _ecl_big_mul_2exp(reg1, reg1, +shift);
+      /* ynum*xden (xden=1) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+    } else {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      /* ynum*xden (xden=2^-shift) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+      if(shift) _ecl_big_mul_2exp(reg2, reg2, -shift);
+    }
+    /* ~ */
+    if (xsig<0) _ecl_big_neg(reg2, reg2);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return (xsig>0) ? result : -result;
+  }
+}
+
+static int
+compare_lfloat_ratio(long double dval, cl_object yval)
+{
+  int xsig, ysig, exponent;
+  cl_object ynum = ecl_ratio_num(yval);
+  cl_object yden = ecl_ratio_den(yval);
+  /* Cheap tests: */
+#ifdef ECL_IEEE_FP
+  if (isinf(dval))
+    return (dval<0) ? -1 : +1;
+#endif
+  if (dval==0)
+    return ecl_minusp(yval) ? +1 : -1;
+  xsig = signbit(dval)    ? -1 : +1;
+  ysig = ecl_minusp(yval) ? -1 : +1;
+  if (xsig!=ysig) return xsig<ysig ? -1 : +1;
+    /* 1. Compare magnitudes. */
+  {
+    cl_fixnum clen = magnitude_length(ynum);
+    cl_fixnum dlen = magnitude_length(yden);
+    cl_fixnum yleft  = (clen-dlen-1);
+    cl_fixnum yright = (clen-dlen+1);
+    cl_fixnum xleft, xright;
+    /* Floats are unnormalized ratios in disguise. There is a difference:
+       ratio: [2^(e-1), 2^(e+1))
+       float: [2^(e-1), 2^(e+0)) */
+    frexpl(dval, &exponent);
+    xleft  = exponent-1;
+    xright = exponent;
+    if (yright <= xleft)  return xsig==+1 ? +1 : -1;
+    if (yleft  >= xright) return xsig==+1 ? -1 : +1;
+  }
+  /* 2. Slow path in bignum registers. */
+  {
+    /* Since we operate strictly on bignums, there is no need to normalize to
+       fixnum even when the result falls in a fixnum range. */
+    /* (mantissa*yden < ynum*exponent) */
+    int result, iterator, shift;
+    unsigned long int limb;
+    cl_object reg1 = _ecl_big_register1();
+    cl_object reg2 = _ecl_big_register2();
+    long double frac = (xsig<0) ? frexpl(-dval,&exponent) : frexpl(+dval,&exponent);
+    _ecl_big_set_ui(reg1, 0);
+    for (iterator=0; iterator<LDBL_MANT_DIG && frac; iterator+=ECL_LONG_BITS) {
+      frac=ldexpl(frac, ECL_LONG_BITS);
+      limb=(unsigned long int)frac;
+      frac-=limb;
+      _ecl_big_mul_2exp(reg1, reg1, ECL_LONG_BITS);
+      _ecl_big_add_ui(reg1, reg1, limb);
+    }
+    shift = exponent-iterator;
+    /* reg1 = mantissa (int), dval = reg1 * 2^shift  */
+    /* Now that we have mantissa and exponent in integer space, we can compare
+       the float with the ratio. Note that shift may be either negative or
+       positive; we want to avoid division because that would lose precision.
+       Depending on its sign we either treat it as part of xnum or xden. */
+    if (shift>0) {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      _ecl_big_mul_2exp(reg1, reg1, +shift);
+      /* ynum*xden (xden=1) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+    } else {
+      /* xnum*yden */
+      if (ECL_FIXNUMP(yden)) _ecl_big_mul_ui(reg1, reg1, ecl_fixnum(yden));
+      else                   _ecl_big_mul(reg1, reg1, yden);
+      /* ynum*xden (xden=2^-shift) */
+      if (ECL_FIXNUMP(ynum)) _ecl_big_set_fix(reg2, ecl_fixnum(ynum));
+      else                   _ecl_big_set(reg2, ynum);
+      if(shift) _ecl_big_mul_2exp(reg2, reg2, -shift);
+    }
+    /* ~ */
+    if (xsig<0) _ecl_big_neg(reg2, reg2);
+    result = _ecl_big_compare(reg1, reg2);
+    _ecl_big_register_free(reg1);
+    _ecl_big_register_free(reg2);
+    return (xsig>0) ? result : -result;
+  }
+}
+
+/* Fallbacks. */
+#define compare_ratio_bignum(x,y)  compare_ratio_integer(x,y)
+#define compare_ratio_fixnum(x,y)  compare_ratio_integer(x,y)
 
 /*
  *
  * The value of ecl_number_compare(x, y) is
  *
- * -1      if      x < y
+ * -n      if      x < y
  *  0      if      x = y
- *  1      if      x > y.
+ * +n      if      x > y.
  *
  * If x or y is not real, it fails.
+ * n is a positive int (c.f mpz_cmp ).
 */
 int
 ecl_number_compare(cl_object x, cl_object y)
 {
   double dx, dy;
   long double ldx, ldy;
- BEGIN:
   MATH_DISPATCH2_BEGIN(x,y) {
     /* rational x rational */
     CASE_FIXNUM_FIXNUM {
@@ -42,63 +476,43 @@ ecl_number_compare(cl_object x, cl_object y)
       if (ix < iy) return -1;
       else         return (ix != iy);
     }
+    CASE_BIGNUM_BIGNUM { return _ecl_big_compare(x, y); }
+    CASE_RATIO_RATIO   { return compare_ratio_ratio(x, y); }
     /* INV: (= x y) can't be zero since fixnum != bignum */
     CASE_FIXNUM_BIGNUM { return ecl_bigsgn(y) < 0 ?  1 : -1; }
     CASE_BIGNUM_FIXNUM { return ecl_bigsgn(x) < 0 ? -1 :  1; }
-    CASE_BIGNUM_BIGNUM { return _ecl_big_compare(x, y); }
-    CASE_FIXNUM_RATIO;
-    CASE_BIGNUM_RATIO {
-      return ecl_number_compare(ecl_times(x, ecl_ratio_den(y)),
-                                ecl_ratio_num(y)); }
-    CASE_RATIO_FIXNUM;
-    CASE_RATIO_BIGNUM {
-      return ecl_number_compare(ecl_ratio_num(x),
-                                ecl_times(y, ecl_ratio_den(x))); }
-    CASE_RATIO_RATIO  {
-      return ecl_number_compare(ecl_times(ecl_ratio_num(x), ecl_ratio_den(y)),
-                                ecl_times(ecl_ratio_num(y), ecl_ratio_den(x))); }
+    CASE_RATIO_FIXNUM { return +compare_ratio_fixnum(x, y); }
+    CASE_FIXNUM_RATIO { return -compare_ratio_fixnum(y, x); }
+    CASE_RATIO_BIGNUM { return +compare_ratio_bignum(x, y); }
+    CASE_BIGNUM_RATIO { return -compare_ratio_bignum(y, x); }
+    /* float x rational */
+#if 0
+    /* All special cases below could be replaced by this unoptimized variant: */
+    CASE_XFLOAT_RATIONAL { return +ecl_number_compare(cl_rational(x), y); }
+    CASE_RATIONAL_XFLOAT { return -ecl_number_compare(cl_rational(y), x); }
+#else
     /* float x fixnum */
-    CASE_SINGLE_FLOAT_FIXNUM {
-      return -double_fix_compare(ecl_fixnum(y), ecl_single_float(x)); }
-    CASE_FIXNUM_SINGLE_FLOAT {
-      return double_fix_compare(ecl_fixnum(x), ecl_single_float(y)); }
-    CASE_DOUBLE_FLOAT_FIXNUM {
-      return -double_fix_compare(ecl_fixnum(y), ecl_double_float(x)); }
-    CASE_FIXNUM_DOUBLE_FLOAT {
-      return  double_fix_compare(ecl_fixnum(x), ecl_double_float(y)); }
-    CASE_LONG_FLOAT_FIXNUM {
-      return -long_double_fix_compare(ecl_fixnum(y), ecl_long_float(x)); }
-    CASE_FIXNUM_LONG_FLOAT {
-      return  long_double_fix_compare(ecl_fixnum(x), ecl_long_float(y)); }
-    /* float x [bignum,ratio] */
-    CASE_SINGLE_FLOAT_BIGNUM;
-    CASE_SINGLE_FLOAT_RATIO;
-    CASE_DOUBLE_FLOAT_BIGNUM;
-    CASE_DOUBLE_FLOAT_RATIO;
-    CASE_LONG_FLOAT_BIGNUM;
-    CASE_LONG_FLOAT_RATIO;
-    {
-#ifdef ECL_IEEE_FP
-      if (ecl_float_infinity_p(x))
-        return ecl_number_compare(x, ecl_make_fixnum(0));
+    CASE_SINGLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_single_float(x), y); }
+    CASE_FIXNUM_SINGLE_FLOAT { return -compare_dfloat_fixnum(ecl_single_float(y), x); }
+    CASE_DOUBLE_FLOAT_FIXNUM { return +compare_dfloat_fixnum(ecl_double_float(x), y); }
+    CASE_FIXNUM_DOUBLE_FLOAT { return -compare_dfloat_fixnum(ecl_double_float(y), x); }
+    CASE_LONG_FLOAT_FIXNUM   { return +compare_lfloat_fixnum(ecl_long_float(x), y); }
+    CASE_FIXNUM_LONG_FLOAT   { return -compare_lfloat_fixnum(ecl_long_float(y), x); }
+    /* float x bignum */
+    CASE_SINGLE_FLOAT_BIGNUM { return +compare_dfloat_bignum(ecl_single_float(x), y); }
+    CASE_BIGNUM_SINGLE_FLOAT { return -compare_dfloat_bignum(ecl_single_float(y), x); }
+    CASE_DOUBLE_FLOAT_BIGNUM { return +compare_dfloat_bignum(ecl_double_float(x), y); }
+    CASE_BIGNUM_DOUBLE_FLOAT { return -compare_dfloat_bignum(ecl_double_float(y), x); }
+    CASE_LONG_FLOAT_BIGNUM   { return +compare_lfloat_bignum(ecl_long_float(x), y); }
+    CASE_BIGNUM_LONG_FLOAT   { return -compare_lfloat_bignum(ecl_long_float(y), x); }
+    /* float x ratio */
+    CASE_SINGLE_FLOAT_RATIO  { return +compare_dfloat_ratio(ecl_single_float(x), y); }
+    CASE_RATIO_SINGLE_FLOAT  { return -compare_dfloat_ratio(ecl_single_float(y), x); }
+    CASE_DOUBLE_FLOAT_RATIO  { return +compare_dfloat_ratio(ecl_double_float(x), y); }
+    CASE_RATIO_DOUBLE_FLOAT  { return -compare_dfloat_ratio(ecl_double_float(y), x); }
+    CASE_LONG_FLOAT_RATIO    { return +compare_lfloat_ratio(ecl_long_float(x), y); }
+    CASE_RATIO_LONG_FLOAT    { return -compare_lfloat_ratio(ecl_long_float(y), x); }
 #endif
-      x = cl_rational(x);
-      goto BEGIN;
-    }
-    CASE_BIGNUM_SINGLE_FLOAT;
-    CASE_RATIO_SINGLE_FLOAT;
-    CASE_BIGNUM_DOUBLE_FLOAT;
-    CASE_RATIO_DOUBLE_FLOAT;
-    CASE_BIGNUM_LONG_FLOAT;
-    CASE_RATIO_LONG_FLOAT;
-    {
-#ifdef ECL_IEEE_FP
-      if (ecl_float_infinity_p(y))
-        return ecl_number_compare(ecl_make_fixnum(0), y);
-#endif
-      y = cl_rational(y);
-      goto BEGIN;
-    }
     /* float x float */
     CASE_SINGLE_FLOAT_SINGLE_FLOAT {
       dx = ecl_single_float(x);

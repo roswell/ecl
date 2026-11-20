@@ -13,6 +13,7 @@
  */
 
 #define ECL_INCLUDE_MATH_H
+#include <float.h>
 #include <limits.h>
 #include <string.h>
 #include <ecl/ecl.h>
@@ -389,6 +390,28 @@ _ecl_big_get_fix(cl_object x)
 }
 #endif /* ECL_GMP_FIXNUM_TO_LIMBS */
 
+void
+_ecl_big_set_lf(cl_object o, long double dval)
+{
+  unsigned long int limb;
+  int neg = signbit(dval)!=0, exponent, iterator, shift;
+  long double frac = neg
+    ? frexpl(-dval,&exponent)
+    : frexpl(+dval,&exponent);
+  _ecl_big_set_ui(o, 0);
+  for (iterator=0; iterator<LDBL_MANT_DIG && frac; iterator+=ECL_LONG_BITS) {
+    frac=ldexpl(frac, ECL_LONG_BITS);
+    limb=(unsigned long int)frac;
+    frac-=limb;
+    _ecl_big_mul_2exp(o, o, ECL_LONG_BITS);
+    _ecl_big_add_ui(o, o, limb);
+  }
+  shift = exponent-iterator;
+  if (shift<0) _ecl_big_div_2exp(o, o, -shift); /* overshot */
+  else         _ecl_big_mul_2exp(o, o, +shift); /* undershot */
+  if (neg) _ecl_big_neg(o, o);
+}
+
 long double
 _ecl_big_get_lf(cl_object o)
 {
@@ -400,8 +423,6 @@ _ecl_big_get_lf(cl_object o)
   }
   return (mpz_sgn(ecl_bignum(o)) < 0)? -output : output;
 }
-
-
 
 #if ECL_FIXNUM_BITS == ECL_INT_BITS
 static inline bool
