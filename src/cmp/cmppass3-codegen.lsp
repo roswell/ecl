@@ -154,3 +154,30 @@
 (define-codegen (:cxx :exit) (instruction)
   (destructuring-bind (loc) (instruction-inputs instruction)
     (wt-nl "return " loc ";")))
+
+
+;;; cmppass2-cont
+
+(define-codegen (:cxx :block) (instruction)
+  (destructuring-bind (blk) (instruction-inputs instruction)
+    (let ((blk-var (blk-var blk)))
+      (wt-nl-open-brace)
+      (when (eq :object (var-kind blk-var))
+        ;; The block is referenced across UNWIND-PROTECT boundary.
+        (setf (var-loc blk-var) (next-lcl))
+        (wt-nl "cl_object " blk-var ";"))
+      (when (env-grows (var-ref-ccb blk-var))
+        ;; The block is referenced from a closure which may escape.
+        (let ((env-lvl *env-lvl*))
+          (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
+      (bind 'FRAME++ blk-var))))
+
+(define-codegen (:cxx :exit-block) (instruction)
+  (destructuring-bind (blk) (instruction-inputs instruction)
+    (wt-nl-close-brace)
+    (when (var-ref-ccb (blk-var blk))
+      (decf *env*))))
+
+;; (define-codegen (:cxx :exit-frame) (instruction)
+;;   (destructuring-bind (tag) (instruction-inputs instruction)
+;;     (wt-nl "ecl_frs_pop(cl_env_copy);")))
