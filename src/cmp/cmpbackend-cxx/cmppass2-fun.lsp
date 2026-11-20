@@ -217,7 +217,8 @@
     ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
-      (with-lexical-scope ()
+      (with-inline-blocks ()
+        (open-inline-block)
         (wt-nl "int i = " nreq ";")
         (do ((opt optionals (cdddr opt))
              (type-check optional-type-check-forms (cdr type-check)))
