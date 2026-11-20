@@ -159,7 +159,7 @@
 ;;; cmppass2-cont
 
 (define-codegen (:cxx :block) (instruction)
-  (destructuring-bind (blk) (instruction-inputs instruction)
+  (destructuring-bind (blk return-from-exit) (instruction-inputs instruction)
     (let ((blk-var (blk-var blk)))
       (wt-nl-open-brace)
       (when (eq :object (var-kind blk-var))
@@ -170,7 +170,11 @@
         ;; The block is referenced from a closure which may escape.
         (let ((env-lvl *env-lvl*))
           (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-      (bind 'FRAME++ blk-var))))
+      (bind 'FRAME++ blk-var)
+      (wt-nl "ecl_frs_push(cl_env_copy," blk-var ");")
+      (wt-nl "if (__ecl_frs_push_result!=0) {")
+      (wt-nl-go return-from-exit)
+      (wt-nl "}"))))
 
 (define-codegen (:cxx :exit-block) (instruction)
   (destructuring-bind (blk) (instruction-inputs instruction)
