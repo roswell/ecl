@@ -188,6 +188,7 @@ lines are inserted, but the order is preserved")
 (defvar *global-funs* nil)              ; holds { fun }*
 (defvar *use-c-global* nil)             ; honor si::c-global declaration
 (defvar *module*)                       ; top-level IR container
+(defvar *last-module* nil)              ; top-level IR container (debug)
 
 (defvar *objects-being-created* nil)    ; helps detecting circular references
 (defvar *objects-init-deferred* nil)    ; helps avoiding circularity

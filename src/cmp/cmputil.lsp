@@ -66,6 +66,7 @@
                     (si::*defun-inline-hook* 'maybe-install-inline-function)
                     (*machine* (or *machine* *default-machine*))
                     (*module* (make-module)))
+               (setf *last-module* *module*)
                (with-compilation-unit ()
                  ,@body))))
        (abort ()))
