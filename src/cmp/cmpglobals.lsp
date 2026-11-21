@@ -199,23 +199,3 @@ deleted. We need this for #'COMPILE because windows DLLs cannot
 be deleted if they have been opened with LoadLibrary.")
 
 (defvar *undefined-vars* nil)
-
-;;; Only these flags are set by the user.
-;;; If (safe-compile) is ON, some kind of run-time checks are not
-;;; included in the compiled code.  The default value is OFF.
-
-(defvar +init-env-form+
-  '((*gensym-counter* 0)
-    (*compiler-in-use* t)
-    (*compiler-phase* 't1)
-    (*cmp-env-root* (copy-tree *cmp-env-root*))
-    (*cmp-env* *cmp-env-root*)
-    (*global-vars* nil)
-    (*global-funs* nil)
-    (*undefined-vars* nil)
-    (*compile-time-too* nil)
-    (*clines-string-list* '())
-    (si::*defun-inline-hook* 'maybe-install-inline-function)
-    (*machine* (or *machine* *default-machine*))
-    (*module* (make-module))))
-
