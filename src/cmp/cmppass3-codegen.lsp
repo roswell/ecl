@@ -199,3 +199,24 @@
     (wt-nl-close-brace)
     (when (var-ref-ccb (blk-var blk))
       (decf *env*))))
+
+;;; TAGBODY
+(define-codegen (:cxx :tagbody) (instruction)
+  (destructuring-bind (tag-loc) (instruction-inputs instruction)
+    (wt-nl-open-brace)
+    (when (eq :object (var-kind tag-loc))
+      (setf (var-loc tag-loc) (next-lcl))
+      (wt-nl "cl_object " tag-loc ";"))
+    (when (env-grows (var-ref-ccb tag-loc))
+      (let ((env-lvl *env-lvl*))
+        (wt-nl "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+    (bind 'FRAME++ tag-loc)))
+
+(define-codegen (:cxx :bad-tag) (instruction)
+  (destructuring-bind (tag-loc) (instruction-inputs instruction)
+    (when (var-ref-ccb tag-loc)
+      (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");"))))
+
+(define-codegen (:cxx :exit-tagbody) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl-close-brace)))

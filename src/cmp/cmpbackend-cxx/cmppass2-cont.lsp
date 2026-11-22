@@ -50,33 +50,23 @@
                   (when (and (tag-p ,tag) (plusp (tag-ref ,tag)))
                     (setf (tag-jump ,tag) (next-label t (tag-name ,tag)))
                     ,@body))))
-    (if (null (var-kind tag-loc))
-        ;; only local goto's
-        (do-tags (tag body (c2tagbody-body body)))
+    (if (var-kind tag-loc)
         ;; some tag used non locally or inside an unwind-protect
-        (let ((*env* *env*) (*env-lvl* *env-lvl*)
-              (*lex* *lex*) (*lcl* *lcl*)
-              (*inline-blocks* 0)
-              (env-grows (env-grows (var-ref-ccb tag-loc))))
-          (when env-grows
-            (let ((env-lvl *env-lvl*))
-              (maybe-open-inline-block)
-              (wt-nl "volatile cl_object env" (incf *env-lvl*)
-                     " = env" env-lvl ";")))
-          (when (eq :OBJECT (var-kind tag-loc))
-            (setf (var-loc tag-loc) (next-lcl))
-            (maybe-open-inline-block)
-            (wt-nl "cl_object " tag-loc ";"))
-          (bind 'FRAME++ tag-loc)
+        (let ((*env* *env*)
+              (*env-lvl* *env-lvl*)
+              (*lex* *lex*)
+              (*lcl* *lcl*))
+          (push-instruction :tagbody tag-loc)
           (with-unwind-frame (tag-loc)
-            (progn
-              (do-tags (tag body nil)
-                (unwind-cond (tag-jump tag) :jump-eq
-                             'VALUEZ  (tag-index tag)))
-              (when (var-ref-ccb tag-loc)
-                (wt-nl "ecl_internal_error(\"GO found an inexistent tag\");")))
+              (progn
+                (do-tags (tag body nil)
+                  (unwind-cond (tag-jump tag) :jump-eq
+                               'VALUEZ  (tag-index tag)))
+                (push-instruction :bad-tag tag-loc))
             (c2tagbody-body body))
-          (close-inline-blocks)))))
+          (push-instruction :exit-tagbody))
+        ;; only local goto's
+        (do-tags (tag body (c2tagbody-body body))))))
 
 (defun c2tagbody-body (body)
   ;;; INV: BODY is a list of tags and forms. We have processed the body
@@ -86,7 +76,7 @@
            (let ((tag-block (label-iblock (tag-jump this-form))))
              (unless (eq tag-block (bir-trail *bir*))
                (bir-insert *bir* tag-block)))
-           (wt-label (tag-jump this-form)))
+           (push-instruction :label (tag-jump this-form)))
           ((endp rest)
            ;; Last form, it is never a label!
            (c2expr this-form))
