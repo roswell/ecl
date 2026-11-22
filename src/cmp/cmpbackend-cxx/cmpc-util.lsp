@@ -261,14 +261,8 @@
      (push-instruction :frame-finish)))
 
 (defmacro with-stack-frame ((var) &body body)
-  (ext:with-gensyms (hlp)
-    `(progn
-       (open-inline-block)
-       (let* ((,var "_ecl_inner_frame")
-              (,hlp "_ecl_inner_frame_aux")
-              (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
-         (wt-nl "ecl_object " ,hlp ";")
-         (wt-nl *volatile* "cl_object " ,var
-                "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" ,hlp ",0);")
-         ,@body)
-       (close-inline-block))))
+  `(let* ((,var "_ecl_inner_frame")
+          (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
+     (push-instruction :stack-open ,var)
+     ,@body
+     (push-instruction :stack-exit)))

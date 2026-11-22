@@ -179,6 +179,19 @@
     (wt-nl "}")
     (wt-nl-close-brace)))
 
+;;; WITH-STACK-FRAME
+(define-codegen (:cxx :stack-open) (instruction)
+  (destructuring-bind (loc) (instruction-inputs instruction)
+    (open-inline-block)
+    (let ((hlp "_ecl_inner_frame_aux"))
+      (wt-nl "ecl_object " hlp ";")
+      (wt-nl *volatile* "cl_object " loc
+             "=ecl_stack_frame_open(cl_env_copy,(cl_object)&" hlp ",0);"))))
+
+(define-codegen (:cxx :stack-exit) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (close-inline-block)))
+
 ;;; BLOCK
 (define-codegen (:cxx :block) (instruction)
   (destructuring-bind (blk) (instruction-inputs instruction)
