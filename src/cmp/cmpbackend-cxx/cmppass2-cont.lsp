@@ -129,22 +129,19 @@
     ;; Here we compile the form which is protected. When this form is aborted,
     ;; it continues with unwinding=TRUE. We call ecl_frs_pop() manually because
     ;; we use C2EXPR* in the body.
-    (wt-nl "volatile bool unwinding = FALSE;")
-    (wt-nl "ecl_frame_ptr next_fr;")
+    (push-instruction :unwind-protect-begin)
     (with-unwind-frame ("ECL_PROTECT_TAG")
-        (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->frs_stack.nlj_fr;")
+        (push-instruction :unwind-protect-abort)
       (let ((*destination* 'VALUEZ))
         (c2expr* form)))
-    (wt-nl "ecl_frs_pop(cl_env_copy);")
     ;; Here we save the values of the form which might have been
     ;; aborted, and execute some cleanup code. This code may also
     ;; be aborted by some control structure, but is not protected.
-    (wt-nl "ecl_stack_frame_push_values(" frame ");")
+    (push-instruction :unwind-protect-clean frame)
     (let ((*destination* 'TRASH))
       (c2expr* body))
-    (wt-nl "ecl_stack_frame_pop_values(" frame ");")
     ;; Finally, if the protected form was aborted, jump to the
     ;; next catch point...
-    (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")
+    (push-instruction :unwind-protect-exit frame)
     ;; ... or simply return the values of the protected form.
     (unwind-exit 'VALUEZ)))

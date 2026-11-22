@@ -243,3 +243,24 @@
   (destructuring-bind () (instruction-inputs instruction)
     (wt-nl "ecl_frs_pop(cl_env_copy);")
     (wt-comment "END CATCH")))
+
+;;; UNWIND-PROTECT
+
+(define-codegen (:cxx :unwind-protect-begin) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl "volatile bool unwinding = FALSE;")
+    (wt-nl "ecl_frame_ptr next_fr;")))
+
+(define-codegen (:cxx :unwind-protect-abort) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl "  unwinding = TRUE; next_fr=cl_env_copy->frs_stack.nlj_fr;")))
+
+(define-codegen (:cxx :unwind-protect-clean) (instruction)
+  (destructuring-bind (frame) (instruction-inputs instruction)
+    (wt-nl "ecl_frs_pop(cl_env_copy);")
+    (wt-nl "ecl_stack_frame_push_values(" frame ");")))
+
+(define-codegen (:cxx :unwind-protect-exit) (instruction)
+  (destructuring-bind (frame) (instruction-inputs instruction)
+    (wt-nl "ecl_stack_frame_pop_values(" frame ");")
+    (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")))
