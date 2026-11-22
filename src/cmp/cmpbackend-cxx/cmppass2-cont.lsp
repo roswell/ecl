@@ -15,29 +15,18 @@
 (in-package #:compiler)
 
 
-(defun c2block (c1form blk body)
+(defun c2block (c1form blk body &aux (blk-var (blk-var blk)))
   (declare (ignore c1form))
   (setf (blk-exit blk) *exit*
         (blk-destination blk) *destination*)
-  (if (plusp (var-ref (blk-var blk)))
-      (let* ((blk-var (blk-var blk))
-             (*env-lvl* *env-lvl*))
+  (if (plusp (var-ref blk-var))
+      (let ((*env-lvl* *env-lvl*))
         (check-vref blk-var)
-        (with-inline-blocks ()
-          (open-inline-block)
-          (when (eq :object (var-kind blk-var))
-            (setf (var-loc blk-var) (next-lcl))
-            (wt-nl "cl_object " blk-var ";"))
-          (when (env-grows (var-ref-ccb blk-var))
-            ;; var is referenced from a closure which may escape.
-            (let ((env-lvl *env-lvl*))
-              (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-          (bind 'FRAME++ blk-var)
-          (with-unwind-frame (blk-var)
-              (unwind-exit 'VALUEZ)
-            (c2expr body))
-          (when (var-ref-ccb blk-var)
-            (decf *env*))))
+        (push-instruction :block blk)
+        (with-unwind-frame (blk-var)
+            (unwind-exit 'VALUEZ)
+          (c2expr body))
+        (push-instruction :exit-block blk))
       (c2expr body)))
 
 (defun c2return-from (c1form blk nonlocal val)

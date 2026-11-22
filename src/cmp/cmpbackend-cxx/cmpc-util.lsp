@@ -254,15 +254,11 @@
 ;;; ecl_frs_pop is emited by the exit manager or the caller. -- jd 2023-11-19
 (defmacro with-unwind-frame ((tag) handler-form &body body)
   `(let ((*unwind-exit* (list* 'FRAME *unwind-exit*)))
-     (open-inline-block)
-     (wt-nl "ecl_frs_push(cl_env_copy," ,tag ");")
-     (wt-nl "if (__ecl_frs_push_result!=0) {")
+     (push-instruction :frame-unwind ,tag)
      ,handler-form
-     ,@(when body
-         `((wt-nl "} else {")
-           ,@body))
-     (wt-nl "}")
-     (close-inline-block)))
+     (push-instruction :frame-normal)
+     ,@body
+     (push-instruction :frame-finish)))
 
 (defmacro with-stack-frame ((var) &body body)
   (ext:with-gensyms (hlp)

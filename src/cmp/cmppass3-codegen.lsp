@@ -158,3 +158,44 @@
 (define-codegen (:cxx :label) (instruction)
   (destructuring-bind (label) (instruction-inputs instruction)
     (wt-label label)))
+
+
+;;; cmppass2-cont
+
+;;; WITH-UNWIND-FRAME
+
+(define-codegen (:cxx :frame-unwind) (instruction)
+  (destructuring-bind (tag) (instruction-inputs instruction)
+    (wt-nl-open-brace)
+    (wt-nl "ecl_frs_push(cl_env_copy," tag ");")
+    (wt-nl "if (__ecl_frs_push_result!=0) {")))
+
+(define-codegen (:cxx :frame-normal) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl "} else {")))
+
+(define-codegen (:cxx :frame-finish) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl "}")
+    (wt-nl-close-brace)))
+
+;;; BLOCK
+(define-codegen (:cxx :block) (instruction)
+  (destructuring-bind (blk) (instruction-inputs instruction)
+    (let ((blk-var (blk-var blk)))
+      (wt-nl-open-brace)
+      (when (eq :object (var-kind blk-var))
+        ;; The block is referenced across UNWIND-PROTECT boundary.
+        (setf (var-loc blk-var) (next-lcl))
+        (wt-nl "cl_object " blk-var ";"))
+      (when (env-grows (var-ref-ccb blk-var))
+        ;; The block is referenced from a closure which may escape.
+        (let ((env-lvl *env-lvl*))
+          (wt-nl "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
+      (bind 'FRAME++ blk-var))))
+
+(define-codegen (:cxx :exit-block) (instruction)
+  (destructuring-bind (blk) (instruction-inputs instruction)
+    (wt-nl-close-brace)
+    (when (var-ref-ccb (blk-var blk))
+      (decf *env*))))
