@@ -253,11 +253,11 @@
      (wt-nl "}")
      (close-inline-block)))
 
-(defmacro with-stack-frame ((var &optional loc) &body body)
+(defmacro with-stack-frame ((var) &body body)
   (ext:with-gensyms (hlp)
     `(progn
        (open-inline-block)
-       (let* ((,var ,(or loc "_ecl_inner_frame"))
+       (let* ((,var "_ecl_inner_frame")
               (,hlp "_ecl_inner_frame_aux")
               (*unwind-exit* (list* (list 'STACK ,var) *unwind-exit*)))
          (wt-nl "ecl_object " ,hlp ";")
