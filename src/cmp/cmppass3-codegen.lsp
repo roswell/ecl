@@ -220,3 +220,13 @@
 (define-codegen (:cxx :exit-tagbody) (instruction)
   (destructuring-bind () (instruction-inputs instruction)
     (wt-nl-close-brace)))
+
+;;; CATCH
+(define-codegen (:cxx :catch) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-comment "BEGIN CATCH")))
+
+(define-codegen (:cxx :exit-catch) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (wt-nl "ecl_frs_pop(cl_env_copy);")
+    (wt-comment "END CATCH")))
