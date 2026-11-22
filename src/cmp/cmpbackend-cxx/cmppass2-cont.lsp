@@ -136,11 +136,9 @@
       (wt-comment "BEGIN CATCH ~A" code)
       (with-unwind-frame ('VALUE0)
         (unless (member new-destination '(TRASH VALUEZ))
-          (with-indentation
-            (with-exit-label (*exit*)
-              (unwind-exit 'VALUEZ))))
-        (with-indentation
-          (c2expr* body)))
+          (with-exit-label (*exit*)
+            (unwind-exit 'VALUEZ)))
+        (c2expr* body))
       (wt-nl "ecl_frs_pop(cl_env_copy);")
       (wt-comment "END CATCH ~A" code))
     (unwind-exit new-destination)))

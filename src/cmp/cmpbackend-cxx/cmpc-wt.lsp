@@ -98,10 +98,6 @@
         (wt1 #\}))
       (baboon :format-control "Mismatch in C blocks")))
 
-(defmacro with-indentation (&body body)
-  `(let ((*opened-c-braces* (1+ *opened-c-braces*)))
-     ,@body))
-
 ;;;
 ;;; LABELS AND JUMPS
 ;;;
