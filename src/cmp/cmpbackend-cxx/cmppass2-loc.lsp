@@ -459,12 +459,3 @@
          (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
-;;;
-;;; Foreign data
-;;;
-
-(defun wt-ffi-data-ref (data ffi-tag)
-  (wt "ecl_foreign_data_ref_elt(&" data "," ffi-tag ")"))
-
-(defun wt-ffi-data-set (value data ffi-tag)
-  (wt "ecl_foreign_data_set_elt(&" data "," ffi-tag "," value ");"))

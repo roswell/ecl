@@ -254,4 +254,15 @@
   (wt "T" temp))
 
 ;;; reference to variable of inner closure.
-(defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))
+(defun wt-env (clv)
+  (wt "ECL_CONS_CAR(CLV" clv ")"))
+
+;;;
+;;; Foreign data
+;;;
+
+(defun wt-ffi-data-ref (data ffi-tag)
+  (wt "ecl_foreign_data_ref_elt(&" data "," ffi-tag ")"))
+
+(defun wt-ffi-data-set (value data ffi-tag)
+  (wt "ecl_foreign_data_set_elt(&" data "," ffi-tag "," value ");"))
