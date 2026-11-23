@@ -415,7 +415,7 @@
          (funcall (gethash destination *set-loc-dispatch-table* 'set-unknown-loc)
                   loc))
         ((var-p destination)
-         (set-var loc destination))
+         (set-var destination loc))
         ((vv-p destination)
          (set-vv loc destination))
         ((atom destination)
@@ -459,3 +459,20 @@
          (wt-nl "cl_env_copy->values[0] = " (coerce-loc :object loc) ";")
          (wt-nl "cl_env_copy->nvalues = 1;"))))
 
+(defun set-var (var loc &aux (var-loc (var-loc var))) ;  ccb
+  (declare (si::c-local))
+  (unless (var-p var)
+    (baboon :format-control "set-var: ~s is not a variable."
+            :format-arguments (list var)))
+  (case (var-kind var)
+    (CLOSURE
+     (wt-nl)(wt-env var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
+    (LEXICAL
+     (wt-nl)(wt-lex var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
+    ((SPECIAL GLOBAL)
+     (if (safe-compile)
+         (wt-nl "ecl_cmp_setq(cl_env_copy," var-loc ",")
+         (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
+     (wt (coerce-loc (var-host-type var) loc) ");"))
+    (t
+     (wt-nl var-loc " = " (coerce-loc (var-host-type var) loc) ";"))))

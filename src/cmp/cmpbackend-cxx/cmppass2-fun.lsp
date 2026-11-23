@@ -45,7 +45,7 @@
   (loop for fun in funs
         for var = (fun-var fun)
         when (plusp (var-ref var))
-          do (set-var (list 'MAKE-CCLOSURE fun) var))
+          do (set-loc var (list 'MAKE-CCLOSURE fun)))
   (c2expr body)
   (close-inline-blocks))
 

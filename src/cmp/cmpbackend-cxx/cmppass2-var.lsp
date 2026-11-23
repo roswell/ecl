@@ -223,7 +223,7 @@
                  (let ((*destination* var))
                    (c2expr* form))))
     (dolist (save saves)
-      (set-var (cdr save) (car save))))
+      (set-loc (car save) (cdr save))))
   (unwind-exit *vv-nil*))
 
 ;;; bind must be called for each variable in a lambda or let, once the value
@@ -300,7 +300,7 @@
 (defun bind-or-set (loc v use-bind)
   (declare (si::c-local))
   (cond ((not use-bind)
-         (set-var loc v))
+         (set-loc v loc))
         ((or (plusp (var-ref v))
              (member (var-kind v) '(SPECIAL GLOBAL)))
          (bind loc v))))
@@ -368,21 +368,3 @@
 (defun c2multiple-value-setq (c1form vars form)
   (declare (ignore c1form))
   (unwind-exit (do-m-v-setq vars form nil)))
-
-(defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
-  (unless (var-p var)
-    (baboon :format-control "set-var: ~s is not a variable."
-            :format-arguments (list var)))
-  (case (var-kind var)
-    (CLOSURE
-     (wt-nl)(wt-env var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
-    (LEXICAL
-     (wt-nl)(wt-lex var-loc)(wt " = " (coerce-loc (var-host-type var) loc) ";"))
-    ((SPECIAL GLOBAL)
-     (if (safe-compile)
-         (wt-nl "ecl_cmp_setq(cl_env_copy," var-loc ",")
-         (wt-nl "ECL_SETQ(cl_env_copy," var-loc ","))
-     (wt (coerce-loc (var-host-type var) loc) ");"))
-    (t
-     (wt-nl var-loc " = " (coerce-loc (var-host-type var) loc) ";"))))
-
