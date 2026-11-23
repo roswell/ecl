@@ -476,3 +476,61 @@
      (wt (coerce-loc (var-host-type var) loc) ");"))
     (t
      (wt-nl var-loc " = " (coerce-loc (var-host-type var) loc) ";"))))
+
+;;;
+;;; BIND
+;;;
+
+;;; bind must be called for each variable in a lambda or let, once the value
+;;; to be bound has been placed in loc.
+;;; bind takes care of setting var-loc.
+
+(defun bind (loc var)
+  ;; loc can be either (LCL n), 'VA-ARGS, (KEYVARS n), (CAR n),
+  ;; a constant, or (VAR var) from a let binding. ; ccb
+  (declare (type var var))
+  (case (var-kind var)
+    (CLOSURE
+     (let ((var-loc (var-loc var)))
+       (unless (typep var-loc 'fixnum)
+         ;; first binding: assign location
+         (setq var-loc (next-env))
+         (setf (var-loc var) var-loc))
+       (when (zerop var-loc) (wt-nl "env" *env-lvl* " = ECL_NIL;"))
+       (wt-nl "CLV" var-loc " = env" *env-lvl*
+              " = CONS(" (coerce-loc :object loc) ",env" *env-lvl* ");")
+       (wt-comment (var-name var))))
+    (LEXICAL
+     (let ((var-loc (var-loc var)))
+       (unless (consp var-loc)
+         ;; first binding: assign location
+         (setq var-loc (next-lex))
+         (setf (var-loc var) var-loc))
+       (wt-nl) (wt-lex var-loc) (wt " = " (coerce-loc :object loc) ";"))
+     (wt-comment (var-name var)))
+    ((SPECIAL GLOBAL)
+     (bds-bind loc var))
+    (t
+     (cond ((not (eq (var-loc var) 'OBJECT))
+            ;; already has location (e.g. optional in lambda list)
+            ;; check they are not the same
+            (unless (equal (var-loc var) loc)
+              (wt-nl var " = " (coerce-loc (var-host-type var) loc) ";")))
+           ((and (consp loc) (eql (car loc) 'LCL))
+            ;; set location for lambda list requireds
+            (setf (var-loc var) loc))
+           (t
+            (baboon :format-control "bind: unexpected var-kind (~s) and loc (~s)."
+                    :format-arguments (list (var-kind var) loc)))))))
+
+(defun bds-bind (loc var)
+  ;; Optimize the case (let ((*special-var* *special-var*)) ...)
+  (cond ((and (var-p loc)
+              (member (var-kind loc) '(global special))
+              (eq (var-name loc) (var-name var)))
+         (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
+        (t
+         (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ","
+                (coerce-loc :object loc) ");")))
+  (push 'BDS-BIND *unwind-exit*)
+  (wt-comment (var-name var)))
