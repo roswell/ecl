@@ -264,3 +264,22 @@
   (destructuring-bind (frame) (instruction-inputs instruction)
     (wt-nl "ecl_stack_frame_pop_values(" frame ");")
     (wt-nl "if (unwinding) ecl_unwind(cl_env_copy,next_fr);")))
+
+
+;;; cmppass2-var
+
+;;; PROGV
+
+(define-codegen (:cxx :progv) (instruction)
+  (destructuring-bind (sym-loc val-loc lcl) (instruction-inputs instruction)
+    (open-inline-block)
+    (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")))
+
+(define-codegen (:cxx :bind-progv) (instruction)
+  (destructuring-bind (sym-loc val-loc lcl) (instruction-inputs instruction)
+    (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")))
+
+(define-codegen (:cxx :exit-progv) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+   (close-inline-block)))
+
