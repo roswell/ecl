@@ -369,18 +369,6 @@
   (declare (ignore c1form))
   (unwind-exit (do-m-v-setq vars form nil)))
 
-(defun wt-var (var)
-  (declare (type var var))
-  (let ((var-loc (var-loc var)))
-    (case (var-kind var)
-      (CLOSURE (wt-env var-loc))
-      (LEXICAL (wt-lex var-loc))
-      ((SPECIAL GLOBAL)
-       (if (safe-compile)
-           (wt "ecl_cmp_symbol_value(cl_env_copy," var-loc ")")
-           (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
-      (t (wt var-loc)))))
-
 (defun set-var (loc var &aux (var-loc (var-loc var))) ;  ccb
   (unless (var-p var)
     (baboon :format-control "set-var: ~s is not a variable."
@@ -398,26 +386,3 @@
     (t
      (wt-nl var-loc " = " (coerce-loc (var-host-type var) loc) ";"))))
 
-(defun wt-lcl (lcl)
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl))
-
-(defun wt-lcl-loc (lcl &optional type name)
-  (declare (ignore type))
-  (unless (numberp lcl)
-    (baboon :format-control "wt-lcl-loc: ~s NaN"
-            :format-arguments (list lcl)))
-  (wt "v" lcl name))
-
-(defun wt-lex (lex)
-  (if (consp lex)
-      (wt "lex" (car lex) "[" (cdr lex) "]")
-      (wt-lcl lex)))
-
-(defun wt-temp (temp)
-  (wt "T" temp))
-
-;;; reference to variable of inner closure.
-(defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))

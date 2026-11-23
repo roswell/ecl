@@ -215,3 +215,43 @@
                       when (member c '(#\# #\@))
                         collect c
                       collect c))))
+
+;;;
+;;; Variables
+;;;
+
+(defun wt-var (var)
+  (declare (type var var))
+  (let ((var-loc (var-loc var)))
+    (case (var-kind var)
+      (CLOSURE (wt-env var-loc))
+      (LEXICAL (wt-lex var-loc))
+      ((SPECIAL GLOBAL)
+       (if (safe-compile)
+           (wt "ecl_cmp_symbol_value(cl_env_copy," var-loc ")")
+           (wt "ECL_SYM_VAL(cl_env_copy," var-loc ")")))
+      (t (wt var-loc)))))
+
+(defun wt-lcl (lcl)
+  (unless (numberp lcl)
+    (baboon :format-control "wt-lcl: ~s NaN"
+            :format-arguments (list lcl)))
+  (wt "v" lcl))
+
+(defun wt-lcl-loc (lcl &optional type name)
+  (declare (ignore type))
+  (unless (numberp lcl)
+    (baboon :format-control "wt-lcl-loc: ~s NaN"
+            :format-arguments (list lcl)))
+  (wt "v" lcl name))
+
+(defun wt-lex (lex)
+  (if (consp lex)
+      (wt "lex" (car lex) "[" (cdr lex) "]")
+      (wt-lcl lex)))
+
+(defun wt-temp (temp)
+  (wt "T" temp))
+
+;;; reference to variable of inner closure.
+(defun wt-env (clv) (wt "ECL_CONS_CAR(CLV" clv ")"))
