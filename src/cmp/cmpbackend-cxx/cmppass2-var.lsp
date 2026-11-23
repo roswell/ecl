@@ -7,9 +7,10 @@
 ;;;;    See file 'LICENSE' for the copyright details.
 ;;;;
 
-(in-package #:compiler)
+(in-package "COMPILER")
 
-(defun c2let-replaceable-var-ref-p (var form rest-forms)
+(defun let-replaceable-var-ref-p (var form rest-forms)
+  (declare (si::c-local))
   (when (and (eq (c1form-name form) 'VARIABLE)
              (null (var-set-nodes var))
              (local-var-p var))
@@ -91,7 +92,7 @@
   (loop for var in vars
         for rest-forms on (append forms (list body))
         for form = (first rest-forms)
-        unless (c2let-replaceable-var-ref-p var form rest-forms)
+        unless (let-replaceable-var-ref-p var form rest-forms)
           collect var into used-vars and
         collect form into used-forms
         finally (setf vars used-vars forms used-forms))
@@ -126,14 +127,14 @@
   ;; Optionally register the variables with the IHS frame for debugging
   (if (policy-debug-variable-bindings)
       (let ((*unwind-exit* *unwind-exit*))
-        (with-inline-blocks ()
-          (open-inline-block)
-          (ext:if-let ((env (build-debug-lexical-env vars)))
-            (progn
-              (push 'IHS-ENV *unwind-exit*)
-              (c2expr body)
-              (pop-debug-lexical-env))
-            (c2expr body))))
+        (open-inline-block)
+        (ext:if-let ((env (build-debug-lexical-env vars)))
+          (progn
+            (push 'IHS-ENV *unwind-exit*)
+            (c2expr body)
+            (pop-debug-lexical-env))
+          (c2expr body))
+        (close-inline-block))
       (c2expr body))
   (close-inline-blocks))
 
@@ -143,39 +144,31 @@
          (*env-lvl* *env-lvl*)
          (*env* *env*)
          (*lcl* *lcl*)
-         (labels nil)
-         (env-grows nil)
-         (*inline-blocks* 0)
-         min-values max-values)
-    ;; 1) Retrieve the number of output values.
-    (multiple-value-setq (min-values max-values)
-      (c1form-values-number init-form))
-    ;; 2) For all variables which are not special and do not belong to a
+         (closure-var-p nil))
+    ;; 1) For all variables which are not special and do not belong to a
     ;;    closure, make a local C variable.
+    (open-inline-block)
     (dolist (var vars)
       (declare (type var var))
       (ext:if-let ((kind (local-var-p var)))
         (when (useful-var-p var)
-          (maybe-open-inline-block)
           (bind (next-lcl) var)
           (wt-nl (host-type->c-name kind) " " *volatile* var ";")
           (wt-comment (var-name var)))
-        (unless env-grows
-          (setq env-grows (var-ref-ccb var)))))
-    ;; 3) If there are closure variables, set up an environment.
-    (when (setq env-grows (env-grows env-grows))
+        (unless closure-var-p
+          (setq closure-var-p (var-ref-ccb var)))))
+    ;; 2) If there are closure variables, set up an environment.
+    (when (env-grows closure-var-p)
       (let ((env-lvl *env-lvl*))
-        (maybe-open-inline-block)
-        (wt-nl "volatile cl_object env" (incf *env-lvl*)
-               " = env" env-lvl ";")))
-    ;; 4) Assign the values to the variables, compiling the form and binding the
+        (wt-nl "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+    ;; 3) Assign the values to the variables, compiling the form and binding the
     ;;    variables in the process.
     (do-m-v-setq vars init-form t)
-    ;; 5) Compile the body. If there are bindings of special variables, these
+    ;; 4) Compile the body. If there are bindings of special variables, these
     ;;    bindings are undone here.
     (c2expr body)
-    ;; 6) Close the C expression.
-    (close-inline-blocks)))
+    ;; 5) Close the C expression.
+    (close-inline-block)))
 
 (defun c2location (c1form loc)
   (unwind-exit (precise-loc-lisp-type loc (c1form-primary-type c1form))))
@@ -204,14 +197,14 @@
          (lcl (next-lcl))
          (sym-loc (make-lcl-var))
          (val-loc (make-lcl-var)))
-    (with-inline-blocks ()
-      (open-inline-block)
-      (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")
-      (let ((*destination* sym-loc)) (c2expr* symbols))
-      (let ((*destination* val-loc)) (c2expr* values))
-      (let ((*unwind-exit* (cons lcl *unwind-exit*)))
-        (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")
-        (c2expr body)))))
+    (open-inline-block)
+    (wt-nl "cl_object " sym-loc ", " val-loc "; cl_index " lcl ";")
+    (let ((*destination* sym-loc)) (c2expr* symbols))
+    (let ((*destination* val-loc)) (c2expr* values))
+    (let ((*unwind-exit* (cons lcl *unwind-exit*)))
+      (wt-nl lcl " = ecl_progv(cl_env_copy, " sym-loc ", " val-loc ");")
+      (c2expr body))
+    (close-inline-block)))
 
 (defun c2psetq (c1form vrefs forms &aux (saves nil))
   (declare (ignore c1form))
@@ -347,29 +340,29 @@
     (let* ((*lcl* *lcl*)
            (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
            (nr (make-lcl-var :type :int)))
-      (with-inline-blocks ()
-        (open-inline-block)
-        (when useful-extra-vars
-          ;; Make a copy of env->nvalues before assigning to any variables
-          (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
+      (open-inline-block)
+      (when useful-extra-vars
+        ;; Make a copy of env->nvalues before assigning to any variables
+        (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
 
-        ;; We know that at least MIN-VALUES variables will get a value
-        (dotimes (i min-values)
-          (when vars
-            (let ((v (pop vars))
-                  (loc (values-loc-or-value0 i)))
-              (bind-or-set loc v use-bind))))
+      ;; We know that at least MIN-VALUES variables will get a value
+      (dotimes (i min-values)
+        (when vars
+          (let ((v (pop vars))
+                (loc (values-loc-or-value0 i)))
+            (bind-or-set loc v use-bind))))
 
-        ;; Assign to other variables only when the form returns enough values
-        (when useful-extra-vars
-          (let ((tmp (make-lcl-var)))
-            (wt-nl "cl_object " tmp ";")
-            (loop for v in vars
-                  for i from min-values
-                  for loc = (values-loc-or-value0 i)
-                  do (when (useful-var-p v)
-                       (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
-                       (bind-or-set tmp v use-bind)))))))
+      ;; Assign to other variables only when the form returns enough values
+      (when useful-extra-vars
+        (let ((tmp (make-lcl-var)))
+          (wt-nl "cl_object " tmp ";")
+          (loop for v in vars
+                for i from min-values
+                for loc = (values-loc-or-value0 i)
+                do (when (useful-var-p v)
+                     (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
+                     (bind-or-set tmp v use-bind)))))
+      (close-inline-block))
     'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)
