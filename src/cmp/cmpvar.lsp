@@ -197,3 +197,7 @@
 (defun useful-var-p (var)
   (or (plusp (var-ref var))
       (global-var-p var)))
+
+(defun useful-var-ref-ccb-p (var)
+  (and (useful-var-p var)
+       (var-ref-ccb var)))

@@ -485,6 +485,9 @@
 ;;; to be bound has been placed in loc.
 ;;; bind takes care of setting var-loc.
 
+;;; FIXME BIND responsibilities are muddled - sometimes it upgrades the variable
+;;; and assigns, sometimes it only upgrades the variable, and sometimes it only
+;;; assigns. Split responsibilities accordingly.
 (defun bind (loc var)
   ;; loc can be either (LCL n), 'VA-ARGS, (KEYVARS n), (CAR n),
   ;; a constant, or (VAR var) from a let binding. ; ccb

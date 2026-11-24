@@ -281,7 +281,7 @@
         (when (useful-var-p var)
           (wt-nl (host-type->c-name kind) " " *volatile* var ";"))))
     ;; If there are closure variables, set up an environment.
-    (when (env-grows (some #'var-ref-ccb vars))
+    (when (env-grows (some #'useful-var-ref-ccb-p vars))
       (let ((env-lvl *env-lvl*))
         (wt-nl "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))))
 
@@ -423,3 +423,22 @@
                (+ 2 (length filtered-locations))
                ",,);")))
     (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname-obj ",ECL_NIL,_ecl_debug_env);")))
+
+
+;;; cmppass2-fun
+
+;;; LOCALS
+
+(define-codegen (:cxx :locals) (instruction)
+  (destructuring-bind (funs) (instruction-inputs instruction)
+    ;; BIND closed locations because of possible circularities.
+    (loop for fun in funs
+          for var = (fun-var fun)
+          when (and (useful-var-p var)
+                    (member (var-kind var) '(closure)))
+            do (bind *vv-nil* var))
+    ;; Assign local functions to variables.
+    (loop for fun in funs
+          for var = (fun-var fun)
+          when (useful-var-p var)
+            do (set-loc var (list 'MAKE-CCLOSURE fun)))))

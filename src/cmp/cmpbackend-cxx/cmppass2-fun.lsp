@@ -12,42 +12,21 @@
 (defun c2locals (c1form funs body labels ;; labels is T when deriving from labels
                  &aux
                    (*env* *env*)
-                   (*inline-blocks* 0)
                    (*env-lvl* *env-lvl*))
   (declare (ignore c1form labels))
-  ;; create location for each function which is returned, either in lexical:
-  (loop with env-grows = nil
-        with closed-vars = '()
-        for fun in funs
-        for var = (fun-var fun)
-        when (plusp (var-ref var))
-          do (case (var-kind var)
-               ((lexical closure)
-                (push var closed-vars)
-                (unless env-grows
-                  (setq env-grows (var-ref-ccb var))))
-               (otherwise
-                (maybe-open-inline-block)
-                (bind (next-lcl) var)
-                (wt-nl "cl_object " *volatile* var ";")))
-        finally
-           ;; if we have closed variables
-           (when (env-grows env-grows)
-             (maybe-open-inline-block)
-             (let ((env-lvl *env-lvl*))
-               (wt "cl_object " *volatile* "env" (incf *env-lvl*) " = env" env-lvl ";")))
-           ;; bind closed locations because of possible circularities
-           (loop for var in closed-vars
-                 do (bind *vv-nil* var)))
-  ;; create the functions:
-  (map nil #'update-function-env funs)
-  ;; - then assign to it
-  (loop for fun in funs
-        for var = (fun-var fun)
-        when (plusp (var-ref var))
-          do (set-loc var (list 'MAKE-CCLOSURE fun)))
-  (c2expr body)
-  (close-inline-blocks))
+  (let ((vars (loop for fun in funs
+                    for var = (fun-var fun)
+                    when (useful-var-p var)
+                      do (vlet var)
+                      and collect var)))
+    ;; Update local functions and register them for emitting.
+    (map nil #'update-function-env funs)
+    ;; Ensure variables where we will store functions.
+    (push-instruction :let-vars vars)
+    ;; Assign local functions to variables.
+    (push-instruction :locals funs)
+    (c2expr body)
+    (push-instruction :let-exit)))
 
 (defun update-function-env (fun)
   (declare (type fun fun))
