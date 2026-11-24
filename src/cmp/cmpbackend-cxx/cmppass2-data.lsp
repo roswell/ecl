@@ -7,8 +7,6 @@
 ;;;;
 ;;;;    See file 'LICENSE' for the copyright details.
 
-;;;; CMPWT  Output routines.
-
 (in-package "COMPILER")
 
 (defun data-permanent-storage-size ()

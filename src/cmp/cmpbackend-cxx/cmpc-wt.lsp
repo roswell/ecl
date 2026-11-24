@@ -258,6 +258,27 @@
   (wt "ECL_CONS_CAR(CLV" clv ")"))
 
 ;;;
+;;; Functions
+;;;
+(defun wt-maybe-check-num-arguments (use-narg minarg maxarg fname)
+  (when (and (policy-check-nargs) use-narg)
+    (flet ((wrong-num-arguments ()
+             (if fname
+                 (wt " FEwrong_num_arguments(" (get-object fname :test #'equal) ");")
+                 (wt " FEwrong_num_arguments_anonym();"))))
+      (if (and maxarg (= minarg maxarg))
+          (progn (wt-nl "if (ecl_unlikely(narg!=" minarg "))")
+                 (wrong-num-arguments))
+          (progn
+            (when (plusp minarg)
+              (wt-nl "if (ecl_unlikely(narg<" minarg "))")
+              (wrong-num-arguments))
+            (when maxarg
+              (wt-nl "if (ecl_unlikely(narg>" maxarg "))")
+              (wrong-num-arguments)))))
+    (open-inline-block)))
+
+;;;
 ;;; Foreign data
 ;;;
 
