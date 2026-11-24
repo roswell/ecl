@@ -90,12 +90,9 @@
         ;; Binding these variables is complicated and involves lexical
         ;; environments, global environments, etc. If we use `(BIND var)
         ;; as destination, BIND might receive the wrong environment.
-        (with-inline-blocks ()
-          (let ((locs (coerce-args (inline-args (list form)))))
-            (bind (first locs) var)
-            ;; Notice that we do not need to update *UNWIND-EXIT* because BIND
-            ;; does it for us.
-            ))
+        (let ((*destination* (make-temp-var)))
+          (c2expr* form)
+          (bind *destination* var))
         ;; The simple case of a variable which is local to a function.
         (let ((*destination* `(BIND ,var)))
           (c2expr* form)))))
@@ -114,18 +111,9 @@
           collect var into used-vars
           and collect form into used-forms
         finally (setf vars used-vars forms used-forms))
-  ;; Emit C definitions of local variables
-  (open-inline-block)
-  (dolist (var vars)
-    (declare (type var var))
-    (ext:when-let ((kind (local-var-p var)))
-      (when (useful-var-p var)
-        (bind (next-lcl (var-name var)) var)
-        (wt-nl (host-type->c-name kind) " " *volatile* var ";"))))
-  ;; Create closure bindings for closed-over variables
-  (when (env-grows (some #'var-ref-ccb vars))
-    (let ((env-lvl *env-lvl*))
-      (wt-nl *volatile* "cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
+  ;; Make necessary local C variables and create closure bindings for
+  ;; closed-over variables.
+  (push-instruction :let-vars vars)
   ;; Assign values
   (loop for form in forms
         for var in vars
@@ -136,7 +124,8 @@
              ((local-var-p var)
               (let ((*destination* var))
                 (c2expr* form)))
-             ((case (c1form-name form)
+             (t
+              (case (c1form-name form)
                 (LOCATION (bind (c1form-arg 0 form) var))
                 (VARIABLE (bind (c1form-arg 0 form) var))
                 (t (bind-init form var))))))
@@ -151,7 +140,7 @@
               (pop-debug-lexical-env))
             (c2expr body)))
       (c2expr body))
-  (close-inline-block))
+  (push-instruction :let-exit))
 
 (defun c2multiple-value-bind (c1form vars init-form body)
   (declare (ignore c1form))
@@ -159,26 +148,16 @@
          (*env-lvl* *env-lvl*)
          (*env* *env*)
          (*lcl* *lcl*))
-    ;; 1) For all variables which are not special and do not belong to a
-    ;;    closure, make a local C variable.
-    (open-inline-block)
-    (dolist (var vars)
-      (declare (type var var))
-      (ext:when-let ((kind (local-var-p var)))
-        (when (useful-var-p var)
-          (bind (next-lcl (var-name var)) var)
-          (wt-nl (host-type->c-name kind) " " *volatile* var ";"))))
-    ;; 2) If there are closure variables, set up an environment.
-    (when (env-grows (some #'var-ref-ccb vars))
-      (let ((env-lvl *env-lvl*))
-        (wt-nl "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))
-    ;; 3) Assign the values to the variables, compiling the form and binding the
-    ;;    variables in the process.
+    ;; Make necessary local C variables and create closure bindings for
+    ;; closed-over variables.
+    (push-instruction :let-vars vars)
+    ;; Assign the values to the variables, compiling the form and binding the
+    ;; variables in the process.
     (do-m-v-setq vars init-form t)
-    ;; 4) Compile the body. If there are bindings of special variables, these
-    ;;    bindings are undone here.
+    ;; Compile the body. If there are bindings of special variables, these
+    ;; bindings are undone here.
     (c2expr body)
-    (close-inline-block)))
+    (push-instruction :let-exit)))
 
 (defun c2location (c1form loc)
   (unwind-exit (precise-loc-lisp-type loc (c1form-primary-type c1form))))
@@ -235,19 +214,6 @@
       (push-instruction :set-loc (car save) (cdr save))))
   (unwind-exit *vv-nil*))
 
-(defun bind-or-set (loc var use-bind)
-  (declare (si::c-local))
-  (cond ((not use-bind)
-         (set-loc var loc))
-        ((useful-var-p var)
-         (bind loc var))))
-
-(defun values-loc-or-value0 (i)
-  (declare (si::c-local))
-  (if (plusp i)
-      (list 'VALUE i)
-      'VALUE0))
-
 (defun do-m-v-setq (vars form use-bind)
   ;; This routine moves values from the multiple-value stack into the
   ;; variables VARS. The amount of values is not known (or at least we only
@@ -270,28 +236,7 @@
       (c2expr* form))
     ;; At least we always have NIL value0
     (setf min-values (max 1 min-values))
-    (let* ((*lcl* *lcl*)
-           (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
-           (tmp (make-lcl-var))
-           (nr (make-lcl-var :type :int)))
-      (open-inline-block)
-      (when useful-extra-vars
-        ;; Make a temporary variable that stores VALUES[i] or ECL_NIL.
-        (wt-nl "cl_object " tmp ";")
-        ;; Make a copy of env->nvalues before assigning to any variables
-        (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
-      ;; We know that at least MIN-VALUES variables will get a value.
-      ;; VARS without a value are initialized to NIL (#VALS < #VARS).
-      (loop for v in vars
-            for i from 0
-            for loc = (values-loc-or-value0 i)
-            do (cond
-                 ((< i min-values)
-                  (bind-or-set loc v use-bind))
-                 ((useful-var-p v)
-                  (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
-                  (bind-or-set tmp v use-bind))))
-      (close-inline-block))
+    (push-instruction :m-v-setq vars min-values use-bind)
     'VALUE0))
 
 (defun c2multiple-value-setq (c1form vars form)

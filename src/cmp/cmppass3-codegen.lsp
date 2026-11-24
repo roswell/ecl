@@ -268,6 +268,59 @@
 
 ;;; cmppass2-var
 
+;;; LET, MULTIPLE-VALUE-BIND and MULTIPLE-VALUE-SETQ
+
+(define-codegen (:cxx :let-vars) (instruction)
+  (destructuring-bind (vars) (instruction-inputs instruction)
+    (open-inline-block)
+    ;; For all variables which are not special and do not belong to a closure,
+    ;; make a local C variable.
+    (dolist (var vars)
+      (declare (type var var))
+      (ext:when-let ((kind (local-var-p var)))
+        (when (useful-var-p var)
+          (bind (next-lcl (var-name var)) var)
+          (wt-nl (host-type->c-name kind) " " *volatile* var ";"))))
+    ;; If there are closure variables, set up an environment.
+    (when (env-grows (some #'var-ref-ccb vars))
+      (let ((env-lvl *env-lvl*))
+        (wt-nl "volatile cl_object env" (incf *env-lvl*) " = env" env-lvl ";")))))
+
+(define-codegen (:cxx :m-v-setq) (instruction)
+  (destructuring-bind (vars min-values use-bind) (instruction-inputs instruction)
+    (let* ((*lcl* *lcl*)
+           (useful-extra-vars (some #'useful-var-p (nthcdr min-values vars)))
+           (tmp (make-lcl-var))
+           (nr (make-lcl-var :type :int)))
+      (open-inline-block)
+      (when useful-extra-vars
+        ;; Make a temporary variable that stores VALUES[i] or ECL_NIL.
+        (wt-nl "cl_object " tmp ";")
+        ;; Make a copy of env->nvalues before assigning to any variables
+        (wt-nl "const int " nr " = cl_env_copy->nvalues;"))
+      ;; We know that at least MIN-VALUES variables will get a value.
+      ;; VARS without a value are initialized to NIL (#VALS < #VARS).
+      (flet ((bind-or-set (loc var)
+               (cond ((not use-bind)
+                      (set-loc var loc))
+                     ((useful-var-p var)
+                      (bind loc var)))))
+        (loop for v in vars
+              for i from 0
+              for loc = 'value0 then (list 'VALUE i)
+              do (cond
+                   ((< i min-values)
+                    (bind-or-set loc v))
+                   ((useful-var-p v)
+                    (wt-nl tmp " = (" nr "<=" i ")? ECL_NIL : " loc ";")
+                    (bind-or-set tmp v)))))
+      (close-inline-block))))
+
+(define-codegen (:cxx :let-exit) (instruction)
+  (destructuring-bind () (instruction-inputs instruction)
+    (close-inline-block)))
+
+
 ;;; PROGV
 
 (define-codegen (:cxx :progv) (instruction)
