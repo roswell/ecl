@@ -60,6 +60,8 @@
     ;; the variables.
     (when filtered-codes
       (setf *ihs-used-p* t)
+      (unless first
+        (open-inline-block))
       (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
       (loop for (name . code) in filtered-codes
             for i from 0
@@ -142,14 +144,12 @@
   (if (policy-debug-variable-bindings)
       (let ((*unwind-exit* *unwind-exit*)
             (useful-vars (remove-if-not #'useful-var-p vars)))
-        (open-inline-block)
-        (ext:if-let ((env (build-debug-lexical-env useful-vars)))
-          (progn
-            (push 'IHS-ENV *unwind-exit*)
-            (c2expr body)
-            (pop-debug-lexical-env))
-          (c2expr body))
-        (close-inline-block))
+        (if (build-debug-lexical-env useful-vars nil)
+            (let ((*unwind-exit* (list* 'IHS-ENV *unwind-exit*)))
+              (c2expr body)
+              (close-inline-block)
+              (pop-debug-lexical-env))
+            (c2expr body)))
       (c2expr body))
   (close-inline-block))
 
