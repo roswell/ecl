@@ -210,6 +210,22 @@
      ,@body
      (close-inline-blocks)))
 
+(defun locative-type-from-var-kind (kind)
+  (cdr (assoc kind
+              '((:object . "_ecl_object_loc")
+                (:fixnum . "_ecl_fixnum_loc")
+                (:char . "_ecl_base_char_loc")
+                (:float . "_ecl_float_loc")
+                (:double . "_ecl_double_loc")
+                (:long-double . "_ecl_long_double_loc")
+                (:csfloat . "_ecl_csfloat_loc")
+                (:cdfloat . "_ecl_cdfloat_loc")
+                (:clfloat . "_ecl_clfloat_loc")
+                #+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
+                #+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
+                #+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")
+                ((special global closure lexical) . NIL)))))
+
 
 ;;; *LAST-LABEL* holds the label# of the last used label. This is used by the
 ;;; code generator to avoid duplicated labels in the same scope.

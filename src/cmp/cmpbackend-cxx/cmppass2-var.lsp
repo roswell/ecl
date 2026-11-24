@@ -25,63 +25,16 @@
         (nsubst-var var form)
         t))))
 
-(defun locative-type-from-var-kind (kind)
-  (cdr (assoc kind
-              '((:object . "_ecl_object_loc")
-                (:fixnum . "_ecl_fixnum_loc")
-                (:char . "_ecl_base_char_loc")
-                (:float . "_ecl_float_loc")
-                (:double . "_ecl_double_loc")
-                (:long-double . "_ecl_long_double_loc")
-                (:csfloat . "_ecl_csfloat_loc")
-                (:cdfloat . "_ecl_cdfloat_loc")
-                (:clfloat . "_ecl_clfloat_loc")
-                #+sse2 (:int-sse-pack . "_ecl_int_sse_pack_loc")
-                #+sse2 (:float-sse-pack . "_ecl_float_sse_pack_loc")
-                #+sse2 (:double-sse-pack . "_ecl_double_sse_pack_loc")
-                ((special global closure lexical) . NIL)))))
-
-(defun build-debug-lexical-env (var-locations &optional first)
-  (let* ((filtered-locations '())
-         (filtered-codes '()))
-    ;; Filter out variables that we know how to store in the debug information
-    ;; table. This excludes among other things closures and special variables.
-    (loop for var in var-locations
-          for name = (let ((*package* (find-package "KEYWORD")))
-                       (format nil "\"~S\"" (var-name var)))
-          for code = (locative-type-from-var-kind (var-kind var))
-          for loc = (var-loc var)
-          when (and code (consp loc) (eq (first loc) 'LCL))
-            do (progn
-                 (push (cons name code) filtered-codes)
-                 (push loc filtered-locations)))
-    ;; Generate two tables, a static one with information about the variables,
-    ;; including name and type, and dynamic one, which is a vector of pointer to
-    ;; the variables.
-    (when filtered-codes
-      (setf *ihs-used-p* t)
-      (unless first
-        (open-inline-block))
-      (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
-      (loop for (name . code) in filtered-codes
-            for i from 0
-            do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
-      (wt "};")
-      (wt-nl "const cl_index _ecl_debug_info_raw[]={")
-      (wt-nl (if first "(cl_index)(ECL_NIL)," "(cl_index)(_ecl_debug_env),")
-             "(cl_index)(_ecl_descriptors)")
-      (loop for var-loc in filtered-locations
-            do (wt ",(cl_index)(&" var-loc ")"))
-      (wt "};")
-      (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
-             (+ 2 (length filtered-locations))
-             ",,);")
-      (unless first
-        (wt-nl "ihs.lcl_env = _ecl_debug_env;")))
-    filtered-codes))
-
-(defun pop-debug-lexical-env ()
-  (wt-nl "ihs.lcl_env = _ecl_debug_env;"))
+(defun let-build-debug-lexenv-p (var-locations)
+  (declare (si::c-local))
+  (and (policy-debug-variable-bindings)
+       (some (lambda (var)
+               (let ((loc (var-loc var)))
+                 (and (useful-var-p var)
+                      (locative-type-from-var-kind (var-kind var))
+                      (consp loc)
+                      (eq (car loc) 'LCL))))
+             var-locations)))
 
 ;;; Used by let*, defmacro and lambda's &aux, &optional, &rest, &keyword
 (defun bind-init (form var)
@@ -130,15 +83,12 @@
                 (VARIABLE (bind (c1form-arg 0 form) var))
                 (t (bind-init form var))))))
   ;; Optionally register the variables with the IHS frame for debugging
-  (if (policy-debug-variable-bindings)
-      (let ((*unwind-exit* *unwind-exit*)
-            (useful-vars (remove-if-not #'useful-var-p vars)))
-        (if (build-debug-lexical-env useful-vars nil)
-            (let ((*unwind-exit* (list* 'IHS-ENV *unwind-exit*)))
-              (c2expr body)
-              (close-inline-block)
-              (pop-debug-lexical-env))
-            (c2expr body)))
+  (if (let-build-debug-lexenv-p vars)
+      (let ((*unwind-exit* (list* 'IHS-ENV *unwind-exit*))
+            (var-locations (remove-if-not #'useful-var-p vars)))
+        (push-instruction :build-debug-lexenv var-locations nil)
+        (c2expr body)
+        (push-instruction :close-debug-lexenv))
       (c2expr body))
   (push-instruction :let-exit))
 

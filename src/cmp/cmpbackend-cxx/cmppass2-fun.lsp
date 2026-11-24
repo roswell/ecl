@@ -206,7 +206,7 @@
       (setf *ihs-used-p* t)
       (push 'IHS *unwind-exit*)
       (when (policy-debug-variable-bindings)
-        (build-debug-lexical-env (reverse requireds) t))
+        (push-instruction :build-debug-lexenv (reverse requireds) t))
       (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",ECL_NIL,_ecl_debug_env);")))
 
   ;; Bind optional parameters as long as there remain arguments.
