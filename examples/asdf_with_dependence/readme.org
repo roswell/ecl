@@ -50,6 +50,19 @@ will display the following and exit:
 Factorial of 5 is: 120
 #+END_SRC
 
+If you get errors like the following:
+
+#+BEGIN_EXAMPLE
+Condition of type: SIMPLE-ERROR
+Package ((UIOP/UTILITY . #<UIOP/UTILITY package>)) referenced in compiled file
+  NIL
+but has not been created
+#+END_EXAMPLE
+
+then try putting the latest ~uiop.asd~ somewhere accessible to
+~asdf:*central-repository*~ and put ~"uiop"~ in your ~.asd~'s
+~:depends-on~ list.  Likewise for ~"sockets"~ and ~"sb-bsd-sockets"~.
+
 ** Build it as shared library and use in C
 
 Use this in REPL to make a shared library:
@@ -208,5 +221,4 @@ build all dependent libraries separately as static libraries.
 
 * Footnotes
 
-[fn:1] You may also link ECL runtime statically. That is not covered
-in this walkthrough.
+[fn:1] You may also link ECL runtime [[../standalone/README.org][statically]].
