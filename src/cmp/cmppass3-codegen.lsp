@@ -283,3 +283,9 @@
   (destructuring-bind () (instruction-inputs instruction)
    (close-inline-block)))
 
+
+;;; PSETQ
+
+(define-codegen (:cxx :set-loc) (instruction)
+  (destructuring-bind (destination loc) (instruction-inputs instruction)
+    (set-loc destination loc)))

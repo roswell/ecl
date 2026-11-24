@@ -232,7 +232,7 @@
                  (let ((*destination* var))
                    (c2expr* form))))
     (dolist (save saves)
-      (set-loc (car save) (cdr save))))
+      (push-instruction :set-loc (car save) (cdr save))))
   (unwind-exit *vv-nil*))
 
 (defun bind-or-set (loc var use-bind)
