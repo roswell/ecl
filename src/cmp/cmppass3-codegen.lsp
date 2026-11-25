@@ -346,7 +346,7 @@
 ;;; Debug env
 
 (define-codegen (:cxx :build-debug-lexenv) (instruction)
-  (destructuring-bind (var-locations inlinep) (instruction-inputs instruction)
+  (destructuring-bind (var-locations) (instruction-inputs instruction)
     (let* ((filtered-locations '())
            (filtered-codes '()))
       ;; Filter out variables that we know how to store in the debug information
@@ -365,17 +365,14 @@
       ;; the variables.
       (when filtered-codes
         (setf *ihs-used-p* t)
-        (unless inlinep
-          (open-inline-block))
+        (open-inline-block)
         (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
         (loop for (name . code) in filtered-codes
               for i from 0
               do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
         (wt "};")
         (wt-nl "const cl_index _ecl_debug_info_raw[]={")
-        (wt-nl (if inlinep
-                   "(cl_index)(ECL_NIL),"
-                   "(cl_index)(_ecl_debug_env),")
+        (wt-nl "(cl_index)(_ecl_debug_env),"
                "(cl_index)(_ecl_descriptors)")
         (loop for var-loc in filtered-locations
               do (wt ",(cl_index)(&" var-loc ")"))
@@ -383,8 +380,7 @@
         (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
                (+ 2 (length filtered-locations))
                ",,);")
-        (unless inlinep
-          (wt-nl "ihs.lcl_env = _ecl_debug_env;")))
+        (wt-nl "ihs.lcl_env = _ecl_debug_env;"))
       filtered-codes)))
 
 (define-codegen (:cxx :close-debug-lexenv) (instruction)
@@ -392,3 +388,39 @@
     (close-inline-block)
     ;; POP-DEBUG-LEXICAL-ENV
     (wt-nl "ihs.lcl_env = _ecl_debug_env;")))
+
+(define-codegen (:cxx :build-debug-funenv) (instruction)
+  (destructuring-bind (var-locations fname-obj) (instruction-inputs instruction)
+    (let* ((filtered-locations '())
+           (filtered-codes '()))
+      ;; Filter out variables that we know how to store in the debug information
+      ;; table. This excludes among other things closures and special variables.
+      (loop for var in var-locations
+            for name = (let ((*package* (find-package "KEYWORD")))
+                         (format nil "\"~S\"" (var-name var)))
+            for code = (locative-type-from-var-kind (var-kind var))
+            for loc = (var-loc var)
+            when (and code (consp loc) (eq (first loc) 'LCL))
+              do (progn
+                   (push (cons name code) filtered-codes)
+                   (push loc filtered-locations)))
+      (open-inline-block)
+      ;; Generate two tables, a static one with information about the variables,
+      ;; including name and type, and dynamic one, which is a vector of pointer to
+      ;; the variables.
+      (when filtered-codes
+        (wt-nl "static const struct ecl_var_debug_info _ecl_descriptors[]={")
+        (loop for (name . code) in filtered-codes
+              for i from 0
+              do (wt-nl (if (zerop i) "{" ",{") name "," code "}"))
+        (wt "};")
+        (wt-nl "const cl_index _ecl_debug_info_raw[]={")
+        (wt-nl "(cl_index)(ECL_NIL),"
+               "(cl_index)(_ecl_descriptors)")
+        (loop for var-loc in filtered-locations
+              do (wt ",(cl_index)(&" var-loc ")"))
+        (wt "};")
+        (wt-nl "ecl_def_ct_vector(_ecl_debug_env,ecl_aet_index,_ecl_debug_info_raw,"
+               (+ 2 (length filtered-locations))
+               ",,);")))
+    (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname-obj ",ECL_NIL,_ecl_debug_env);")))

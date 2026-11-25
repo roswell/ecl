@@ -86,7 +86,7 @@
   (if (let-build-debug-lexenv-p vars)
       (let ((*unwind-exit* (list* 'IHS-ENV *unwind-exit*))
             (var-locations (remove-if-not #'useful-var-p vars)))
-        (push-instruction :build-debug-lexenv var-locations nil)
+        (push-instruction :build-debug-lexenv var-locations)
         (c2expr body)
         (push-instruction :close-debug-lexenv))
       (c2expr body))

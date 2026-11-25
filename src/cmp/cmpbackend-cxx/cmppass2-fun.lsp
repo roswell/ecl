@@ -201,13 +201,12 @@
   (mapc #'bind required-lcls requireds)
 
   (when fname-in-ihs-p
-    (let ((fname (get-object (or description fname) :test #'equal)))
-      (open-inline-block)
-      (setf *ihs-used-p* t)
-      (push 'IHS *unwind-exit*)
-      (when (policy-debug-variable-bindings)
-        (push-instruction :build-debug-lexenv (reverse requireds) t))
-      (wt-nl "ecl_ihs_push(cl_env_copy,&ihs," fname ",ECL_NIL,_ecl_debug_env);")))
+    (setf *ihs-used-p* t)
+    (push 'IHS *unwind-exit*)
+    (let ((fname-obj (get-object (or description fname) :test #'equal)))
+      (if (policy-debug-variable-bindings)
+          (push-instruction :build-debug-funenv (reverse requireds) fname-obj)
+          (push-instruction :build-debug-funenv nil fname-obj))))
 
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
