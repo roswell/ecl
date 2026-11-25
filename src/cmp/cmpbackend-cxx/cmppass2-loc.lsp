@@ -496,7 +496,8 @@
          ;; first binding: assign location
          (setq var-loc (next-env))
          (setf (var-loc var) var-loc))
-       (when (zerop var-loc) (wt-nl "env" *env-lvl* " = ECL_NIL;"))
+       (when (zerop var-loc)
+         (wt-nl "env" *env-lvl* " = ECL_NIL;"))
        (wt-nl "CLV" var-loc " = env" *env-lvl*
               " = CONS(" (coerce-loc :object loc) ",env" *env-lvl* ");")
        (wt-comment (var-name var))))
@@ -509,7 +510,16 @@
        (wt-nl) (wt-lex var-loc) (wt " = " (coerce-loc :object loc) ";"))
      (wt-comment (var-name var)))
     ((SPECIAL GLOBAL)
-     (bds-bind loc var))
+     ;; Optimize the case (let ((*special-var* *special-var*)) ...)
+     (cond ((and (var-p loc)
+                 (member (var-kind loc) '(global special))
+                 (eq (var-name loc) (var-name var)))
+            (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
+           (t
+            (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ","
+                   (coerce-loc :object loc) ");")))
+     (push 'BDS-BIND *unwind-exit*)
+     (wt-comment (var-name var)))
     (t
      (cond ((not (eq (var-loc var) 'OBJECT))
             ;; already has location (e.g. optional in lambda list)
@@ -522,15 +532,3 @@
            (t
             (baboon :format-control "bind: unexpected var-kind (~s) and loc (~s)."
                     :format-arguments (list (var-kind var) loc)))))))
-
-(defun bds-bind (loc var)
-  ;; Optimize the case (let ((*special-var* *special-var*)) ...)
-  (cond ((and (var-p loc)
-              (member (var-kind loc) '(global special))
-              (eq (var-name loc) (var-name var)))
-         (wt-nl "ecl_bds_push(cl_env_copy," (var-loc var) ");"))
-        (t
-         (wt-nl "ecl_bds_bind(cl_env_copy," (var-loc var) ","
-                (coerce-loc :object loc) ");")))
-  (push 'BDS-BIND *unwind-exit*)
-  (wt-comment (var-name var)))
