@@ -187,12 +187,18 @@
           (push-instruction :build-debug-funenv (reverse requireds) fname-obj)
           (push-instruction :build-debug-funenv nil fname-obj))))
 
+  ;; When binding optional and keyword parameters, we have duplicate calls to
+  ;; BIND to assign default value when the argument is not present, i.e:
+  ;;
+  ;;   if(i>=narg) BIND
+  ;;   else        BIND
+  ;;
+  ;; that may result in duplicate 'BDS-BIND entries in *UNWIND-EXIT* and in too
+  ;; many calls bds_unwind1(). To avoid that we rebind *UNWIND-EXIT* in one
+  ;; branch and discard erroneous entries.
+
   ;; Bind optional parameters as long as there remain arguments.
   (when optionals
-    ;; When binding optional values, we use two calls to BIND. This means
-    ;; 'BDS-BIND is pushed twice on *unwind-exit*, which results in two calls
-    ;; to bds_unwind1(), which is wrong. A simple fix is to save *unwind-exit*
-    ;; which is what we do here.
     (let ((va-arg-loc (if simple-varargs 'VA-ARG 'CL-VA-ARG)))
       ;; counter for optionals
       (with-inline-blocks ()
@@ -201,23 +207,24 @@
         (do ((opt optionals (cdddr opt))
              (type-check optional-type-check-forms (cdr type-check)))
             ((endp opt))
-          (wt-nl "if (i >= narg) {")
-          (let ((*opened-c-braces* (1+ *opened-c-braces*))
-                (var (first opt))
-                (init (second opt)))
-            (c2bind-init var init)
-            (when (third opt)
-              (bind *vv-nil* (third opt))))
-          (wt-nl "} else {")
-          (let ((*opened-c-braces* (1+ *opened-c-braces*))
-                (*unwind-exit* *unwind-exit*))
-            (wt-nl "i++;")
-            (bind va-arg-loc (first opt))
-            (if (car type-check)
+          (let ((var (first opt))
+                (init (second opt))
+                (flag (third opt)))
+            (wt-nl "if (i >= narg) {")
+            (let ((*opened-c-braces* (1+ *opened-c-braces*)))
+              (c2bind-init var init)
+              (when flag
+                (bind *vv-nil* flag)))
+            (wt-nl "} else {")
+            (let ((*opened-c-braces* (1+ *opened-c-braces*))
+                  (*unwind-exit* *unwind-exit*))
+              (wt-nl "i++;")
+              (bind va-arg-loc var)
+              (when (car type-check)
                 (c2expr* (car type-check)))
-            (when (third opt)
-              (bind *vv-t* (third opt))))
-          (wt-nl "}")))))
+              (when flag
+                (bind *vv-t* flag)))
+            (wt-nl "}"))))))
 
   (when (or rest key-flag allow-other-keys)
     (cond ((not (or key-flag allow-other-keys))
@@ -231,8 +238,12 @@
                   (wt-nl "cl_parse_key(args,0,NULL,NULL")))
            ;; This explicit coercion is required to remove the "volatile"
            ;; declaration on some variables.
-           (if rest (wt ",(cl_object*)&" rest-loc) (wt ",NULL"))
-           (wt (if allow-other-keys ",TRUE);" ",FALSE);"))))
+           (if rest
+               (wt ",(cl_object*)&" rest-loc)
+               (wt ",NULL"))
+           (if allow-other-keys
+               (wt ",TRUE);")
+               (wt ",FALSE);"))))
     (when rest
       (bind rest-loc rest)))
 
@@ -240,6 +251,7 @@
     (wt-nl (if simple-varargs "va_end(args);" "ecl_va_end(args);")))
 
   ;;; Bind keywords.
+  ;;; Keys are bound from a variable assigned while binding &rest parameters.
   (do ((kwd keywords (cddddr kwd))
        (all-kwd nil)
        (KEYVARS[i] `(KEYVARS 0))
