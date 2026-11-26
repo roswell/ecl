@@ -53,6 +53,9 @@
              (let ((*destination* `(BIND ,var)))
                (c2expr* form)))))))
 
+(defun c2bind-loc (var loc)
+  (bind loc var))
+
 (defun c2let* (c1form vars forms body
                &aux
                (*volatile* (c1form-volatile* c1form))

@@ -214,16 +214,16 @@
             (let ((*opened-c-braces* (1+ *opened-c-braces*)))
               (c2bind-init var init)
               (when flag
-                (bind *vv-nil* flag)))
+                (c2bind-loc flag *vv-nil*)))
             (wt-nl "} else {")
             (let ((*opened-c-braces* (1+ *opened-c-braces*))
                   (*unwind-exit* *unwind-exit*))
               (wt-nl "i++;")
-              (bind va-arg-loc var)
+              (c2bind-loc var va-arg-loc)
               (when (car type-check)
                 (c2expr* (car type-check)))
               (when flag
-                (bind *vv-t* flag)))
+                (c2bind-loc flag *vv-t*)))
             (wt-nl "}"))))))
 
   (when (or rest key-flag allow-other-keys)
@@ -272,7 +272,7 @@
              ;; no initform
              ;; ECL_NIL has been set in keyvars if keyword parameter is not supplied.
              (setf (second KEYVARS[i]) i)
-             (bind KEYVARS[i] var)
+             (c2bind-loc var KEYVARS[i])
              (when (car type-check)
                (c2expr* (car type-check))))
             (t
@@ -285,13 +285,13 @@
              (wt-nl "} else {")
              (let ((*opened-c-braces* (1+ *opened-c-braces*)))
                (setf (second KEYVARS[i]) i)
-               (bind KEYVARS[i] var)
+               (c2bind-loc var KEYVARS[i])
                (when (car type-check)
                  (c2expr* (car type-check))))
              (wt-nl "}")))
       (when flag
         (setf (second KEYVARS[i]) (+ nkey i))
-        (bind KEYVARS[i] flag))))
+        (c2bind-loc flag KEYVARS[i]))))
   (when *tail-recursion-info*
     (setf *tail-recursion-mark* (next-label t))
     (push *tail-recursion-mark* *unwind-exit*)
