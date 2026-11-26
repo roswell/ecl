@@ -37,18 +37,21 @@
              var-locations)))
 
 ;;; Used by let*, defmacro and lambda's &aux, &optional, &rest, &keyword
-(defun bind-init (form var)
-  (let ((kind (var-kind var)))
-    (if (member kind '(CLOSURE LEXICAL SPECIAL GLOBAL))
-        ;; Binding these variables is complicated and involves lexical
-        ;; environments, global environments, etc. If we use `(BIND var)
-        ;; as destination, BIND might receive the wrong environment.
-        (let ((*destination* (make-temp-var)))
-          (c2expr* form)
-          (bind *destination* var))
-        ;; The simple case of a variable which is local to a function.
-        (let ((*destination* `(BIND ,var)))
-          (c2expr* form)))))
+(defun c2bind-init (var form)
+  (case (c1form-name form)
+    (LOCATION (bind (c1form-arg 0 form) var))
+    (VARIABLE (bind (c1form-arg 0 form) var))
+    (t (let ((kind (var-kind var)))
+         (if (member kind '(CLOSURE LEXICAL SPECIAL GLOBAL))
+             ;; Binding these variables is complicated and involves lexical
+             ;; environments, global environments, etc. If we use `(BIND var)
+             ;; as destination, BIND might receive the wrong environment.
+             (let ((*destination* (make-temp-var)))
+               (c2expr* form)
+               (bind *destination* var))
+             ;; The simple case of a variable which is local to a function.
+             (let ((*destination* `(BIND ,var)))
+               (c2expr* form)))))))
 
 (defun c2let* (c1form vars forms body
                &aux
@@ -78,10 +81,7 @@
               (let ((*destination* var))
                 (c2expr* form)))
              (t
-              (case (c1form-name form)
-                (LOCATION (bind (c1form-arg 0 form) var))
-                (VARIABLE (bind (c1form-arg 0 form) var))
-                (t (bind-init form var))))))
+              (c2bind-init var form))))
   ;; Optionally register the variables with the IHS frame for debugging
   (if (let-build-debug-lexenv-p vars)
       (let ((*unwind-exit* (list* 'IHS-ENV *unwind-exit*))
