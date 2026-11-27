@@ -69,6 +69,9 @@
         finally (setf vars used-vars forms used-forms))
   ;; Make necessary local C variables and create closure bindings for
   ;; closed-over variables.
+  (dolist (var vars)
+    (when (useful-var-p var)
+      (vlet var)))
   (push-instruction :let-vars vars)
   ;; Assign values
   (loop for form in forms
@@ -100,6 +103,9 @@
          (*lcl* *lcl*))
     ;; Make necessary local C variables and create closure bindings for
     ;; closed-over variables.
+    (dolist (var vars)
+      (when (useful-var-p var)
+        (vlet var)))
     (push-instruction :let-vars vars)
     ;; Assign the values to the variables, compiling the form and binding the
     ;; variables in the process.

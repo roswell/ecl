@@ -279,7 +279,6 @@
       (declare (type var var))
       (ext:when-let ((kind (local-var-p var)))
         (when (useful-var-p var)
-          (bind (next-lcl (var-name var)) var)
           (wt-nl (host-type->c-name kind) " " *volatile* var ";"))))
     ;; If there are closure variables, set up an environment.
     (when (env-grows (some #'var-ref-ccb vars))

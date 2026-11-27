@@ -532,3 +532,32 @@
            (t
             (baboon :format-control "bind: unexpected var-kind (~s) and loc (~s)."
                     :format-arguments (list (var-kind var) loc)))))))
+
+;;; This operator declares variable before binding in the current scope. In the
+;;; case of lexical variables, it also assigns the location. When the variable
+;;; is special, then it registers it in *UNWIND-EXIT* for the exist manager.
+(defun vlet (var &optional loc)
+  (declare (type var var))
+  (case (var-kind var)
+    ((SPECIAL GLOBAL)
+     ;(push 'BDS-BIND *unwind-exit*)
+     )
+    (CLOSURE
+     (unless (eq (var-loc var) 'OBJECT) ; env locations are fixnums
+       (baboon :format-control "vlet: variable (~s) already has a location (~s)."
+               :format-arguments (list (var-name var) (var-loc var))))
+
+     (setf (var-loc var)
+           (or loc (next-env))))
+    (LEXICAL
+     (unless (eq (var-loc var) 'OBJECT) ; lex locations are `(*level* . *lex*)
+       (baboon :format-control "vlet: variable (~s) already has a location (~s)."
+               :format-arguments (list (var-name var) (var-loc var))))
+     (setf (var-loc var)
+           (or loc (next-lex))))
+    (otherwise
+     (unless (eq (var-loc var) 'OBJECT) ; lcl locations are `(LCL n t "cname")
+       (baboon :format-control "vlet: variable (~s) already has a location (~s)."
+               :format-arguments (list (var-name var) (var-loc var))))
+     (setf (var-loc var)
+           (or loc (next-lcl (var-name var)))))))
